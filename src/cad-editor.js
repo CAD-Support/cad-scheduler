@@ -33,7 +33,7 @@
     },
 
     async save(changes) {
-      return CAD.api.request('cad_update_appointment', changes);
+      return CAD.API.request('cad_update_appointment', changes);
     },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -18,13 +18,13 @@
       this.container = container;
       if (!this.container) return;
 
-      const tables = CAD.config.tables;
+      const tables = CAD.Config.get('tables') ?? [];
       this.container.innerHTML = '';
       this.container.classList.add('cad-calendar');
 
       tables.forEach((table) => {
         const column = CAD.components.tableColumn(table);
-        CAD.state.appointments
+        (CAD.State.get('appointments') ?? [])
           .filter((appt) => appt.tableId === table.id)
           .forEach((appt) => column.appendChild(CAD.components.appointmentBlock(appt)));
         this.container.appendChild(column);

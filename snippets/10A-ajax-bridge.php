@@ -17,10 +17,11 @@ function cad_enqueue_assets() {
 	$base = get_stylesheet_directory_uri() . '/cad-scheduler/src/';
 
 	wp_enqueue_script( 'cad-core', $base . 'cad-core.js', array(), '0.1.0', true );
+	wp_enqueue_script( 'cad-api', $base . 'cad-api.js', array( 'cad-core' ), '0.1.0', true );
 	wp_enqueue_script( 'cad-components', $base . 'cad-components.js', array( 'cad-core' ), '0.1.0', true );
-	wp_enqueue_script( 'cad-editor', $base . 'cad-editor.js', array( 'cad-core' ), '0.1.0', true );
+	wp_enqueue_script( 'cad-editor', $base . 'cad-editor.js', array( 'cad-core', 'cad-api' ), '0.1.0', true );
 	wp_enqueue_script( 'cad-calendar', $base . 'cad-calendar.js', array( 'cad-core', 'cad-components' ), '0.1.0', true );
-	wp_enqueue_script( 'cad-ui', $base . 'cad-ui.js', array( 'cad-core', 'cad-calendar' ), '0.1.0', true );
+	wp_enqueue_script( 'cad-ui', $base . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar' ), '0.1.0', true );
 
 	wp_localize_script(
 		'cad-core',

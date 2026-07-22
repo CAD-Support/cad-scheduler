@@ -39,17 +39,17 @@
     },
 
     async load(date) {
-      CAD.state.loading = true;
-      CAD.state.error = null;
+      CAD.State.set('loading', true);
+      CAD.State.set('error', null);
 
       try {
-        const result = await CAD.api.fetchSchedule(date);
-        CAD.state.appointments = result.data?.appointments ?? [];
+        const result = await CAD.API.getSchedule(date);
+        CAD.State.set('appointments', result.data?.appointments ?? []);
         this.render();
       } catch (err) {
-        CAD.state.error = err.message;
+        CAD.State.set('error', err.message);
       } finally {
-        CAD.state.loading = false;
+        CAD.State.set('loading', false);
       }
 
       return this;
