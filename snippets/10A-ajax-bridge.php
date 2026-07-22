@@ -2,26 +2,119 @@
 /**
  * Snippet 10A — AJAX Bridge
  *
- * Enqueues CAD Scheduler scripts and registers WordPress AJAX handlers
- * for Bookly schedule data.
+ * Bootstrap and routing only. No filesystem paths or require_once calls.
+ *
+ * Deploy after PHP modules from includes/ (see docs/deployment.md).
+ *
+ * Code Snippets: create snippet "CAD — AJAX Bridge", priority 20, run site-wide.
  *
  * @package CAD_Scheduler
  */
 
 defined( 'ABSPATH' ) || exit;
 
+if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
+	define( 'CAD_SCHEDULER_VERSION', '0.2.0' );
+}
+
+if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
+	define( 'CAD_SCHEDULER_GITHUB_REPO', 'CAD-Support/cad-scheduler' );
+}
+
 /**
- * Register and enqueue frontend assets.
+ * Build a public asset URL for JS/CSS served from GitHub via jsDelivr.
+ *
+ * Override with the cad_scheduler_asset_url filter to point at a local
+ * theme or plugin directory during development.
+ *
+ * @param string $relative_path Path relative to repository root.
+ * @return string
+ */
+function cad_scheduler_asset_url( $relative_path ) {
+	$relative_path = ltrim( $relative_path, '/' );
+	$url           = sprintf(
+		'https://cdn.jsdelivr.net/gh/%s@%s/%s',
+		CAD_SCHEDULER_GITHUB_REPO,
+		CAD_SCHEDULER_VERSION,
+		$relative_path
+	);
+
+	/**
+	 * Filter the public asset URL for CAD Scheduler JS/CSS.
+	 *
+	 * @param string $url           Resolved asset URL.
+	 * @param string $relative_path Path relative to repository root.
+	 */
+	return apply_filters( 'cad_scheduler_asset_url', $url, $relative_path );
+}
+
+/**
+ * @return bool
+ */
+function cad_scheduler_is_ready() {
+	return class_exists( 'CAD_Schedule_Provider', false );
+}
+
+/**
+ * @return CAD_Schedule_Provider|null
+ */
+function cad_schedule_provider() {
+	static $provider = null;
+
+	if ( ! cad_scheduler_is_ready() ) {
+		return null;
+	}
+
+	if ( null === $provider ) {
+		$provider = new CAD_Schedule_Provider();
+	}
+
+	return $provider;
+}
+
+/**
+ * Register frontend assets when the scheduler shortcode is present.
+ */
+function cad_maybe_enqueue_assets() {
+	if ( ! cad_scheduler_is_ready() || ! is_singular() ) {
+		return;
+	}
+
+	$post = get_post();
+
+	if ( ! $post || ! has_shortcode( $post->post_content, 'cad_scheduler' ) ) {
+		return;
+	}
+
+	cad_enqueue_assets();
+}
+add_action( 'wp_enqueue_scripts', 'cad_maybe_enqueue_assets' );
+
+/**
+ * Enqueue CAD Scheduler scripts and styles.
  */
 function cad_enqueue_assets() {
-	$base = get_stylesheet_directory_uri() . '/cad-scheduler/src/';
+	if ( ! cad_scheduler_is_ready() ) {
+		return;
+	}
 
-	wp_enqueue_script( 'cad-core', $base . 'cad-core.js', array(), '0.1.0', true );
-	wp_enqueue_script( 'cad-api', $base . 'cad-api.js', array( 'cad-core' ), '0.1.0', true );
-	wp_enqueue_script( 'cad-components', $base . 'cad-components.js', array( 'cad-core' ), '0.1.0', true );
-	wp_enqueue_script( 'cad-editor', $base . 'cad-editor.js', array( 'cad-core', 'cad-api' ), '0.1.0', true );
-	wp_enqueue_script( 'cad-calendar', $base . 'cad-calendar.js', array( 'cad-core', 'cad-components' ), '0.1.0', true );
-	wp_enqueue_script( 'cad-ui', $base . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar' ), '0.1.0', true );
+	$provider = cad_schedule_provider();
+	$ver      = CAD_SCHEDULER_VERSION;
+	$src      = cad_scheduler_asset_url( 'src/' );
+
+	wp_enqueue_style(
+		'cad-scheduler',
+		cad_scheduler_asset_url( 'assets/css/cad-scheduler.css' ),
+		array(),
+		$ver
+	);
+
+	wp_enqueue_script( 'cad-core', $src . 'cad-core.js', array(), $ver, true );
+	wp_enqueue_script( 'cad-api', $src . 'cad-api.js', array( 'cad-core' ), $ver, true );
+	wp_enqueue_script( 'cad-components', $src . 'cad-components.js', array( 'cad-core' ), $ver, true );
+	wp_enqueue_script( 'cad-editor', $src . 'cad-editor.js', array( 'cad-core', 'cad-api' ), $ver, true );
+	wp_enqueue_script( 'cad-calendar', $src . 'cad-calendar.js', array( 'cad-core', 'cad-components' ), $ver, true );
+	wp_enqueue_script( 'cad-ui', $src . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar' ), $ver, true );
 
 	wp_localize_script(
 		'cad-core',
@@ -29,38 +122,68 @@ function cad_enqueue_assets() {
 		array(
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'cad_scheduler' ),
-			'tables'  => apply_filters( 'cad_scheduler_tables', array() ),
+			'tables'  => $provider->get_tables(),
 		)
 	);
+
+	wp_add_inline_script(
+		'cad-ui',
+		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui){return;}CAD.init(window.cadConfig||{});var mount=document.getElementById('cad-scheduler');if(!mount){return;}CAD.ui.mount('#cad-scheduler').load(new Date().toISOString().slice(0,10));});})();"
+	);
 }
-add_action( 'wp_enqueue_scripts', 'cad_enqueue_assets' );
 
 /**
- * Fetch schedule for a given date.
+ * Render the scheduler mount point.
+ *
+ * @return string
+ */
+function cad_scheduler_shortcode() {
+	if ( ! cad_scheduler_is_ready() ) {
+		return '';
+	}
+
+	cad_enqueue_assets();
+
+	return '<div id="cad-scheduler" class="cad-scheduler-mount"></div>';
+}
+add_shortcode( 'cad_scheduler', 'cad_scheduler_shortcode' );
+
+/**
+ * Route schedule requests to the schedule provider.
  */
 function cad_ajax_get_schedule() {
 	check_ajax_referer( 'cad_scheduler', 'nonce' );
 
+	$provider = cad_schedule_provider();
+
+	if ( ! $provider ) {
+		wp_send_json_error(
+			array( 'message' => 'CAD Scheduler PHP modules are not loaded.' ),
+			500
+		);
+	}
+
 	$date = sanitize_text_field( wp_unslash( $_POST['date'] ?? '' ) );
 
-	// TODO: Query Bookly appointments for $date and map to CAD format.
-	wp_send_json_success(
-		array(
-			'date'         => $date,
-			'appointments' => array(),
-		)
-	);
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+		wp_send_json_error(
+			array( 'message' => 'Invalid date format. Expected YYYY-MM-DD.' ),
+			400
+		);
+	}
+
+	wp_send_json_success( $provider->get_schedule( $date ) );
 }
 add_action( 'wp_ajax_cad_get_schedule', 'cad_ajax_get_schedule' );
 add_action( 'wp_ajax_nopriv_cad_get_schedule', 'cad_ajax_get_schedule' );
 
 /**
- * Update a single appointment.
+ * Route appointment update requests.
  */
 function cad_ajax_update_appointment() {
 	check_ajax_referer( 'cad_scheduler', 'nonce' );
 
-	// TODO: Validate and persist changes via Bookly API.
+	// Sprint 3+: persist changes via Bookly.
 	wp_send_json_success( array( 'updated' => true ) );
 }
 add_action( 'wp_ajax_cad_update_appointment', 'cad_ajax_update_appointment' );

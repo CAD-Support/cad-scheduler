@@ -126,9 +126,19 @@ flowchart TB
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Deployment](docs/deployment.md)
 - [Roadmap](docs/roadmap.md)
 - [Changelog](docs/changelog.md)
 
 ## Snippets
 
-WordPress snippets live in `snippets/`. Start with `10A-ajax-bridge.php` for the Bookly AJAX bridge.
+PHP is deployed via [Code Snippets](https://wordpress.org/plugins/code-snippets/). See [Deployment](docs/deployment.md) for the full workflow.
+
+| Snippet | Source |
+|---------|--------|
+| CAD — Bookly Repository | `includes/class-cad-bookly-repository.php` |
+| CAD — Bookly Mapper | `includes/class-cad-bookly-mapper.php` |
+| CAD — Schedule Provider | `includes/class-cad-schedule-provider.php` |
+| CAD — AJAX Bridge | `snippets/10A-ajax-bridge.php` |
+
+JavaScript and CSS load from GitHub via jsDelivr — no theme deployment required.
