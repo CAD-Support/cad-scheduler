@@ -1,6 +1,12 @@
 /**
- * CAD Scheduler — Core
- * Configuration, state, and Bookly API bridge.
+ * ======================================================
+ * CAD Scheduler
+ * ------------------------------------------------------
+ * Module: CAD Core
+ * Version: 1.0.0
+ * Author: Crock A Doodle + OpenAI
+ * Repository: https://github.com/CAD-Support/cad-scheduler
+ * ======================================================
  */
 (function (global) {
   'use strict';
