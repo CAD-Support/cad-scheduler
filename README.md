@@ -4,6 +4,7 @@ Modern Bookly frontend for multi-table studio scheduling.
 
 ## Design Principles
 
+- **Rule #1: If it can't be demonstrated, it isn't finished.**
 - Modular first
 - No plugin modifications
 - Code Snippets compatible

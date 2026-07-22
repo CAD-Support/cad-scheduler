@@ -1,7 +1,12 @@
 # Roadmap
 
-## Phase 1 — Foundation
+## Rule #1
 
+**If it can't be demonstrated, it isn't finished.**
+
+Every sprint must deliver something visible on a real WordPress page — using the `[cad_scheduler]` shortcode and real Bookly data — that can be shown to a studio user.
+
+## Phase 1 — Foundation
 - [ ] AJAX bridge snippet (`10A-ajax-bridge.php`)
 - [ ] Core module: config, state, Bookly API wrapper
 - [ ] Basic multi-table calendar grid (read-only)
