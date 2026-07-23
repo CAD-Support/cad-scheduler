@@ -11,6 +11,51 @@
 
 Paste each file **in full** into Code Snippets. Run everywhere (or front-end only).
 
+## Access control
+
+`cad_get_schedule` requires a logged-in WordPress user with the `read` capability (default). Anonymous requests are rejected.
+
+- Place `[cad_scheduler]` on a **login-protected** page for studio staff.
+- To require a stricter capability, use:
+
+```php
+add_filter( 'cad_scheduler_get_schedule_capability', function () {
+    return 'edit_posts'; // example: editors and administrators only
+} );
+```
+
+The endpoint returns customer names and appointment details from Bookly — treat it as internal staff data, not public.
+
+## Diagnostics
+
+CAD Scheduler shows a diagnostic panel when required components are missing. It is **automatic** when blocking issues are detected; optional detail mode is available for healthy installs.
+
+**Architectural note:** This intentionally differs from Bookly. Bookly surfaces missing dependencies as **wp-admin notices**; CAD runs on the **frontend**, so it uses **user-friendly diagnostic panels** on the schedule page instead. See `docs/bookly-reference-map.md` — Architectural Decisions.
+
+**Blocking (scheduler does not load):**
+
+- Missing Repository, Mapper, or Provider snippets (priorities 10–12)
+- Missing AJAX bridge snippet (priority 20) — shortcode will not register at all
+
+**Non-blocking (scheduler loads with warnings):**
+
+- Bookly database tables not found
+
+**Optional health check on a working install:**
+
+```php
+add_filter( 'cad_scheduler_diagnostics_enabled', '__return_true' );
+```
+
+Shows a confirmation panel below the scheduler when all components are healthy.
+
+**Filters:**
+
+| Filter | Purpose |
+|--------|---------|
+| `cad_scheduler_health` | Add or modify health issues |
+| `cad_scheduler_diagnostics_enabled` | Force diagnostic panel when healthy |
+
 ## Page
 
 ```

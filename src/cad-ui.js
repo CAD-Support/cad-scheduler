@@ -10,10 +10,73 @@
   CAD.ui = {
     root: null,
 
+    collectIssues() {
+      const issues = [];
+      const health = CAD.Config.get('health');
+
+      if (Array.isArray(health)) {
+        health.forEach((issue) => {
+          if (issue?.message) {
+            issues.push(String(issue.message));
+          }
+        });
+      }
+
+      if (typeof window.cadConfig === 'undefined') {
+        issues.push('JavaScript configuration (cadConfig) is missing.');
+      }
+
+      if (!CAD.Config.get('ajaxUrl')) {
+        issues.push('AJAX URL is not configured.');
+      }
+
+      if (!CAD.Config.get('nonce')) {
+        issues.push('Security nonce is not configured.');
+      }
+
+      return issues;
+    },
+
+    showDiagnostics(messages) {
+      if (!this.root || !messages.length) {
+        return this;
+      }
+
+      this.root.innerHTML = '';
+      this.root.classList.add('cad-scheduler');
+
+      const panel = document.createElement('div');
+      panel.className = 'cad-scheduler__diagnostics';
+      panel.setAttribute('role', 'alert');
+
+      const title = document.createElement('p');
+      title.className = 'cad-scheduler__diagnostics-title';
+      title.innerHTML = '<strong>CAD Scheduler</strong>';
+      panel.appendChild(title);
+
+      const list = document.createElement('ul');
+      list.className = 'cad-scheduler__diagnostics-list';
+      messages.forEach((message) => {
+        const item = document.createElement('li');
+        item.textContent = message;
+        list.appendChild(item);
+      });
+      panel.appendChild(list);
+
+      this.root.appendChild(panel);
+      return this;
+    },
+
     mount(selector) {
       this.root = document.querySelector(selector);
       if (!this.root) throw new Error(`Mount point not found: ${selector}`);
       this.root.classList.add('cad-scheduler');
+
+      const issues = this.collectIssues();
+      if (issues.length) {
+        this.showDiagnostics(issues);
+      }
+
       return this;
     },
 
@@ -50,6 +113,10 @@
 
     render() {
       if (!this.root) return this;
+
+      if (this.root.querySelector('.cad-scheduler__diagnostics')) {
+        return this;
+      }
 
       this.root.innerHTML = `
         <div class="cad-scheduler__header"></div>

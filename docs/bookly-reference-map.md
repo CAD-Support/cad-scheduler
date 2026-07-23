@@ -29,6 +29,26 @@ The [End Time Calculation](#end-time-calculation) section is the reference templ
 
 ---
 
+## Architectural Decisions
+
+Documented differences from Bookly that are **intentional**, not compatibility gaps.
+
+### Diagnostics (frontend vs wp-admin)
+
+| | Bookly | CAD Scheduler |
+|---|--------|---------------|
+| **Context** | Runs primarily in **wp-admin** | Runs on the **frontend** via `[cad_scheduler]` |
+| **Missing dependency** | Admin notices, setup wizards | User-facing **diagnostic panel** on the schedule page |
+| **Audience** | Site administrators in dashboard | Studio staff on the page where the scheduler is embedded |
+
+**Why CAD differs:** Bookly’s admin notices are appropriate inside wp-admin. CAD has no wp-admin UI — failures must surface where the shortcode renders, or staff see a blank page with no explanation.
+
+**What CAD does:** `cad_scheduler_health()` + diagnostic panel (`cad-scheduler__diagnostics`) via PHP (blocking issues) and JavaScript (config validation). See [Deployment — Diagnostics](deployment.md#diagnostics).
+
+**This is intentional.** Do not replace frontend panels with wp-admin notices unless CAD gains a dedicated admin settings screen.
+
+---
+
 ## Library inventory
 
 ### Extracted add-ons (16)
@@ -156,7 +176,7 @@ If appointment timing is wrong on the grid, inspect in that order: repository SQ
 
 **CAD intentional differences** (must stay documented if kept):
 
-_None currently for appointment read layer._
+- **Diagnostics** — frontend diagnostic panels instead of Bookly-style wp-admin notices; see [Architectural Decisions — Diagnostics](#diagnostics-frontend-vs-wp-admin)
 
 **CAD aligned with Bookly:**
 
@@ -791,7 +811,10 @@ These are defined in CAD Scheduler, not Bookly:
 |------------|------|---------|
 | `cad_scheduler_tables` | `includes/class-cad-schedule-provider.php` | Filter mapped staff/tables |
 | `cad_scheduler_asset_url` | `snippets/10A-ajax-bridge.php` | Override jsDelivr CDN URL |
-| `wp_ajax_cad_get_schedule` | `snippets/10A-ajax-bridge.php` | CAD schedule read endpoint |
+| `wp_ajax_cad_get_schedule` | `snippets/10A-ajax-bridge.php` | CAD schedule read endpoint (logged-in users only; filter `cad_scheduler_get_schedule_capability`, default `read`) |
+| `cad_scheduler_get_schedule_capability` | `snippets/10A-ajax-bridge.php` | Filter required WP capability for schedule AJAX |
+| `cad_scheduler_health` | `snippets/10A-ajax-bridge.php` | Filter health-check issues (diagnostics) |
+| `cad_scheduler_diagnostics_enabled` | `snippets/10A-ajax-bridge.php` | Show diagnostic panel when install is healthy |
 | `wp_ajax_cad_update_appointment` | `snippets/10A-ajax-bridge.php` | CAD update stub (future) |
 
 ---
