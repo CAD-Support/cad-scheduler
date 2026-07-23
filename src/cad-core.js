@@ -1,59 +1,40 @@
 /**
- * ======================================================
- * CAD Scheduler
- * ------------------------------------------------------
- * Module: CAD Core
- * Version: 1.0.0
- * Author: Crock A Doodle + OpenAI
- * Repository: https://github.com/CAD-Support/cad-scheduler
- * ======================================================
+ * CAD Scheduler v2 — Core
+ * @module cad-core
  */
 (function (global) {
   'use strict';
 
   const CAD = global.CAD || {};
-
-  CAD.config = {
-    ajaxUrl: '',
-    nonce: '',
-    tables: [],
-    timezone: 'America/New_York',
+  let config = {
+    debug: false,
+    dayStart: '08:00',
+    dayEnd: '20:00',
+    slotMinutes: 15,
+    hourHeight: 64,
   };
+  let state = {};
 
-  CAD.state = {
-    appointments: [],
-    staff: [],
-    loading: false,
-    error: null,
-  };
+  CAD.VERSION = Object.freeze({ major: 2, minor: 0, patch: 0, build: '2026.07.23' });
 
-  CAD.api = {
-    async request(action, data = {}) {
-      const body = new FormData();
-      body.append('action', action);
-      body.append('nonce', CAD.config.nonce);
-      Object.entries(data).forEach(([key, value]) => body.append(key, value));
+  CAD.Config = Object.freeze({
+    get(key) { return config[key]; },
+    merge(values) { config = { ...config, ...values }; },
+  });
 
-      const response = await fetch(CAD.config.ajaxUrl, {
-        method: 'POST',
-        body,
-        credentials: 'same-origin',
-      });
+  CAD.State = Object.freeze({
+    get(key) { return state[key]; },
+    set(key, value) { state[key] = value; return value; },
+  });
 
-      if (!response.ok) {
-        throw new Error(`Request failed: ${response.status}`);
-      }
-
-      return response.json();
-    },
-
-    fetchSchedule(date) {
-      return CAD.api.request('cad_get_schedule', { date });
-    },
-  };
+  CAD.Logger = Object.freeze({
+    log(...args) { if (config.debug) console.log('[CAD]', ...args); },
+    warn(...args) { if (config.debug) console.warn('[CAD]', ...args); },
+    error(...args) { console.error('[CAD]', ...args); },
+  });
 
   CAD.init = function (options = {}) {
-    Object.assign(CAD.config, options);
+    CAD.Config.merge(options);
     return CAD;
   };
 

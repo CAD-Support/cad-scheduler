@@ -141,3 +141,38 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+# ==========================================
+# Operating System
+# ==========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ==========================================
+# IDEs
+# ==========================================
+.vscode/
+.idea/
+
+# Cursor temporary files (keep project settings if you use them)
+.cursor/cache/
+.cursor/tmp/
+
+# ==========================================
+# Composer
+# ==========================================
+vendor/
+
+# ==========================================
+# Temporary files
+# ==========================================
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# ==========================================
+# WordPress
+# ==========================================
+wp-content/uploads/
