@@ -1,0 +1,269 @@
+/* CAD Scheduler v2 — matrix grid */
+
+.cad-scheduler {
+  --cad-orange: #f7941d;
+  --cad-purple: #6b2d84;
+  --cad-teal: #009ca6;
+  --cad-ink: #2b2b2b;
+  --cad-muted: #5c5c5c;
+  --cad-surface: #ffffff;
+  --cad-bg: #fffaf5;
+  --cad-border: rgba(43, 43, 43, 0.1);
+  --cad-radius: 10px;
+  --cad-shadow: 0 1px 3px rgba(43, 43, 43, 0.08);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--cad-ink);
+}
+
+.cad-scheduler__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--cad-purple);
+}
+
+.cad-scheduler__header--error {
+  color: #b42318;
+  margin-bottom: 0.75rem;
+}
+
+.cad-scheduler__diagnostics {
+  margin: 0 0 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid #b42318;
+  border-radius: var(--cad-radius);
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.cad-scheduler__diagnostics-title {
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+}
+
+.cad-scheduler__diagnostics-list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.cad-scheduler__diagnostics-list li + li {
+  margin-top: 0.35rem;
+}
+
+.cad-matrix__empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--cad-muted);
+}
+
+.cad-matrix__scroll {
+  overflow: auto;
+  max-height: 85vh;
+  border: 1px solid var(--cad-border);
+  border-radius: var(--cad-radius);
+  background: var(--cad-surface);
+  box-shadow: var(--cad-shadow);
+}
+
+.cad-matrix__scroll:focus-visible {
+  outline: 2px solid var(--cad-teal);
+  outline-offset: 2px;
+}
+
+/* Header row — tables across top */
+.cad-matrix__head {
+  display: grid;
+  grid-template-columns: 4.5rem repeat(var(--cad-table-count), minmax(9rem, 1fr));
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--cad-surface);
+  border-bottom: 2px solid var(--cad-border);
+}
+
+.cad-matrix__corner,
+.cad-matrix__table-label {
+  padding: 0.75rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+  background: color-mix(in srgb, var(--cad-surface) 90%, var(--cad-orange) 10%);
+  border-right: 1px solid var(--cad-border);
+}
+
+.cad-matrix__corner {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  color: var(--cad-purple);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+}
+
+.cad-matrix__table-label:last-child {
+  border-right: none;
+}
+
+/* Body — time left, lanes right */
+.cad-matrix__body {
+  display: grid;
+  grid-template-columns: 4.5rem repeat(var(--cad-table-count), minmax(9rem, 1fr));
+  min-height: var(--cad-grid-height);
+}
+
+.cad-matrix__times {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--cad-surface);
+  border-right: 1px solid var(--cad-border);
+}
+
+.cad-matrix__time-slot {
+  height: var(--cad-slot-height);
+  padding-right: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--cad-muted);
+  text-align: right;
+  transform: translateY(-0.5em);
+  user-select: none;
+}
+
+.cad-matrix__lane {
+  position: relative;
+  border-right: 1px solid var(--cad-border);
+  min-height: var(--cad-grid-height);
+}
+
+.cad-matrix__lane:last-child {
+  border-right: none;
+}
+
+.cad-matrix__lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cad-matrix__line {
+  height: var(--cad-slot-height);
+  border-bottom: 1px solid rgba(43, 43, 43, 0.06);
+}
+
+.cad-matrix__blocks {
+  position: absolute;
+  inset: 0 0.25rem;
+  pointer-events: none;
+}
+
+.cad-matrix__blocks .cad-appointment {
+  pointer-events: auto;
+}
+
+/* Appointment blocks */
+.cad-appointment {
+  position: absolute;
+  left: 0.2rem;
+  right: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  overflow: hidden;
+  border: none;
+  border-left: 3px solid var(--cad-teal);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fff 0%, color-mix(in srgb, #fff 85%, var(--cad-teal) 15%) 100%);
+  box-shadow: var(--cad-shadow);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cad-appointment:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(43, 43, 43, 0.12);
+}
+
+.cad-appointment:focus-visible {
+  outline: 2px solid var(--cad-orange);
+  outline-offset: 1px;
+}
+
+.cad-appointment--selected {
+  box-shadow: 0 0 0 2px var(--cad-orange);
+}
+
+.cad-appointment__time {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--cad-teal);
+  text-transform: uppercase;
+}
+
+.cad-appointment__customer {
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cad-appointment__id {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cad-teal);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.05rem 0.25rem;
+  border-radius: 0.15rem;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.cad-appointment--validation {
+  padding-right: 2.25rem;
+}
+
+.cad-appointment__service {
+  font-size: 0.6875rem;
+  color: var(--cad-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cad-appointment--cancelled,
+.cad-appointment--rejected {
+  opacity: 0.65;
+  border-left-color: #9ca3af;
+}
+
+.cad-appointment--pending,
+.cad-appointment--waitlisted {
+  border-left-color: var(--cad-orange);
+}
+
+@media (max-width: 768px) {
+  .cad-matrix__head,
+  .cad-matrix__body {
+    grid-template-columns: 3.25rem repeat(var(--cad-table-count), minmax(7rem, 1fr));
+  }
+
+  .cad-appointment__service {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cad-appointment {
+    transition: none;
+  }
+}

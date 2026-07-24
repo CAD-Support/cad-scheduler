@@ -1,0 +1,2 @@
+<?php defined( 'ABSPATH' ) || exit; // Exit if accessed directly ?>
+<tr><td><label><label><input type="checkbox" data-read-only-value="deposit" /> <?php esc_html_e( 'Disable deposit update', 'bookly' ) ?></label></td></tr>
