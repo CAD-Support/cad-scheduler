@@ -94,7 +94,7 @@ See [Sprint 1.7 — Live Validation](sprint-1.7-live-validation.md) and the [Val
 
 ## Assets
 
-JS/CSS load from jsDelivr tag `2.2.0`. Tag GitHub release after push.
+JS/CSS load from jsDelivr tag `2.2.1`. Tag GitHub release after push.
 
 ## Local asset override
 

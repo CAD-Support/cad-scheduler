@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.2.1] — 2026-07-24
+
+### Fixed
+
+- Calendar scrollport — `.cad-matrix__scroll` now uses an explicit responsive `height` (not `max-height` alone) so the bordered card scrolls internally instead of expanding past the page and clipping late appointments ([Sprint 2.2](sprint-2.2-scrollable-calendar.md))
+- WordPress/Elementor flex parents can no longer grow the matrix with content (`min-width: 0` on hosts; nav stays outside the scrollport)
+
+### Added
+
+- WordPress DOM scrollport fixture: [`docs/fixtures/sprint-2.2-wp-scrollport.html`](fixtures/sprint-2.2-wp-scrollport.html)
+
 ## [2.2.0] — 2026-07-24
 
 ### Added

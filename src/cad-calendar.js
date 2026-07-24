@@ -244,12 +244,13 @@
 
       applyGridVariables(container, metrics, tables.length);
 
-      // Single scrollport: vertical + horizontal. Sticky head/times are CSS-only (Sprint 2.2).
+      // Sole scrollport: contains corner, headers, times, lanes, appointments.
       const scroll = document.createElement('div');
       scroll.className = 'cad-matrix__scroll';
       scroll.tabIndex = 0;
       scroll.setAttribute('role', 'region');
       scroll.setAttribute('aria-label', 'Studio schedule');
+      applyGridVariables(scroll, metrics, tables.length);
       scroll.append(buildHeaderRow(tables), buildBodyRow(tables, appointments, metrics));
 
       container.appendChild(scroll);

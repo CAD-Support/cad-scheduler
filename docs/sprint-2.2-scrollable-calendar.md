@@ -29,15 +29,27 @@ Keep `.cad-nav` fixed above the grid. Scroll only the calendar body. Sticky tabl
 
 ```
 .cad-scheduler
-  .cad-nav
-  .cad-scheduler__status
+  .cad-nav                         ← outside scrollport
+  .cad-scheduler__status           ← outside scrollport
   .cad-scheduler__calendar.cad-matrix
-    .cad-matrix__scroll          ← overflow: auto
-      .cad-matrix__head          ← sticky top
+    .cad-matrix__scroll            ← sole scrollport (bordered card)
+      .cad-matrix__head            ← sticky top
       .cad-matrix__body
-        .cad-matrix__times       ← sticky left
+        .cad-matrix__times         ← sticky left
         .cad-matrix__lane…
 ```
+
+## Scrollport (2.2.1)
+
+The single element that contains corner, table headers, time column, lanes, and appointments is **`.cad-matrix__scroll`**.
+
+It must remain the only overflow ancestor of sticky chrome:
+
+- `height` + `max-height`: `var(--cad-scroll-height)` (`min(70vh, calc(100dvh - 14rem))`, tighter on small screens)
+- `overflow-x/y: auto`
+- No `overflow: hidden` on `.cad-scheduler` / `.cad-matrix` (breaks sticky)
+
+Verify with [`docs/fixtures/sprint-2.2-wp-scrollport.html`](fixtures/sprint-2.2-wp-scrollport.html) (matches shortcode + `CAD.ui` / `CAD.calendar` class structure inside an Elementor-like flex column).
 
 ## Files
 

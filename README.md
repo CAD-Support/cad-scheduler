@@ -50,4 +50,4 @@ assets/         Static assets (css, images)
 
 ## Snippets
 
-See [Deployment](docs/deployment.md). Use `[cad_scheduler]` on a page. Assets via jsDelivr `@2.2.0`.
+See [Deployment](docs/deployment.md). Use `[cad_scheduler]` on a page. Assets via jsDelivr `@2.2.1`.
