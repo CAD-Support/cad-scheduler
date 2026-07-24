@@ -127,7 +127,7 @@
 
     const corner = document.createElement('div');
     corner.className = 'cad-matrix__corner';
-    corner.textContent = CAD.State.get('date') || 'Today';
+    corner.textContent = CAD.State.get('selectedDate') || 'Today';
     head.appendChild(corner);
 
     tables.forEach((table) => {

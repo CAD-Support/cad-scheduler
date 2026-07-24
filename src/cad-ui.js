@@ -1,5 +1,6 @@
 /**
  * CAD Scheduler v2 — UI
+ * Shell orchestration and schedule loading. Date controls live in cad-navigation.js.
  */
 (function (global) {
   'use strict';
@@ -7,8 +8,20 @@
   const CAD = global.CAD;
   if (!CAD) throw new Error('cad-core.js must be loaded before cad-ui.js');
 
+  /**
+   * @param {unknown} err
+   * @returns {boolean}
+   */
+  function isAbortError(err) {
+    return Boolean(err && typeof err === 'object' && err.name === 'AbortError');
+  }
+
   CAD.ui = {
     root: null,
+    /** @type {AbortController|null} */
+    _loadController: null,
+    /** Monotonic id — only the newest load may apply results. */
+    _loadSeq: 0,
 
     collectIssues() {
       const issues = [];
@@ -80,34 +93,43 @@
       return this;
     },
 
-    renderHeader() {
-      const header = this.root?.querySelector('.cad-scheduler__header');
-      if (!header) return;
+    /**
+     * Create status + calendar containers once. Never wipe .cad-nav.
+     */
+    ensureShell() {
+      if (!this.root || this.root.querySelector('.cad-scheduler__diagnostics')) {
+        return;
+      }
 
-      header.className = 'cad-scheduler__header';
-      header.textContent = '';
+      if (!this.root.querySelector('.cad-scheduler__status')) {
+        const status = document.createElement('div');
+        status.className = 'cad-scheduler__status';
+        status.setAttribute('aria-live', 'polite');
+        this.root.appendChild(status);
+      }
+
+      if (!this.root.querySelector('.cad-scheduler__calendar')) {
+        const calendar = document.createElement('div');
+        calendar.className = 'cad-scheduler__calendar';
+        this.root.appendChild(calendar);
+      }
+    },
+
+    renderStatus() {
+      const status = this.root?.querySelector('.cad-scheduler__status');
+      if (!status) return;
+
+      status.className = 'cad-scheduler__status';
+      status.textContent = '';
 
       if (CAD.State.get('loading')) {
-        header.textContent = 'Loading schedule…';
-        return;
-      }
-      if (CAD.State.get('error')) {
-        header.classList.add('cad-scheduler__header--error');
-        header.textContent = CAD.State.get('error');
+        status.textContent = 'Loading schedule…';
         return;
       }
 
-      const date = CAD.State.get('date');
-      if (date) {
-        const title = document.createElement('h2');
-        title.className = 'cad-scheduler__title';
-        title.textContent = new Date(`${date}T12:00:00`).toLocaleDateString([], {
-          weekday: 'long',
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
-        });
-        header.appendChild(title);
+      if (CAD.State.get('error')) {
+        status.classList.add('cad-scheduler__status--error');
+        status.textContent = CAD.State.get('error');
       }
     },
 
@@ -118,12 +140,9 @@
         return this;
       }
 
-      this.root.innerHTML = `
-        <div class="cad-scheduler__header"></div>
-        <div class="cad-scheduler__calendar"></div>
-      `;
-
-      this.renderHeader();
+      this.ensureShell();
+      this.renderStatus();
+      CAD.Navigation?.sync?.();
 
       if (!CAD.State.get('loading')) {
         CAD.calendar?.render(this.root.querySelector('.cad-scheduler__calendar'));
@@ -132,25 +151,49 @@
       return this;
     },
 
+    /**
+     * @param {string} [date] YYYY-MM-DD — defaults to selectedDate or cadConfig.today
+     */
     async load(date) {
-      const scheduleDate = date ?? CAD.Config.get('today');
-      CAD.State.set('date', scheduleDate);
-      CAD.State.set('loading', true);
-      CAD.State.set('error', null);
+      const scheduleDate =
+        date || CAD.State.get('selectedDate') || CAD.Config.get('today');
+
+      this._loadController?.abort();
+      const controller = new AbortController();
+      this._loadController = controller;
+      const seq = ++this._loadSeq;
+
+      CAD.State.update({
+        selectedDate: scheduleDate,
+        loading: true,
+        error: null,
+      });
       this.render();
 
       try {
-        const result = await CAD.API.getSchedule(scheduleDate);
+        const result = await CAD.API.getSchedule(scheduleDate, {
+          signal: controller.signal,
+        });
+
+        if (seq !== this._loadSeq) {
+          return this;
+        }
+
         if (result?.success === false) {
           throw new Error(result.data?.message || 'Failed to load schedule');
         }
         CAD.State.set('appointments', result.data?.appointments ?? []);
       } catch (err) {
+        if (isAbortError(err) || seq !== this._loadSeq) {
+          return this;
+        }
         CAD.State.set('error', err.message);
         CAD.State.set('appointments', []);
       } finally {
-        CAD.State.set('loading', false);
-        this.render();
+        if (seq === this._loadSeq) {
+          CAD.State.set('loading', false);
+          this.render();
+        }
       }
 
       return this;

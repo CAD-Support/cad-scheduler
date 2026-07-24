@@ -9,17 +9,27 @@
   if (!CAD) throw new Error('cad-core.js must be loaded before cad-api.js');
 
   const api = Object.freeze({
-    async request(action, data = {}) {
+    /**
+     * @param {string} action
+     * @param {Record<string, *>} [data]
+     * @param {{ signal?: AbortSignal }} [options]
+     */
+    async request(action, data = {}, options = {}) {
       const body = new FormData();
       body.append('action', action);
       body.append('nonce', String(CAD.Config.get('nonce') ?? ''));
       Object.entries(data).forEach(([k, v]) => body.append(k, String(v ?? '')));
 
-      const response = await fetch(String(CAD.Config.get('ajaxUrl') ?? ''), {
+      const fetchOpts = {
         method: 'POST',
         body,
         credentials: 'same-origin',
-      });
+      };
+      if (options.signal) {
+        fetchOpts.signal = options.signal;
+      }
+
+      const response = await fetch(String(CAD.Config.get('ajaxUrl') ?? ''), fetchOpts);
 
       const text = await response.text();
       if (!response.ok) {
@@ -33,8 +43,12 @@
       }
     },
 
-    getSchedule(date) {
-      return api.request('cad_get_schedule', { date });
+    /**
+     * @param {string} date YYYY-MM-DD
+     * @param {{ signal?: AbortSignal }} [options] optional AbortSignal for cancellation
+     */
+    getSchedule(date, options = {}) {
+      return api.request('cad_get_schedule', { date }, options);
     },
   });
 

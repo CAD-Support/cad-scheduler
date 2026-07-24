@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.1.0] — 2026-07-24
+
+### Added
+
+- **Date navigation** — Previous / Today / Next and native date picker above the scheduler ([Sprint 2.1](sprint-2.1-date-navigation.md))
+- `src/cad-navigation.js` (`CAD.Navigation`) owns day controls and locale date formatting
+- `CAD.State.update()` and `selectedDate` (`YYYY-MM-DD`) for the active day
+
+### Changed
+
+- Init flow: `CAD.Navigation.init()` then `CAD.ui.load(today)` — date changes reload via existing `CAD.API.getSchedule` without a page refresh
+- UI shell is preserved across loads (nav is not recreated)
+- Schedule loads abort prior in-flight requests so rapid navigation cannot apply a stale day
+
 ## [2.0.0] — 2026-07-23
 
 ### Added

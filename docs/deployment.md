@@ -86,12 +86,13 @@ See [Sprint 1.7 — Live Validation](sprint-1.7-live-validation.md) and the [Val
 - [ ] Table names appear **across the top**
 - [ ] Time labels appear **down the left** (15-minute grid)
 - [ ] Appointments sit at the correct time and span their duration
+- [ ] Previous / Today / Next and date picker change the day **without** a page reload
 - [ ] Layout scrolls on mobile
 - [ ] Data comes from Bookly via `cad_get_schedule`
 
 ## Assets
 
-JS/CSS load from jsDelivr tag `2.0.0`. Tag GitHub release after push.
+JS/CSS load from jsDelivr tag `2.1.0`. Tag GitHub release after push.
 
 ## Local asset override
 

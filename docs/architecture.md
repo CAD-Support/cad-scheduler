@@ -9,9 +9,13 @@ CAD Scheduler replaces the default Bookly frontend with a custom multi-table stu
 ```
 WordPress + Bookly (backend)
         ↕  AJAX bridge (snippets/10A-ajax-bridge.php)
-    cad-core.js (state, API)
+    cad-core.js (config, state)
         ↕
-    cad-ui.js (layout orchestration)
+    cad-api.js (WordPress AJAX)
+        ↕
+    cad-ui.js (shell + load orchestration)
+        ↕
+    cad-navigation.js (day controls)
         ↕
   cad-components.js / cad-editor.js / cad-calendar.js
         ↕
@@ -22,27 +26,36 @@ WordPress + Bookly (backend)
 
 ### cad-core.js
 
-Central configuration, event bus, and Bookly API communication.
+Central configuration (`CAD.Config`), state (`CAD.State`), and `CAD.init()`.
+
+### cad-api.js
+
+WordPress AJAX wrapper (`CAD.API.getSchedule(date)` → `cad_get_schedule`).
 
 ### cad-ui.js
 
-Top-level UI shell: mounts components, handles global layout and navigation.
+Top-level UI shell: mounts the scheduler, ensures status + calendar containers, loads appointments.
+
+### cad-navigation.js
+
+Day navigation: Previous / Today / Next / native date picker. Formats the header with the browser locale; always stores and sends `YYYY-MM-DD`.
 
 ### cad-components.js
 
-Shared UI primitives (tables, time slots, staff rows, modals).
+Shared UI primitives (appointment blocks, empty state).
 
 ### cad-editor.js
 
-Inline editing: drag, resize, assign staff/tables, validate conflicts.
+Selection / future inline editing.
 
 ### cad-calendar.js
 
-Multi-table calendar grid: day/week views, table columns, availability overlay.
+Multi-table matrix grid: tables across top, time down left, duration-sized blocks.
 
 ## Data Flow
 
 1. Page loads; `10A-ajax-bridge.php` enqueues scripts and exposes AJAX endpoints.
-2. `cad-core.js` fetches appointments, staff, and table config from Bookly.
-3. `cad-calendar.js` renders the grid; `cad-editor.js` handles user edits.
-4. Changes POST back through the bridge; Bookly persists to the database.
+2. `CAD.init(cadConfig)` → `CAD.ui.mount()` → `CAD.Navigation.init()` → `CAD.ui.load(today)`.
+3. Navigation updates `CAD.State.selectedDate`, then reuses `CAD.API.getSchedule(date)`.
+4. `cad-calendar.js` re-renders appointment blocks in the existing shell.
+5. Future edits POST back through the bridge; Bookly persists to the database.

@@ -15,7 +15,7 @@
   };
   let state = {};
 
-  CAD.VERSION = Object.freeze({ major: 2, minor: 0, patch: 0, build: '2026.07.23' });
+  CAD.VERSION = Object.freeze({ major: 2, minor: 1, patch: 0, build: '2026.07.24' });
 
   CAD.Config = Object.freeze({
     get(key) { return config[key]; },
@@ -25,6 +25,12 @@
   CAD.State = Object.freeze({
     get(key) { return state[key]; },
     set(key, value) { state[key] = value; return value; },
+    update(values = {}) {
+      Object.keys(values).forEach((key) => {
+        state[key] = values[key];
+      });
+      return state;
+    },
   });
 
   CAD.Logger = Object.freeze({
