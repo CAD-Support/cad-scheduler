@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CAD — Dynamic day range verification</title>
+  <link rel="stylesheet" href="/assets/css/cad-scheduler.css" />
+  <style>
+    body { margin: 1rem; font-family: system-ui, sans-serif; background: #fffaf5; }
+    h1 { font-size: 1rem; color: #6b2d84; }
+    #report { font: 12px/1.45 ui-monospace, monospace; white-space: pre-wrap; }
+    .ok { color: #0a7; }
+    .bad { color: #b42318; }
+  </style>
+</head>
+<body>
+  <h1>Dynamic day range — WordPress config + appointments</h1>
+  <div id="cad-scheduler" class="cad-scheduler-mount cad-scheduler">
+    <nav class="cad-nav" aria-label="Schedule date">
+      <div class="cad-nav__controls">
+        <button type="button" class="cad-nav__btn">◀ Previous</button>
+        <button type="button" class="cad-nav__btn cad-nav__btn--today">Today</button>
+        <button type="button" class="cad-nav__btn">Next ▶</button>
+      </div>
+      <h2 class="cad-nav__date">Friday, July 24, 2026</h2>
+    </nav>
+    <div class="cad-scheduler__status"></div>
+    <div class="cad-scheduler__calendar" id="calendar-host"></div>
+  </div>
+  <pre id="report"></pre>
+  <script src="/src/cad-core.js"></script>
+  <script src="/src/cad-components.js"></script>
+  <script src="/src/cad-editor.js"></script>
+  <script src="/src/cad-calendar.js"></script>
+  <script>
+    (function () {
+      const report = document.getElementById('report');
+      const host = document.getElementById('calendar-host');
+
+      // Studio hours matching the user example (10:00–20:00), 30-minute slots.
+      const openDay = { start: '10:00', end: '20:00' };
+      CAD.init({
+        today: '2026-07-24',
+        dayStart: '10:00',
+        dayEnd: '20:00',
+        slotMinutes: 30,
+        hourHeight: 64,
+        openHours: {
+          0: null,
+          1: openDay,
+          2: openDay,
+          3: openDay,
+          4: openDay,
+          5: openDay,
+          6: openDay,
+        },
+        tables: [
+          { id: '1', name: 'Table 1' },
+          { id: '2', name: 'Table 2' },
+        ],
+      });
+
+      const appointments = [
+        {
+          id: 'a1',
+          tableId: '1',
+          start: '2026-07-24T20:00:00',
+          end: '2026-07-24T21:30:00',
+          customer: 'Eve',
+          service: 'Paint',
+          status: 'approved',
+        },
+        {
+          id: 'a2',
+          tableId: '2',
+          start: '2026-07-24T20:30:00',
+          end: '2026-07-24T22:00:00',
+          customer: 'Late',
+          service: 'Paint',
+          status: 'approved',
+        },
+      ];
+
+      CAD.State.update({
+        selectedDate: '2026-07-24',
+        appointments,
+      });
+
+      const range = CAD.calendar.resolveDayRange(appointments, '2026-07-24', 30);
+      const metrics = CAD.calendar.gridMetrics(appointments);
+      CAD.calendar.render(host);
+
+      const scroll = host.querySelector('.cad-matrix__scroll');
+      const labels = [...host.querySelectorAll('.cad-matrix__time-slot')]
+        .map((el) => el.textContent)
+        .filter(Boolean);
+      const blocks = [...host.querySelectorAll('.cad-appointment')];
+
+      // Scroll to bottom — late blocks must be fully inside the scrollport.
+      scroll.scrollTop = scroll.scrollHeight;
+      const sr = scroll.getBoundingClientRect();
+      const lateBlock = blocks.find((b) => b.textContent.includes('Late'));
+      const eveBlock = blocks.find((b) => b.textContent.includes('Eve'));
+      const lateRect = lateBlock.getBoundingClientRect();
+      const eveRect = eveBlock.getBoundingClientRect();
+
+      const pass = {
+        rangeStart: range.startMin === 10 * 60,
+        rangeEnd: range.endMin === 22 * 60 + 30, // 22:00 ceiled + one 30-min slot
+        metricsAlign: metrics.startMin === range.startMin && metrics.endMin === range.endMin,
+        gridHeightUsesRange: metrics.gridHeight === metrics.slotCount * metrics.slotHeight,
+        dayEndClock: metrics.dayEnd === '22:30',
+        labelsIncludeTen: labels.some((l) => /10:00/.test(l)),
+        labelsReachEvening: labels.some((l) => /22:00|10:00\s*PM/i.test(l)),
+        bothBlocksRendered: blocks.length === 2,
+        lateFullyVisible:
+          lateRect.top >= sr.top - 1 && lateRect.bottom <= sr.bottom + 1,
+        eveFullyVisible:
+          eveRect.top >= sr.top - 1 && eveRect.bottom <= sr.bottom + 1,
+        verticalScroll: scroll.scrollHeight > scroll.clientHeight + 1,
+        stickyHead: getComputedStyle(host.querySelector('.cad-matrix__head')).position.includes('sticky'),
+      };
+
+      // Closed Sunday with appointments still expands.
+      const sundayAppts = [
+        {
+          id: 's1',
+          tableId: '1',
+          start: '2026-07-26T11:00:00',
+          end: '2026-07-26T12:00:00',
+          customer: 'Sun',
+          service: 'Paint',
+          status: 'approved',
+        },
+      ];
+      const sunday = CAD.calendar.resolveDayRange(sundayAppts, '2026-07-26', 30);
+      pass.closedDayWithAppts =
+        sunday.startMin === 11 * 60 && sunday.endMin === 12 * 60 + 30;
+
+      // No outside appointments → open hours only (+ padding slot).
+      const inHours = CAD.calendar.resolveDayRange(
+        [
+          {
+            id: 'i1',
+            tableId: '1',
+            start: '2026-07-24T12:00:00',
+            end: '2026-07-24T13:00:00',
+            customer: 'Noon',
+            service: 'Paint',
+            status: 'approved',
+          },
+        ],
+        '2026-07-24',
+        30
+      );
+      pass.inHoursOnly =
+        inHours.startMin === 10 * 60 && inHours.endMin === 20 * 60 + 30;
+
+      const allPass = Object.values(pass).every(Boolean);
+      report.className = allPass ? 'ok' : 'bad';
+      report.textContent = JSON.stringify(
+        {
+          allPass,
+          pass,
+          range,
+          metrics: {
+            startMin: metrics.startMin,
+            endMin: metrics.endMin,
+            dayStart: metrics.dayStart,
+            dayEnd: metrics.dayEnd,
+            slotCount: metrics.slotCount,
+            gridHeight: metrics.gridHeight,
+          },
+          labels,
+          stateGrid: {
+            start: CAD.State.get('gridStart'),
+            end: CAD.State.get('gridEnd'),
+          },
+        },
+        null,
+        2
+      );
+    })();
+  </script>
+</body>
+</html>

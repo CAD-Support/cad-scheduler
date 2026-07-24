@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.2.2] — 2026-07-24
+
+### Added
+
+- **Dynamic day range** — matrix start/end follows weekday open hours and expands for appointments outside business hours, with slot snap + one bottom padding slot ([Sprint 2.3](sprint-2.3-dynamic-day-range.md))
+- `cadConfig.openHours` (weekday map) plus filters `cad_scheduler_open_hours`, `cad_scheduler_day_start`, `cad_scheduler_day_end`
+- Fixture: [`docs/fixtures/sprint-2.3-day-range.html`](fixtures/sprint-2.3-day-range.html)
+
+### Changed
+
+- `CAD.calendar.gridMetrics()` derives `--cad-grid-height` / time labels from the computed range for the selected date (recalculated on Previous / Next / Today / picker)
+
 ## [2.2.1] — 2026-07-24
 
 ### Fixed

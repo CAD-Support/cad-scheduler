@@ -11,7 +11,7 @@
 defined( 'ABSPATH' ) || exit;
 
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '2.2.1' );
+	define( 'CAD_SCHEDULER_VERSION', '2.2.2' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -33,6 +33,31 @@ function cad_scheduler_ready() {
 	return class_exists( 'CAD_Bookly_Repository', false )
 		&& class_exists( 'CAD_Bookly_Mapper', false )
 		&& class_exists( 'CAD_Schedule_Provider', false );
+}
+
+/**
+ * Weekly open hours for the matrix (0 = Sunday … 6 = Saturday).
+ * Use null for a closed day. Override via cad_scheduler_open_hours.
+ *
+ * @return array<int, array{start: string, end: string}|null>
+ */
+function cad_scheduler_open_hours() {
+	$start = apply_filters( 'cad_scheduler_day_start', '08:00' );
+	$end   = apply_filters( 'cad_scheduler_day_end', '20:00' );
+	$day   = array(
+		'start' => $start,
+		'end'   => $end,
+	);
+	$weekly = array(
+		0 => $day,
+		1 => $day,
+		2 => $day,
+		3 => $day,
+		4 => $day,
+		5 => $day,
+		6 => $day,
+	);
+	return apply_filters( 'cad_scheduler_open_hours', $weekly );
 }
 
 /**
@@ -188,10 +213,11 @@ function cad_enqueue_assets() {
 			'nonce'          => wp_create_nonce( 'cad_scheduler' ),
 			'today'          => current_time( 'Y-m-d' ),
 			'tables'         => $provider->get_tables(),
-			'dayStart'     => '08:00',
-			'dayEnd'       => '20:00',
-			'slotMinutes'  => 15,
-			'hourHeight'   => 64,
+			'dayStart'       => apply_filters( 'cad_scheduler_day_start', '08:00' ),
+			'dayEnd'         => apply_filters( 'cad_scheduler_day_end', '20:00' ),
+			'openHours'      => cad_scheduler_open_hours(),
+			'slotMinutes'    => 15,
+			'hourHeight'     => 64,
 			'health'         => cad_scheduler_health_for_config(),
 			'diagnostics'    => cad_scheduler_diagnostics_enabled(),
 			'validationMode' => cad_scheduler_validation_mode_enabled(),

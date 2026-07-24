@@ -26,6 +26,17 @@
   }
 
   /**
+   * @param {number} minutes
+   * @returns {string} HH:MM
+   */
+  function formatClock(minutes) {
+    const clamped = Math.max(0, Math.min(24 * 60, Math.round(minutes)));
+    const h = Math.floor(clamped / 60);
+    const m = clamped % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
+  /**
    * @param {Date} date
    * @returns {number}
    */
@@ -48,24 +59,139 @@
   }
 
   /**
+   * Studio open hours for a YYYY-MM-DD date.
+   * @param {string} isoDate
+   * @returns {{ startMin: number, endMin: number }|null} null = closed
+   */
+  function openHoursForDate(isoDate) {
+    const fallbackStart = String(CAD.Config.get('dayStart') ?? '08:00');
+    const fallbackEnd = String(CAD.Config.get('dayEnd') ?? '20:00');
+    const date = new Date(`${isoDate}T12:00:00`);
+    const weekday = Number.isNaN(date.getTime()) ? new Date().getDay() : date.getDay();
+    const weekly = CAD.Config.get('openHours');
+
+    let entry = null;
+    if (weekly && typeof weekly === 'object') {
+      entry = weekly[weekday] ?? weekly[String(weekday)];
+    }
+
+    if (entry === null || entry === false) {
+      return null; // explicitly closed
+    }
+
+    if (entry && typeof entry === 'object') {
+      const start = parseClock(String(entry.start ?? fallbackStart));
+      const end = parseClock(String(entry.end ?? fallbackEnd));
+      if (end > start) {
+        return { startMin: start, endMin: end };
+      }
+      return null;
+    }
+
+    // No weekly map — use global dayStart/dayEnd every day.
+    const startMin = parseClock(fallbackStart);
+    const endMin = parseClock(fallbackEnd);
+    return endMin > startMin ? { startMin, endMin } : null;
+  }
+
+  /**
+   * @param {Array<Record<string, string>>} appointments
+   * @returns {{ earliest: number|null, latest: number|null }}
+   */
+  function appointmentBounds(appointments) {
+    let earliest = null;
+    let latest = null;
+
+    appointments.forEach((appointment) => {
+      const start = new Date(appointment.start);
+      const end = new Date(appointment.end);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return;
+      }
+      const startMin = toMinutes(start);
+      const endMin = toMinutes(end);
+      earliest = earliest === null ? startMin : Math.min(earliest, startMin);
+      latest = latest === null ? endMin : Math.max(latest, endMin);
+    });
+
+    return { earliest, latest };
+  }
+
+  /**
+   * Display range: open hours ∪ appointments, snapped to slots, + one bottom slot.
+   * @param {Array<Record<string, string>>} appointments
+   * @param {string} isoDate
+   * @param {number} slotMinutes
+   * @returns {{ startMin: number, endMin: number }}
+   */
+  function resolveDayRange(appointments, isoDate, slotMinutes) {
+    const slot = Math.max(1, slotMinutes);
+    const open = openHoursForDate(isoDate);
+    const { earliest, latest } = appointmentBounds(appointments);
+
+    let startMin;
+    let endMin;
+
+    if (open) {
+      startMin = open.startMin;
+      endMin = open.endMin;
+      if (earliest !== null) {
+        startMin = Math.min(startMin, earliest);
+      }
+      if (latest !== null) {
+        endMin = Math.max(endMin, latest);
+      }
+    } else if (earliest !== null && latest !== null) {
+      // Closed day with appointments — show appointment span only.
+      startMin = earliest;
+      endMin = latest;
+    } else {
+      // Closed day, no appointments — fall back to configured day window for an empty shell.
+      startMin = parseClock(String(CAD.Config.get('dayStart') ?? '08:00'));
+      endMin = parseClock(String(CAD.Config.get('dayEnd') ?? '20:00'));
+      if (endMin <= startMin) {
+        startMin = 8 * 60;
+        endMin = 20 * 60;
+      }
+    }
+
+    startMin = Math.floor(startMin / slot) * slot;
+    endMin = Math.ceil(endMin / slot) * slot;
+    endMin += slot; // one slot of bottom padding so the latest block is fully visible
+
+    if (endMin <= startMin) {
+      endMin = startMin + slot;
+    }
+
+    return { startMin, endMin };
+  }
+
+  /**
+   * @param {Array<Record<string, string>>} [appointments]
    * @returns {{
    *   startMin: number,
+   *   endMin: number,
    *   rangeMin: number,
    *   slotCount: number,
    *   slotHeight: number,
    *   gridHeight: number,
    *   labels: string[],
-   *   slotMinutes: number
+   *   slotMinutes: number,
+   *   dayStart: string,
+   *   dayEnd: string
    * }}
    */
-  function gridMetrics() {
-    const dayStart = String(CAD.Config.get('dayStart') ?? '08:00');
-    const dayEnd = String(CAD.Config.get('dayEnd') ?? '20:00');
+  function gridMetrics(appointments) {
     const slotMinutes = Number(CAD.Config.get('slotMinutes') ?? 15);
     const hourHeight = Number(CAD.Config.get('hourHeight') ?? 64);
+    const isoDate = String(
+      CAD.State.get('selectedDate') || CAD.Config.get('today') || '1970-01-01'
+    );
+    const list = Array.isArray(appointments)
+      ? appointments
+      : (Array.isArray(CAD.State.get('appointments')) ? CAD.State.get('appointments') : []);
 
-    const startMin = parseClock(dayStart);
-    const endMin = parseClock(dayEnd);
+    const { startMin, endMin } = resolveDayRange(list, isoDate, slotMinutes);
     const rangeMin = Math.max(endMin - startMin, slotMinutes);
     const slotCount = Math.ceil(rangeMin / slotMinutes);
     const slotHeight = (hourHeight * slotMinutes) / 60;
@@ -77,14 +203,22 @@
       labels.push(minute % 60 === 0 ? formatLabel(minute) : '');
     }
 
+    CAD.State.update({
+      gridStart: formatClock(startMin),
+      gridEnd: formatClock(endMin),
+    });
+
     return {
       startMin,
+      endMin,
       rangeMin,
       slotCount,
       slotHeight,
       gridHeight,
       labels,
       slotMinutes,
+      dayStart: formatClock(startMin),
+      dayEnd: formatClock(endMin),
     };
   }
 
@@ -220,6 +354,11 @@
   }
 
   CAD.calendar = {
+    /** @see resolveDayRange */
+    resolveDayRange,
+    /** @see gridMetrics */
+    gridMetrics,
+
     /**
      * @param {HTMLElement|null} container
      */
@@ -231,7 +370,7 @@
       const tables = CAD.Config.get('tables') ?? [];
       const stateAppointments = CAD.State.get('appointments');
       const appointments = Array.isArray(stateAppointments) ? stateAppointments : [];
-      const metrics = gridMetrics();
+      const metrics = gridMetrics(appointments);
 
       // Replace grid contents only — keep host classes (e.g. cad-scheduler__calendar).
       container.innerHTML = '';

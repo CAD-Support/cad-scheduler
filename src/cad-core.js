@@ -10,12 +10,13 @@
     debug: false,
     dayStart: '08:00',
     dayEnd: '20:00',
+    openHours: null,
     slotMinutes: 15,
     hourHeight: 64,
   };
   let state = {};
 
-  CAD.VERSION = Object.freeze({ major: 2, minor: 2, patch: 1, build: '2026.07.24' });
+  CAD.VERSION = Object.freeze({ major: 2, minor: 2, patch: 2, build: '2026.07.24' });
 
   CAD.Config = Object.freeze({
     get(key) { return config[key]; },

@@ -74,6 +74,9 @@ See [Sprint 1.7 — Live Validation](sprint-1.7-live-validation.md) and the [Val
 | `cad_scheduler_health` | Add or modify health issues |
 | `cad_scheduler_diagnostics_enabled` | Force diagnostic panel when healthy |
 | `cad_scheduler_validation_mode_enabled` | Show appointment ID on each block (default `false`) |
+| `cad_scheduler_day_start` | Default open time `HH:MM` (default `08:00`) |
+| `cad_scheduler_day_end` | Default close time `HH:MM` (default `20:00`) |
+| `cad_scheduler_open_hours` | Weekly map `0–6 → { start, end }` or `null` (closed) |
 
 ## Page
 
@@ -94,7 +97,7 @@ See [Sprint 1.7 — Live Validation](sprint-1.7-live-validation.md) and the [Val
 
 ## Assets
 
-JS/CSS load from jsDelivr tag `2.2.1`. Tag GitHub release after push.
+JS/CSS load from jsDelivr tag `2.2.2`. Tag GitHub release after push.
 
 ## Local asset override
 
