@@ -51,7 +51,8 @@ assets/         Static assets (css, images)
 - [Sprint 2.2 — Scrollable Calendar](docs/sprint-2.2-scrollable-calendar.md)
 - [Sprint 2.3 — Dynamic Day Range](docs/sprint-2.3-dynamic-day-range.md)
 - [Sprint 2.4 — Adaptive Appointment Cards](docs/sprint-2.4-adaptive-cards.md)
+- [Sprint 2.4.1 — Card Readability](docs/sprint-2.4.1-card-readability.md)
 
 ## Snippets
 
-See [Deployment](docs/deployment.md). Use `[cad_scheduler]` on a page. Assets via jsDelivr `@2.4.0`.
+See [Deployment](docs/deployment.md). Use `[cad_scheduler]` on a page. Assets via jsDelivr (tag must exist on the CDN before bumping `CAD_SCHEDULER_VERSION`).

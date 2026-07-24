@@ -11,23 +11,27 @@
 
 ## Density tiers
 
+Priority order (when shown): Time → Customer (largest) → Service → Painters → Status → Phone. Never table.
+
 | Density | Height rule | Shows |
 |---------|-------------|--------|
 | Compact | `< 48px` | Time, customer |
 | Standard | `< 72px` | + service |
-| Large | `< 96px` | + number of painters |
-| Extra large (`xl`) | `≥ 96px` | + status badge(s) if applicable |
+| Large | `< 96px` | + painters, status |
+| Extra large (`xl`) | `≥ 96px` | + phone (when present) |
 
 Thresholds live in `CAD.cardRenderer.HEIGHT_THRESHOLDS`.
 
 ## Status indicators (read-only)
+
+Shown on large and xl. Badges when applicable; otherwise `✓ Confirmed`.
 
 | Indicator | When |
 |-----------|------|
 | 🟢 Arrived | Status slug `arrived` |
 | ❌ No Show | Status slug `no-show` / `noshow` |
 | 💲 Paid | Bookly payment status `completed` |
-| _(none)_ | Confirmed / approved (unless also paid) |
+| ✓ Confirmed | Approved / confirmed with no special badges |
 
 No editing in this sprint.
 
@@ -35,7 +39,9 @@ No editing in this sprint.
 
 On `(hover: hover) and (pointer: fine)`, hovering a card shows:
 
-Customer · Service · Time · Table · Painters · Status
+Label-free stack (customer bold/largest, then service, time, painters, status, phone when present).
+
+(Table is not shown — the matrix already groups by table.)
 
 No buttons. No editing.
 

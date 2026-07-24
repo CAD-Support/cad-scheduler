@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.4.1] — 2026-07-24
+
+### Fixed
+
+- **Card readability** — appointment cards use fully opaque backgrounds so grid lines and overlapping appointments never show through ([Sprint 2.4.1](sprint-2.4.1-card-readability.md))
+- Cancelled / rejected cards no longer use `opacity` (muted opaque fills instead)
+
+### Changed
+
+- Hover tooltips omit table name/line (redundant with column grouping; `tableId` unchanged in the model)
+
+### Added
+
+- Customer phone on cards and tooltips from Bookly `customers.phone` (hidden when empty)
+- Compact label-free hover tooltips (customer bold; service, time, painters, status, phone)
+- Consistent card hierarchy by density: time → customer → service → painters → status → phone (XL)
+
 ## [2.4.0] — 2026-07-24
 
 ### Added

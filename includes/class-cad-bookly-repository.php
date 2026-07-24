@@ -57,6 +57,7 @@ class CAD_Bookly_Repository {
 				ca.number_of_persons,
 				p.status AS payment_status,
 				COALESCE(NULLIF(c.full_name, ''), TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, '')))) AS customer_name,
+				c.phone AS customer_phone,
 				s.title AS service_title, s.duration AS service_duration
 			FROM {$wpdb->prefix}bookly_appointments a
 			INNER JOIN {$wpdb->prefix}bookly_customer_appointments ca ON ca.appointment_id = a.id

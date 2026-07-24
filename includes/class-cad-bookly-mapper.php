@@ -68,6 +68,7 @@ class CAD_Bookly_Mapper {
 		}
 
 		$payment_status = strtolower( (string) ( $row['payment_status'] ?? '' ) );
+		$phone          = trim( (string) ( $row['customer_phone'] ?? '' ) );
 
 		return array(
 			'id'       => $id,
@@ -75,6 +76,7 @@ class CAD_Bookly_Mapper {
 			'start'    => $start,
 			'end'      => $end,
 			'customer' => (string) ( $row['customer_name'] ?? '' ),
+			'phone'    => $phone,
 			'service'  => (string) ( $row['service_title'] ?? '' ),
 			'status'   => (string) ( $row['appointment_status'] ?? '' ),
 			'painters' => $painters,

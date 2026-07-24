@@ -48,6 +48,15 @@
       if (CAD.cardRenderer) {
         btn.append(CAD.cardRenderer.render(appointment, availableHeight));
         CAD.cardRenderer.bindTooltip(btn, appointment);
+      } else {
+        // Fallback when card-renderer is not loaded (older fixtures / partial enqueue).
+        const customer = document.createElement('span');
+        customer.className = 'cad-appointment__customer';
+        customer.textContent = appointment.customer || 'Walk-in';
+        const service = document.createElement('span');
+        service.className = 'cad-appointment__service';
+        service.textContent = appointment.service || 'Service';
+        btn.append(customer, service);
       }
 
       if (validationMode && appointment.id != null && appointment.id !== '') {

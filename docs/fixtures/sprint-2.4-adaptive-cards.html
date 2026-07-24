@@ -60,6 +60,7 @@
           start: '2026-07-24T10:00:00',
           end: '2026-07-24T10:15:00',
           customer: 'Compact Pat',
+          phone: '519-555-1001',
           service: 'Quick touch',
           status: 'approved',
           painters: 1,
@@ -71,6 +72,7 @@
           start: '2026-07-24T10:30:00',
           end: '2026-07-24T11:15:00',
           customer: 'Standard Sam',
+          phone: '',
           service: 'Studio session',
           status: 'approved',
           painters: 2,
@@ -82,6 +84,7 @@
           start: '2026-07-24T10:00:00',
           end: '2026-07-24T11:15:00',
           customer: 'Large Lee',
+          phone: '519-555-1234',
           service: 'Group paint',
           status: 'approved',
           painters: 4,
@@ -93,6 +96,7 @@
           start: '2026-07-24T12:00:00',
           end: '2026-07-24T14:00:00',
           customer: 'XL Alex',
+          phone: '519-555-9999',
           service: 'Full party',
           status: 'arrived',
           painters: 6,
@@ -134,20 +138,42 @@
 
       expectHas('c1', '.cad-appointment__service', false);
       expectHas('c1', '.cad-appointment__painters', false);
+      expectHas('c1', '.cad-appointment__phone', false);
       expectHas('s1', '.cad-appointment__service', true);
       expectHas('s1', '.cad-appointment__painters', false);
+      expectHas('s1', '.cad-appointment__status', false);
+      expectHas('s1', '.cad-appointment__phone', false);
       expectHas('l1', '.cad-appointment__painters', true);
-      expectHas('l1', '.cad-appointment__badges', false);
+      expectHas('l1', '.cad-appointment__status', true);
+      expectHas('l1', '.cad-appointment__phone', false);
       expectHas('x1', '.cad-appointment__badges', true);
       expectHas('x1', '.cad-appointment__badge--arrived', true);
       expectHas('x1', '.cad-appointment__badge--paid', true);
+      expectHas('x1', '.cad-appointment__phone', true);
+      if (byId('x1')?.querySelector('.cad-appointment__phone')?.textContent === '☎ 519-555-9999') {
+        pass('x1 phone format');
+      } else {
+        fail('x1 phone format');
+      }
+      if (byId('l1')?.querySelector('.cad-appointment__status')?.textContent === '✓ Confirmed') {
+        pass('l1 status confirmed');
+      } else {
+        fail('l1 status confirmed');
+      }
 
-      const tipLabels = ['Customer', 'Service', 'Time', 'Table', 'Painters', 'Status'];
       const probe = byId('x1');
       probe?.dispatchEvent(new Event('mouseenter'));
       const liveTip = document.querySelector('.cad-appointment-tip:not([hidden])');
-      if (liveTip && tipLabels.every((label) => liveTip.textContent.includes(label))) {
-        pass('tooltip fields present');
+      const tipText = liveTip?.textContent || '';
+      if (
+        liveTip &&
+        tipText.includes('XL Alex') &&
+        tipText.includes('Full party') &&
+        tipText.includes('☎ 519-555-9999') &&
+        !liveTip.querySelector('.cad-appointment-tip__label') &&
+        !/\bTable\b/i.test(tipText)
+      ) {
+        pass('tooltip label-free stack (no table)');
       } else if (CAD.cardRenderer.statusBadges(appointments[3]).length >= 2) {
         pass('tooltip skipped (no fine pointer); badge data ok');
       } else {

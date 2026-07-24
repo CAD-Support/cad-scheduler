@@ -12,6 +12,7 @@
 - [x] Scrollable calendar (sticky headers / time labels, horizontal overflow) — Sprint 2.2
 - [x] Dynamic day range (open hours ∪ appointments) — Sprint 2.3
 - [x] Adaptive appointment cards (height-based density, badges, hover tooltip) — Sprint 2.4
+- [x] Card readability (opaque appointment backgrounds) — Sprint 2.4.1
 - [ ] Appointment details panel (read-only) — Sprint 2.5
 - [ ] Inline appointment editor
 - [ ] Drag-and-drop rescheduling

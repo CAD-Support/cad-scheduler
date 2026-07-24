@@ -49,11 +49,15 @@
     return count === 1 ? '1 painter' : `${count} painters`;
   }
 
-  function tableName(appointment) {
-    const tables = CAD.Config.get('tables') || [];
-    const id = String(appointment.tableId ?? '');
-    const match = tables.find((t) => String(t.id) === id);
-    return match?.name || (id ? `Table ${id}` : '—');
+  /** @returns {string} Trimmed phone, or empty string when missing */
+  function phoneValue(appointment) {
+    return String(appointment.phone ?? '').trim();
+  }
+
+  /** @returns {string} Display line e.g. "☎ 519-555-1234", or "" when empty */
+  function phoneLabel(appointment) {
+    const phone = phoneValue(appointment);
+    return phone ? `☎ ${phone}` : '';
   }
 
   /**
@@ -82,16 +86,17 @@
     return badges;
   }
 
-  function statusSummary(appointment) {
+  /** Compact status line for tooltips (no field labels). */
+  function tipStatusLine(appointment) {
     const badges = statusBadges(appointment);
     if (badges.length) {
-      return badges.map((b) => `${b.icon} ${b.label}`).join(', ');
+      return badges.map((b) => `${b.icon} ${b.label}`).join(' · ');
     }
     const slug = String(appointment.status || '').trim().toLowerCase();
     if (!slug || slug === 'approved' || slug === 'confirmed') {
-      return 'Confirmed';
+      return '✓ Confirmed';
     }
-    return slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    return `✓ ${slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}`;
   }
 
   function el(tag, className, text) {
@@ -131,21 +136,35 @@
 
   function fillTip(tip, appointment) {
     tip.replaceChildren();
-    const rows = [
-      ['Customer', appointment.customer || 'Walk-in'],
-      ['Service', appointment.service || 'Service'],
-      ['Time', formatTimeRange(appointment)],
-      ['Table', tableName(appointment)],
-      ['Painters', paintersLabel(appointment)],
-      ['Status', statusSummary(appointment)],
+    // Label-free stack; table omitted (columns already group by table).
+    const lines = [
+      {
+        className: 'cad-appointment-tip__customer',
+        text: appointment.customer || 'Walk-in',
+      },
+      {
+        className: 'cad-appointment-tip__line',
+        text: appointment.service || 'Service',
+      },
+      {
+        className: 'cad-appointment-tip__line',
+        text: formatTimeRange(appointment),
+      },
+      {
+        className: 'cad-appointment-tip__line',
+        text: paintersLabel(appointment),
+      },
+      {
+        className: 'cad-appointment-tip__line',
+        text: tipStatusLine(appointment),
+      },
     ];
-    rows.forEach(([label, value]) => {
-      const row = el('div', 'cad-appointment-tip__row');
-      row.append(
-        el('span', 'cad-appointment-tip__label', label),
-        el('span', 'cad-appointment-tip__value', value)
-      );
-      tip.appendChild(row);
+    const phone = phoneLabel(appointment);
+    if (phone) {
+      lines.push({ className: 'cad-appointment-tip__line', text: phone });
+    }
+    lines.forEach(({ className, text }) => {
+      tip.appendChild(el('div', className, text));
     });
   }
 
@@ -191,6 +210,38 @@
   }
 
   /**
+   * Append status for large/xl: badges when applicable, otherwise ✓ Confirmed.
+   * @param {DocumentFragment} fragment
+   * @param {Record<string, unknown>} appointment
+   */
+  function appendStatus(fragment, appointment) {
+    const badges = statusBadges(appointment);
+    if (badges.length) {
+      const row = el('span', 'cad-appointment__badges');
+      badges.forEach((badge) => {
+        const chip = el(
+          'span',
+          `cad-appointment__badge cad-appointment__badge--${badge.key}`,
+          `${badge.icon} ${badge.label}`
+        );
+        chip.setAttribute('aria-label', badge.label);
+        row.appendChild(chip);
+      });
+      fragment.appendChild(row);
+      return;
+    }
+    fragment.appendChild(
+      el('span', 'cad-appointment__status', tipStatusLine(appointment))
+    );
+  }
+
+  /**
+   * Hierarchy by density (table never rendered):
+   * compact  → time, customer
+   * standard → + service
+   * large    → + painters, status
+   * xl       → + phone (when present)
+   *
    * @param {Record<string, unknown>} appointment
    * @param {number} availableHeight Pixel height available for the card
    * @returns {DocumentFragment}
@@ -204,32 +255,28 @@
       el('span', 'cad-appointment__customer', appointment.customer || 'Walk-in')
     );
 
-    if (density !== 'compact') {
-      fragment.appendChild(
-        el('span', 'cad-appointment__service', appointment.service || 'Service')
-      );
+    if (density === 'compact') {
+      return fragment;
     }
 
-    if (density === 'large' || density === 'xl') {
-      fragment.appendChild(
-        el('span', 'cad-appointment__painters', paintersLabel(appointment))
-      );
+    fragment.appendChild(
+      el('span', 'cad-appointment__service', appointment.service || 'Service')
+    );
+
+    if (density === 'standard') {
+      return fragment;
     }
+
+    // large + xl
+    fragment.appendChild(
+      el('span', 'cad-appointment__painters', paintersLabel(appointment))
+    );
+    appendStatus(fragment, appointment);
 
     if (density === 'xl') {
-      const badges = statusBadges(appointment);
-      if (badges.length) {
-        const row = el('span', 'cad-appointment__badges');
-        badges.forEach((badge) => {
-          const chip = el(
-            'span',
-            `cad-appointment__badge cad-appointment__badge--${badge.key}`,
-            `${badge.icon} ${badge.label}`
-          );
-          chip.setAttribute('aria-label', badge.label);
-          row.appendChild(chip);
-        });
-        fragment.appendChild(row);
+      const phone = phoneLabel(appointment);
+      if (phone) {
+        fragment.appendChild(el('span', 'cad-appointment__phone', phone));
       }
     }
 

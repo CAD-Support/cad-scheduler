@@ -364,7 +364,7 @@
   pointer-events: auto;
 }
 
-/* Appointment blocks */
+/* Appointment blocks — fully opaque (Sprint 2.4.1); grid never shows through */
 .cad-appointment {
   position: absolute;
   z-index: 1;
@@ -379,7 +379,9 @@
   border: none;
   border-left: 3px solid var(--cad-teal);
   border-radius: 8px;
-  background: linear-gradient(180deg, #fff 0%, color-mix(in srgb, #fff 85%, var(--cad-teal) 15%) 100%);
+  /* Solid hex only — no alpha, no backdrop-filter */
+  background-color: #ffffff;
+  background-image: linear-gradient(180deg, #ffffff 0%, #d9f0f2 100%);
   box-shadow: var(--cad-shadow);
   text-align: left;
   cursor: pointer;
@@ -401,14 +403,15 @@
 
 .cad-appointment__time {
   font-size: 0.625rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--cad-teal);
   text-transform: uppercase;
 }
 
 .cad-appointment__customer {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -423,7 +426,7 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--cad-teal);
-  background: rgba(255, 255, 255, 0.92);
+  background: #ffffff;
   padding: 0.05rem 0.25rem;
   border-radius: 0.15rem;
   line-height: 1.2;
@@ -442,9 +445,11 @@
   text-overflow: ellipsis;
 }
 
-.cad-appointment__painters {
+.cad-appointment__painters,
+.cad-appointment__status,
+.cad-appointment__phone {
   font-size: 0.625rem;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--cad-ink);
   white-space: nowrap;
   overflow: hidden;
@@ -454,76 +459,86 @@
 .cad-appointment__badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2rem;
-  margin-top: 0.1rem;
+  gap: 0.15rem;
+  margin-top: 0.05rem;
 }
 
 .cad-appointment__badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.15rem;
-  padding: 0.05rem 0.3rem;
-  border-radius: 4px;
-  font-size: 0.5625rem;
-  font-weight: 700;
-  line-height: 1.25;
+  gap: 0.1rem;
+  padding: 0.02rem 0.22rem;
+  border-radius: 3px;
+  font-size: 0.5rem;
+  font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
-  background: color-mix(in srgb, var(--cad-surface) 82%, var(--cad-teal) 18%);
-  color: var(--cad-ink);
+  background: #e8f6f7;
+  color: var(--cad-muted);
+}
+
+.cad-appointment__badge--arrived {
+  background: #e8f6f7;
 }
 
 .cad-appointment__badge--no-show {
-  background: color-mix(in srgb, #fff 70%, #b42318 30%);
+  background: #f8e8e7;
+  color: #8a3a32;
 }
 
 .cad-appointment__badge--paid {
-  background: color-mix(in srgb, #fff 70%, #0a7 30%);
+  background: #e5f5ef;
+  color: #2a6b55;
+}
+
+.cad-appointment__status {
+  color: var(--cad-muted);
 }
 
 /* Desktop hover tooltip — ephemeral; removed when not hovering */
 .cad-appointment-tip {
   position: fixed;
   z-index: 50;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.25rem 0.65rem;
-  min-width: 11rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 10rem;
   max-width: 16rem;
-  padding: 0.55rem 0.65rem;
+  padding: 0.55rem 0.7rem;
   border: 1px solid var(--cad-border);
   border-radius: 8px;
-  background: var(--cad-surface);
+  background: #ffffff;
   box-shadow: 0 8px 20px rgba(43, 43, 43, 0.14);
   pointer-events: none;
+  text-align: left;
+  color: var(--cad-ink);
 }
 
 .cad-appointment-tip[hidden] {
   display: none !important;
 }
 
-.cad-appointment-tip__row {
-  display: contents;
-}
-
-.cad-appointment-tip__label {
-  font-size: 0.625rem;
+.cad-appointment-tip__customer {
+  font-size: 0.9375rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--cad-muted);
+  line-height: 1.25;
+  word-break: break-word;
 }
 
-.cad-appointment-tip__value {
+.cad-appointment-tip__line {
   font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--cad-ink);
+  font-weight: 400;
+  line-height: 1.3;
   word-break: break-word;
 }
 
 .cad-appointment--cancelled,
 .cad-appointment--rejected {
-  opacity: 0.65;
+  /* Opaque muted fill — never use opacity (shows grid through) */
+  background-color: #f3f4f6;
+  background-image: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
   border-left-color: #9ca3af;
+  color: #4b5563;
 }
 
 .cad-appointment--pending,
