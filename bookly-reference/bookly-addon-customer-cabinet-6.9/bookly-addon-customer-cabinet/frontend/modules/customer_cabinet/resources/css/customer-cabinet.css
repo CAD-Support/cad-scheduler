@@ -1,0 +1,41 @@
+#bookly-tbs a {
+    border-bottom: none;
+}
+#bookly-tbs .pagination {
+    border: none;
+}
+#bookly-tbs .pagination:before, #bookly-tbs .pagination:after {
+    display: none;
+}
+#bookly-tbs .pagination .next, #bookly-tbs .pagination .next:hover {
+    background-color: inherit;
+}
+#bookly-tbs table.table.table-striped {
+    table-layout: inherit;
+}
+#bookly-tbs ul.bookly-nav-justified {
+    margin: 0;
+}
+#bookly-tbs.bookly-customer-cabinet .modal-content a,
+#bookly-tbs.bookly-customer-cabinet .dropdown-menu a {
+    text-decoration: unset;
+    border: 0;
+}
+#bookly-tbs.bookly-customer-cabinet form {
+    position: relative;
+}
+#bookly-tbs.bookly-customer-cabinet .dropdown-toggle::after {
+    display: none;
+}
+#bookly-tbs .modal {
+    z-index: 99999;
+}
+
+.booklySelect2-container {
+    z-index: 100000;
+}
+
+#bookly-tbs.bookly-customer-cabinet .checkbox,
+#bookly-tbs.bookly-customer-cabinet .radio {
+    position: initial;
+}

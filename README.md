@@ -1,6 +1,8 @@
-# CAD Scheduler
+# CAD Scheduler v2
 
 Modern Bookly frontend for multi-table studio scheduling.
+
+**Layout:** tables across the top · time down the left · 15-minute grid · duration-sized appointment blocks.
 
 ## Design Principles
 
@@ -12,6 +14,10 @@ Modern Bookly frontend for multi-table studio scheduling.
 - Fast and responsive
 - Progressive enhancement
 - Fully documented
+
+## Rule #1
+
+If it can't be demonstrated, it isn't finished.
 
 ## Structure
 
@@ -26,11 +32,12 @@ assets/         Static assets (css, images)
 
 | File | Purpose |
 |------|---------|
-| `cad-core.js` | Core state, config, and API bridge |
-| `cad-ui.js` | UI orchestration and layout |
-| `cad-components.js` | Reusable UI components |
-| `cad-editor.js` | Schedule editor interactions |
-| `cad-calendar.js` | Multi-table calendar view |
+| `cad-core.js` | Config, state, init |
+| `cad-api.js` | WordPress AJAX (`CAD.API`) |
+| `cad-ui.js` | Load orchestration |
+| `cad-calendar.js` | v2 matrix grid |
+| `cad-components.js` | Appointment blocks |
+| `cad-editor.js` | Selection |
 
 ## Documentation
 
@@ -40,4 +47,4 @@ assets/         Static assets (css, images)
 
 ## Snippets
 
-WordPress snippets live in `snippets/`. Start with `10A-ajax-bridge.php` for the Bookly AJAX bridge.
+See [Deployment](docs/deployment.md). Use `[cad_scheduler]` on a page. Assets via jsDelivr `@2.0.0`.
