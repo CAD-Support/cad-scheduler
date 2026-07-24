@@ -50,7 +50,7 @@ Selection / future inline editing.
 
 ### cad-calendar.js
 
-Multi-table matrix grid: tables across top, time down left, duration-sized blocks.
+Multi-table matrix grid: tables across top, time down left, duration-sized blocks. Scrollport is `.cad-matrix__scroll` with sticky headers and time labels (Sprint 2.2).
 
 ## Data Flow
 

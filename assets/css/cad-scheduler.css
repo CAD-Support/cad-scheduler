@@ -26,8 +26,11 @@
   color: #b42318;
 }
 
-/* Date navigation — Sprint 2.1 */
+/* Date navigation — Sprint 2.1 (stays outside the calendar scrollport) */
 .cad-nav {
+  position: relative;
+  z-index: 6;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -180,9 +183,19 @@
   color: var(--cad-muted);
 }
 
+/* Sprint 2.2 — scrollport; nav/status stay outside this element */
 .cad-matrix__scroll {
+  --cad-time-width: 4.5rem;
+  --cad-col-min: 9rem;
+  --cad-z-lane: 0;
+  --cad-z-times: 3;
+  --cad-z-head: 4;
+  --cad-z-corner: 5;
+  --cad-sticky-tint: color-mix(in srgb, var(--cad-surface) 90%, var(--cad-orange) 10%);
   overflow: auto;
-  max-height: 85vh;
+  max-height: min(85vh, calc(100vh - 12rem));
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--cad-border);
   border-radius: var(--cad-radius);
   background: var(--cad-surface);
@@ -194,14 +207,31 @@
   outline-offset: 2px;
 }
 
-/* Header row — tables across top */
-.cad-matrix__head {
+/*
+ * Shared track: grow with the viewport when few tables, but never compress
+ * below --cad-col-min (horizontal scroll kicks in for many tables).
+ * align-items: start keeps sticky grid items from stretch-breaking in Safari.
+ */
+.cad-matrix__head,
+.cad-matrix__body {
   display: grid;
-  grid-template-columns: 4.5rem repeat(var(--cad-table-count), minmax(9rem, 1fr));
+  align-items: start;
+  grid-template-columns:
+    var(--cad-time-width)
+    repeat(var(--cad-table-count), minmax(var(--cad-col-min), 1fr));
+  min-width: max(
+    100%,
+    calc(var(--cad-time-width) + (var(--cad-table-count) * var(--cad-col-min)))
+  );
+}
+
+/* Header row — sticky while the body scrolls vertically */
+.cad-matrix__head {
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
-  z-index: 4;
-  background: var(--cad-surface);
+  z-index: var(--cad-z-head);
+  background: var(--cad-sticky-tint);
   border-bottom: 2px solid var(--cad-border);
 }
 
@@ -211,17 +241,26 @@
   font-size: 0.8125rem;
   font-weight: 700;
   text-align: center;
-  background: color-mix(in srgb, var(--cad-surface) 90%, var(--cad-orange) 10%);
+  background: var(--cad-sticky-tint);
   border-right: 1px solid var(--cad-border);
 }
 
+/*
+ * Corner stays above both sticky axes:
+ * - rides with sticky head (vertical)
+ * - sticky left within the scrollport (horizontal)
+ * Highest chrome z-index so labels/times never cover it.
+ */
 .cad-matrix__corner {
+  position: -webkit-sticky;
   position: sticky;
+  top: 0;
   left: 0;
-  z-index: 5;
+  z-index: var(--cad-z-corner);
   color: var(--cad-purple);
   font-size: 0.6875rem;
   text-transform: uppercase;
+  box-shadow: 2px 0 0 var(--cad-border);
 }
 
 .cad-matrix__table-label:last-child {
@@ -230,17 +269,20 @@
 
 /* Body — time left, lanes right */
 .cad-matrix__body {
-  display: grid;
-  grid-template-columns: 4.5rem repeat(var(--cad-table-count), minmax(9rem, 1fr));
   min-height: var(--cad-grid-height);
 }
 
+/* Time labels stick during horizontal scroll; above appointment blocks */
 .cad-matrix__times {
+  position: -webkit-sticky;
   position: sticky;
   left: 0;
-  z-index: 3;
+  z-index: var(--cad-z-times);
+  width: var(--cad-time-width);
+  min-height: var(--cad-grid-height);
   background: var(--cad-surface);
   border-right: 1px solid var(--cad-border);
+  box-shadow: 2px 0 0 var(--cad-border);
 }
 
 .cad-matrix__time-slot {
@@ -251,14 +293,19 @@
   font-variant-numeric: tabular-nums;
   color: var(--cad-muted);
   text-align: right;
-  transform: translateY(-0.5em);
+  /* Prefer offset over transform — avoids sticky/compositor flicker in Safari */
+  position: relative;
+  top: -0.5em;
   user-select: none;
 }
 
 .cad-matrix__lane {
   position: relative;
+  z-index: var(--cad-z-lane);
+  isolation: isolate;
   border-right: 1px solid var(--cad-border);
   min-height: var(--cad-grid-height);
+  min-width: var(--cad-col-min);
 }
 
 .cad-matrix__lane:last-child {
@@ -289,6 +336,7 @@
 /* Appointment blocks */
 .cad-appointment {
   position: absolute;
+  z-index: 1;
   left: 0.2rem;
   right: 0.2rem;
   display: flex;
@@ -304,11 +352,10 @@
   box-shadow: var(--cad-shadow);
   text-align: left;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: box-shadow 0.15s ease;
 }
 
 .cad-appointment:hover {
-  transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(43, 43, 43, 0.12);
 }
 
@@ -376,9 +423,9 @@
 }
 
 @media (max-width: 768px) {
-  .cad-matrix__head,
-  .cad-matrix__body {
-    grid-template-columns: 3.25rem repeat(var(--cad-table-count), minmax(7rem, 1fr));
+  .cad-matrix__scroll {
+    --cad-time-width: 3.25rem;
+    --cad-col-min: 7rem;
   }
 
   .cad-appointment__service {

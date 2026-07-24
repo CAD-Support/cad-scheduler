@@ -244,6 +244,7 @@
 
       applyGridVariables(container, metrics, tables.length);
 
+      // Single scrollport: vertical + horizontal. Sticky head/times are CSS-only (Sprint 2.2).
       const scroll = document.createElement('div');
       scroll.className = 'cad-matrix__scroll';
       scroll.tabIndex = 0;

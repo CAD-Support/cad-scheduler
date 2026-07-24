@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CAD Sprint 2.2 — Sticky scroll fixture</title>
+  <link rel="stylesheet" href="/assets/css/cad-scheduler.css" />
+  <style>
+    body { margin: 1rem; background: #fffaf5; }
+    h1 { font: 600 1rem/1.4 system-ui; color: #6b2d84; }
+  </style>
+</head>
+<body>
+  <h1>Sticky fixture — scroll the matrix</h1>
+  <div class="cad-scheduler">
+    <nav class="cad-nav" aria-label="Schedule date">
+      <div class="cad-nav__controls">
+        <button type="button" class="cad-nav__btn">◀ Previous</button>
+        <button type="button" class="cad-nav__btn cad-nav__btn--today">Today</button>
+        <button type="button" class="cad-nav__btn">Next ▶</button>
+      </div>
+      <h2 class="cad-nav__date">Friday, July 24, 2026</h2>
+    </nav>
+    <div class="cad-scheduler__status"></div>
+    <div class="cad-scheduler__calendar cad-matrix" style="--cad-table-count: 8; --cad-grid-height: 960px; --cad-slot-height: 16px;">
+      <div class="cad-matrix__scroll" id="scroll" tabindex="0" role="region" aria-label="Studio schedule">
+        <div class="cad-matrix__head" id="head">
+          <div class="cad-matrix__corner" id="corner">2026-07-24</div>
+          <div class="cad-matrix__table-label">Table 1</div>
+          <div class="cad-matrix__table-label">Table 2</div>
+          <div class="cad-matrix__table-label">Table 3</div>
+          <div class="cad-matrix__table-label">Table 4</div>
+          <div class="cad-matrix__table-label">Table 5</div>
+          <div class="cad-matrix__table-label">Table 6</div>
+          <div class="cad-matrix__table-label">Table 7</div>
+          <div class="cad-matrix__table-label">Table 8</div>
+        </div>
+        <div class="cad-matrix__body">
+          <div class="cad-matrix__times" id="times"></div>
+          <div class="cad-matrix__lane"><div class="cad-matrix__blocks">
+            <button type="button" class="cad-appointment" style="top:40px;height:64px;"><span class="cad-appointment__customer">A</span></button>
+          </div></div>
+          <div class="cad-matrix__lane"><div class="cad-matrix__blocks">
+            <button type="button" class="cad-appointment" style="top:120px;height:80px;"><span class="cad-appointment__customer">B</span></button>
+          </div></div>
+          <div class="cad-matrix__lane"><div class="cad-matrix__blocks">
+            <button type="button" class="cad-appointment" style="top:200px;height:96px;"><span class="cad-appointment__customer">C</span></button>
+          </div></div>
+          <div class="cad-matrix__lane"><div class="cad-matrix__blocks">
+            <button type="button" class="cad-appointment" style="top:60px;height:48px;"><span class="cad-appointment__customer">D</span></button>
+          </div></div>
+          <div class="cad-matrix__lane"><div class="cad-matrix__blocks">
+            <button type="button" class="cad-appointment" style="top:300px;height:72px;"><span class="cad-appointment__customer">E</span></button>
+          </div></div>
+          <div class="cad-matrix__lane"><div class="cad-matrix__blocks">
+            <button type="button" class="cad-appointment" style="top:20px;height:120px;"><span class="cad-appointment__customer">F</span></button>
+          </div></div>
+          <div class="cad-matrix__lane"><div class="cad-matrix__blocks">
+            <button type="button" class="cad-appointment" style="top:400px;height:64px;"><span class="cad-appointment__customer">G</span></button>
+          </div></div>
+          <div class="cad-matrix__lane"><div class="cad-matrix__blocks">
+            <button type="button" class="cad-appointment" style="top:160px;height:90px;"><span class="cad-appointment__customer">H</span></button>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <pre id="out" style="font:12px/1.4 ui-monospace,monospace;margin-top:1rem;"></pre>
+  <script>
+    const times = document.getElementById('times');
+    for (let i = 0; i < 60; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'cad-matrix__time-slot';
+      slot.textContent = i % 4 === 0 ? (8 + Math.floor(i / 4)) + ':00' : '';
+      times.appendChild(slot);
+    }
+    document.querySelectorAll('.cad-matrix__lane').forEach((lane) => {
+      const lines = document.createElement('div');
+      lines.className = 'cad-matrix__lines';
+      for (let i = 0; i < 60; i++) {
+        const line = document.createElement('div');
+        line.className = 'cad-matrix__line';
+        lines.appendChild(line);
+      }
+      lane.insertBefore(lines, lane.firstChild);
+    });
+
+    const scroll = document.getElementById('scroll');
+    const corner = document.getElementById('corner');
+    const head = document.getElementById('head');
+    const out = document.getElementById('out');
+
+    function report() {
+      const sr = scroll.getBoundingClientRect();
+      const cr = corner.getBoundingClientRect();
+      const hr = head.getBoundingClientRect();
+      const tr = times.getBoundingClientRect();
+      const z = (el) => getComputedStyle(el).zIndex;
+      out.textContent = [
+        'scrollTop=' + scroll.scrollTop + ' scrollLeft=' + scroll.scrollLeft,
+        'corner.left≈scroll.left: ' + (Math.abs(cr.left - sr.left) < 2),
+        'head.top≈scroll.top: ' + (Math.abs(hr.top - sr.top) < 2),
+        'times.left≈scroll.left: ' + (Math.abs(tr.left - sr.left) < 2),
+        'z corner/head/times: ' + z(corner) + '/' + z(head) + '/' + z(times),
+        'corner above head: ' + (Number(z(corner)) > Number(z(head))),
+        'head above times: ' + (Number(z(head)) > Number(z(times))),
+      ].join('\n');
+    }
+
+    scroll.addEventListener('scroll', report, { passive: true });
+    scroll.scrollTo(120, 180);
+    report();
+  </script>
+</body>
+</html>

@@ -9,6 +9,7 @@
 ## Phase 2 — Editing
 
 - [x] Calendar date navigation (Previous / Today / Next / picker) — Sprint 2.1
+- [x] Scrollable calendar (sticky headers / time labels, horizontal overflow) — Sprint 2.2
 - [ ] Inline appointment editor
 - [ ] Drag-and-drop rescheduling
 - [ ] Conflict detection across tables

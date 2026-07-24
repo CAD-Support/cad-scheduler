@@ -46,7 +46,8 @@ assets/         Static assets (css, images)
 - [Roadmap](docs/roadmap.md)
 - [Changelog](docs/changelog.md)
 - [Sprint 2.1 — Date Navigation](docs/sprint-2.1-date-navigation.md)
+- [Sprint 2.2 — Scrollable Calendar](docs/sprint-2.2-scrollable-calendar.md)
 
 ## Snippets
 
-See [Deployment](docs/deployment.md). Use `[cad_scheduler]` on a page. Assets via jsDelivr `@2.1.0`.
+See [Deployment](docs/deployment.md). Use `[cad_scheduler]` on a page. Assets via jsDelivr `@2.2.0`.

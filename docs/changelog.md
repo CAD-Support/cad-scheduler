@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.2.0] — 2026-07-24
+
+### Added
+
+- **Scrollable calendar** — sticky table headers and time labels; horizontal scroll for many tables without column compression ([Sprint 2.2](sprint-2.2-scrollable-calendar.md))
+- Sticky stacking test fixture: [`docs/fixtures/sprint-2.2-sticky.html`](fixtures/sprint-2.2-sticky.html)
+
+### Changed
+
+- `.cad-matrix__scroll` is the sole calendar scrollport; `.cad-nav` stays outside it (Sprint 2.1 navigation unchanged)
+- Sticky chrome stacking hardened for Chrome / Edge / Safari (corner `z-index: 5`, header `4`, times `3`; no transform flicker on appointments)
+
 ## [2.1.0] — 2026-07-24
 
 ### Added
