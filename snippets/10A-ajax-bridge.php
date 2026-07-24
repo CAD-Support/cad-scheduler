@@ -30,7 +30,9 @@ function cad_scheduler_asset_url( $path ) {
 }
 
 function cad_scheduler_ready() {
-	return class_exists( 'CAD_Schedule_Provider', false );
+	return class_exists( 'CAD_Bookly_Repository', false )
+		&& class_exists( 'CAD_Bookly_Mapper', false )
+		&& class_exists( 'CAD_Schedule_Provider', false );
 }
 
 /**
@@ -181,9 +183,10 @@ function cad_enqueue_assets() {
 		'cad-core',
 		'cadConfig',
 		array(
-			'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-			'nonce'        => wp_create_nonce( 'cad_scheduler' ),
-			'tables'       => $provider->get_tables(),
+			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+			'nonce'          => wp_create_nonce( 'cad_scheduler' ),
+			'today'          => current_time( 'Y-m-d' ),
+			'tables'         => $provider->get_tables(),
 			'dayStart'     => '08:00',
 			'dayEnd'       => '20:00',
 			'slotMinutes'  => 15,
@@ -196,7 +199,7 @@ function cad_enqueue_assets() {
 
 	wp_add_inline_script(
 		'cad-ui',
-		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui)return;CAD.init(window.cadConfig||{});var m=document.getElementById('cad-scheduler');if(!m)return;CAD.ui.mount('#cad-scheduler');if(m.querySelector('.cad-scheduler__diagnostics'))return;CAD.ui.load(new Date().toISOString().slice(0,10));});})();"
+		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui)return;CAD.init(window.cadConfig||{});var m=document.getElementById('cad-scheduler');if(!m)return;CAD.ui.mount('#cad-scheduler');if(m.querySelector('.cad-scheduler__diagnostics'))return;CAD.ui.load();});})();"
 	);
 }
 

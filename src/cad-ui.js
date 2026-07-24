@@ -133,13 +133,14 @@
     },
 
     async load(date) {
-      CAD.State.set('date', date);
+      const scheduleDate = date ?? CAD.Config.get('today');
+      CAD.State.set('date', scheduleDate);
       CAD.State.set('loading', true);
       CAD.State.set('error', null);
       this.render();
 
       try {
-        const result = await CAD.API.getSchedule(date);
+        const result = await CAD.API.getSchedule(scheduleDate);
         if (result?.success === false) {
           throw new Error(result.data?.message || 'Failed to load schedule');
         }
