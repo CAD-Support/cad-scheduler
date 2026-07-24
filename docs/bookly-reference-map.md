@@ -15,13 +15,14 @@ CAD Scheduler itself is developed entirely outside `bookly-reference`.
 
 ```
 bookly-reference/
-├── Archive Zip files/     ← Original vendor ZIP packages
-├── bookly-addon-pro-10.2/
+├── Archive Zip files/     ← In git: original vendor ZIP packages
+├── core-extract/          ← Local only (gitignored)
+├── bookly-addon-pro-10.2/ ← Local only (gitignored)
 ├── bookly-addon-events-1.6/
-├── ...
+└── ...
 ```
 
-**Important:** CAD Scheduler never executes or modifies code from Archive Zip files. These files are retained only as historical vendor artifacts. Development and comparison are performed against the extracted source directories.
+**Important:** The repository intentionally excludes extracted Bookly source code. Extract locally from `Archive Zip files/` into `core-extract/` and `bookly-addon-*/` — see [`bookly-reference/README.md`](../bookly-reference/README.md). CAD Scheduler never executes or modifies code from Archive Zip files.
 
 ---
 
@@ -91,23 +92,27 @@ Documented differences from Bookly that are **intentional**, not compatibility g
 | `bookly-addon-advanced-google-calendar-3.1` | 3.1 | Bookly Advanced Google Calendar |
 | `bookly-addon-authorize-net-3.5` | 3.5 | Bookly Authorize.Net |
 
-### Core Bookly (not extracted)
+### Core Bookly (local extract)
 
-The free/core plugin is present **only as a ZIP**, not as browsable source:
+Core source is **not in git**. Extract from `Archive Zip files/` into `bookly-reference/core-extract/`:
 
-- `bookly-reference/codecanyon-7ppRH7nv-bookly-booking-plugin-responsive-appointment-booking-and-scheduling/bookly-responsive-appointment-booking-tool.27.2.zip`
+```
+bookly-reference/core-extract/bookly-responsive-appointment-booking-tool/
+```
 
-All add-ons import core classes as `Bookly\Lib\...` and `Bookly\Backend\...`. For core calendar queries, appointment save flows, and entity definitions, extract that ZIP or inspect the live plugin on a WordPress install.
+Typical paths: `backend/modules/calendar/`, `lib/entities/`, `lib/utils/DateTime.php`.
+
+All add-ons import core classes as `Bookly\Lib\...` and `Bookly\Backend\...`. For calendar queries, appointment save flows, and entity definitions, extract into `core-extract/` or inspect the live plugin on a WordPress install.
 
 ### Bookly Archive (ZIP packages, not extracted)
 
 Original vendor ZIP packages live in `/bookly-reference/Archive Zip files/`. See that folder’s [README](../bookly-reference/Archive%20Zip%20files/README.md).
 
-These ZIPs are **read-only** and **not part of the CAD Scheduler build**. Development and Bookly parity analysis use the extracted source folders under `/bookly-reference/`.
+These ZIPs are **read-only** and **not part of the CAD Scheduler build**. Development and Bookly parity analysis use extracted source folders under `/bookly-reference/` (local only — see [`.gitignore`](../.gitignore)).
 
 Archive contents include: core Bookly, Locations, Packages, Recurring Appointments, Group Booking, Staff Cabinet, Service Extras, Service Schedule, Special Hours, Special Days, Waiting List, Tasks, Invoices, Files, Taxes, Stripe, PayPal, PayU, Outlook Calendar, Google Maps Address, Custom Duration, Multiply Appointments, Multisite, Mailchimp, Ratings, and duplicate ZIP copies of extracted add-ons.
 
-Re-extract a ZIP into `/bookly-reference` before inspecting if CAD needs that add-on.
+Re-extract a ZIP into `/bookly-reference` before inspecting if CAD needs that add-on. Extracted paths are gitignored; see [`bookly-reference/README.md`](../bookly-reference/README.md).
 
 ---
 
@@ -843,6 +848,6 @@ These are defined in CAD Scheduler, not Bookly:
 
 ## Document maintenance
 
-- **Source path:** `/bookly-reference` (read-only)
+- **Source path:** `/bookly-reference` (read-only; extracted source is local/gitignored)
 - **When to update:** After adding extracted add-on ZIPs or upgrading Bookly versions
 - **Version note:** Map generated from extracted add-on versions listed above; core Bookly **27.2** present as ZIP only

@@ -1,9 +1,19 @@
 # Bookly Archive
 
-Part of the [`bookly-reference`](../README.md#bookly-reference-repository-layout) library. This folder holds original CodeCanyon ZIP packages preserved for historical reference.
+Original CodeCanyon ZIP packages preserved for historical reference. Part of [`bookly-reference`](../README.md).
 
 These ZIP files are **read-only** and are **not part of the CAD Scheduler build**.
 
-Development, inspection, and Bookly parity analysis are performed against the extracted source folders under `/bookly-reference/`, not against these archives.
+## Extract for parity analysis
 
-**Important:** CAD Scheduler never executes or modifies code from Archive Zip files. These files are retained only as historical vendor artifacts.
+The repository intentionally excludes extracted Bookly source code. To inspect Bookly implementation locally:
+
+1. Open this folder (`bookly-reference/Archive Zip files/`)
+2. Extract the required packages into:
+
+- `bookly-reference/core-extract/` — core plugin (calendar, entities, utils)
+- `bookly-reference/bookly-addon-*/` — add-ons as needed (e.g. Pro, Events)
+
+These folders are ignored by Git and exist only for local development.
+
+**Important:** CAD Scheduler never executes or modifies code from these archives. Development and comparison use the extracted folders on your machine, not the ZIPs directly.

@@ -44,7 +44,7 @@ Bookly wp-admin calendar
 | API (JS) | `src/cad-api.js` |
 | UI | `src/cad-ui.js`, `src/cad-calendar.js`, `src/cad-components.js` |
 | Bookly Pro calendar | `bookly-reference/bookly-addon-pro-10.2/.../frontend/modules/calendar/Ajax.php` |
-| Bookly core calendar | `bookly-reference/_core-extract/.../backend/modules/calendar/Page.php` |
+| Bookly core calendar | `bookly-reference/core-extract/.../backend/modules/calendar/Page.php` |
 
 ---
 
