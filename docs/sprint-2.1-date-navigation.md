@@ -47,6 +47,10 @@ CAD.calendar.render(container)
 
 `CAD.ui.load()` aborts any previous in-flight `fetch` via `AbortController` and tracks a monotonic load sequence id. Aborted or out-of-order responses are ignored — they must not clear errors, clear appointments, or call `CAD.calendar.render` for an older date. `CAD.API.getSchedule(date)` remains the same call site; an optional `{ signal }` is passed through to `fetch` only.
 
+## Single calendar host
+
+`CAD.ui.ensureShell()` creates one `.cad-scheduler__calendar` and reuses it. `CAD.calendar.render(container)` clears that element’s `innerHTML` and adds `.cad-matrix` via `classList` — it must **not** replace `className` (that previously stripped `.cad-scheduler__calendar` and caused a new host on each navigation). Prev / Next / Today / Pick Date all call `CAD.ui.load()` → the same `CAD.ui.calendarEl`.
+
 ## State
 
 ```js

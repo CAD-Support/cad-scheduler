@@ -18,6 +18,8 @@
 
   CAD.ui = {
     root: null,
+    /** Stable calendar host — reused across loads; never recreated. */
+    calendarEl: null,
     /** @type {AbortController|null} */
     _loadController: null,
     /** Monotonic id — only the newest load may apply results. */
@@ -95,6 +97,7 @@
 
     /**
      * Create status + calendar containers once. Never wipe .cad-nav.
+     * Ensures exactly one .cad-scheduler__calendar (idempotent).
      */
     ensureShell() {
       if (!this.root || this.root.querySelector('.cad-scheduler__diagnostics')) {
@@ -108,11 +111,45 @@
         this.root.appendChild(status);
       }
 
-      if (!this.root.querySelector('.cad-scheduler__calendar')) {
-        const calendar = document.createElement('div');
+      let calendar =
+        this.calendarEl && this.root.contains(this.calendarEl)
+          ? this.calendarEl
+          : this.root.querySelector('.cad-scheduler__calendar');
+
+      // Recover hosts left by older renders that replaced className with cad-matrix only.
+      if (!calendar) {
+        calendar = this.root.querySelector(':scope > .cad-matrix');
+        if (calendar) {
+          calendar.classList.add('cad-scheduler__calendar');
+        }
+      }
+
+      if (!calendar) {
+        calendar = document.createElement('div');
         calendar.className = 'cad-scheduler__calendar';
         this.root.appendChild(calendar);
+      } else if (!calendar.classList.contains('cad-scheduler__calendar')) {
+        calendar.classList.add('cad-scheduler__calendar');
       }
+
+      this.calendarEl = calendar;
+
+      // Drop duplicate calendar/matrix shells; keep nav + status + one calendar.
+      Array.from(this.root.children).forEach((child) => {
+        if (
+          child === calendar ||
+          child.classList.contains('cad-nav') ||
+          child.classList.contains('cad-scheduler__status')
+        ) {
+          return;
+        }
+        if (
+          child.classList.contains('cad-scheduler__calendar') ||
+          child.classList.contains('cad-matrix')
+        ) {
+          child.remove();
+        }
+      });
     },
 
     renderStatus() {
@@ -144,8 +181,8 @@
       this.renderStatus();
       CAD.Navigation?.sync?.();
 
-      if (!CAD.State.get('loading')) {
-        CAD.calendar?.render(this.root.querySelector('.cad-scheduler__calendar'));
+      if (!CAD.State.get('loading') && this.calendarEl) {
+        CAD.calendar?.render(this.calendarEl);
       }
 
       return this;

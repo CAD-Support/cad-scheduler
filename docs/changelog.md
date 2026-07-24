@@ -14,6 +14,10 @@
 - UI shell is preserved across loads (nav is not recreated)
 - Schedule loads abort prior in-flight requests so rapid navigation cannot apply a stale day
 
+### Fixed
+
+- Date navigation no longer appends duplicate calendars — `CAD.calendar.render()` keeps `.cad-scheduler__calendar` and only replaces that container’s contents
+
 ## [2.0.0] — 2026-07-23
 
 ### Added

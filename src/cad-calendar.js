@@ -233,8 +233,9 @@
       const appointments = Array.isArray(stateAppointments) ? stateAppointments : [];
       const metrics = gridMetrics();
 
+      // Replace grid contents only — keep host classes (e.g. cad-scheduler__calendar).
       container.innerHTML = '';
-      container.className = 'cad-matrix';
+      container.classList.add('cad-matrix');
 
       if (tables.length === 0) {
         container.appendChild(CAD.components.emptyState('No tables configured.'));
