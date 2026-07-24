@@ -97,7 +97,38 @@ See [Sprint 1.7 — Live Validation](sprint-1.7-live-validation.md) and the [Val
 
 ## Assets
 
-JS/CSS load from jsDelivr tag `2.4.0`. Tag GitHub release after push.
+JS/CSS load from jsDelivr using the Git tag in `CAD_SCHEDULER_VERSION` (currently `2.4.0` after a successful release).
+
+### Release order
+
+Never bump `CAD_SCHEDULER_VERSION` (or paste a bridge that already points at a new tag) until jsDelivr is serving that tag. Doing so breaks the scheduler: the CDN returns 404s for assets that do not exist yet.
+
+```
+Local commit
+    ↓
+Local QA
+    ↓
+Push commit
+    ↓
+Create tag
+    ↓
+Push tag
+    ↓
+Verify jsDelivr serves the tag
+    ↓
+Update CAD_SCHEDULER_VERSION
+    ↓
+Final smoke test
+```
+
+**Verify a tag on jsDelivr** (replace `2.4.0` / path as needed):
+
+```
+https://cdn.jsdelivr.net/gh/CAD-Support/cad-scheduler@2.4.0/src/cad-core.js
+https://cdn.jsdelivr.net/gh/CAD-Support/cad-scheduler@2.4.0/assets/css/cad-scheduler.css
+```
+
+Expect HTTP 200 and file contents that match the tagged commit. If the CDN is still warming, wait and retry before changing `CAD_SCHEDULER_VERSION` in WordPress.
 
 ## Local asset override
 
