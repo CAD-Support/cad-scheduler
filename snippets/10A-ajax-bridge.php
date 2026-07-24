@@ -10,6 +10,10 @@
 
 defined( 'ABSPATH' ) || exit;
 
+// IMPORTANT:
+// This version must reference an existing Git tag or commit that is
+// already available on jsDelivr. Do not increment before the release
+// has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
 	define( 'CAD_SCHEDULER_VERSION', '2.4.0' );
 }
