@@ -14,6 +14,7 @@ Modern Bookly frontend for multi-table studio scheduling.
 - Fast and responsive
 - Progressive enhancement
 - Fully documented
+- **Calendar First** — maximize visible calendar space; avoid permanent chrome that shrinks the matrix
 
 ## Rule #1
 
@@ -36,8 +37,9 @@ assets/         Static assets (css, images)
 | `cad-api.js` | WordPress AJAX (`CAD.API`) |
 | `cad-ui.js` | Shell + load orchestration |
 | `cad-navigation.js` | Previous / Today / Next / date picker |
+| `cad-card-renderer.js` | Height-based adaptive appointment cards |
 | `cad-calendar.js` | v2 matrix grid |
-| `cad-components.js` | Appointment blocks |
+| `cad-components.js` | Appointment block shell |
 | `cad-editor.js` | Selection |
 
 ## Documentation
@@ -48,7 +50,8 @@ assets/         Static assets (css, images)
 - [Sprint 2.1 — Date Navigation](docs/sprint-2.1-date-navigation.md)
 - [Sprint 2.2 — Scrollable Calendar](docs/sprint-2.2-scrollable-calendar.md)
 - [Sprint 2.3 — Dynamic Day Range](docs/sprint-2.3-dynamic-day-range.md)
+- [Sprint 2.4 — Adaptive Appointment Cards](docs/sprint-2.4-adaptive-cards.md)
 
 ## Snippets
 
-See [Deployment](docs/deployment.md). Use `[cad_scheduler]` on a page. Assets via jsDelivr `@2.2.2`.
+See [Deployment](docs/deployment.md). Use `[cad_scheduler]` on a page. Assets via jsDelivr `@2.4.0`.

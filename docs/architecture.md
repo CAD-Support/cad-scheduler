@@ -17,7 +17,7 @@ WordPress + Bookly (backend)
         ↕
     cad-navigation.js (day controls)
         ↕
-  cad-components.js / cad-editor.js / cad-calendar.js
+  cad-components.js / cad-card-renderer.js / cad-editor.js / cad-calendar.js
         ↕
     assets/ (css, images)
 ```
@@ -42,7 +42,11 @@ Day navigation: Previous / Today / Next / native date picker. Formats the header
 
 ### cad-components.js
 
-Shared UI primitives (appointment blocks, empty state).
+Appointment block shell: applies layout (`top` / `height`) and delegates card content to `CAD.cardRenderer`.
+
+### cad-card-renderer.js
+
+Height-based adaptive card content (`CAD.cardRenderer.render(appointment, availableHeight)`), read-only status badges, and desktop hover tooltips. The calendar only supplies available height.
 
 ### cad-editor.js
 
@@ -50,7 +54,7 @@ Selection / future inline editing.
 
 ### cad-calendar.js
 
-Multi-table matrix grid: tables across top, time down left, duration-sized blocks. Scrollport is `.cad-matrix__scroll` with sticky headers and time labels (Sprint 2.2).
+Multi-table matrix grid: tables across top, time down left, duration-sized blocks. Scrollport is `.cad-matrix__scroll` with sticky headers and time labels (Sprint 2.2). Layout height is passed through to components; card field choices live in the renderer.
 
 ## Data Flow
 

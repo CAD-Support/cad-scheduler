@@ -442,6 +442,84 @@
   text-overflow: ellipsis;
 }
 
+.cad-appointment__painters {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--cad-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cad-appointment__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin-top: 0.1rem;
+}
+
+.cad-appointment__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--cad-surface) 82%, var(--cad-teal) 18%);
+  color: var(--cad-ink);
+}
+
+.cad-appointment__badge--no-show {
+  background: color-mix(in srgb, #fff 70%, #b42318 30%);
+}
+
+.cad-appointment__badge--paid {
+  background: color-mix(in srgb, #fff 70%, #0a7 30%);
+}
+
+/* Desktop hover tooltip — ephemeral; removed when not hovering */
+.cad-appointment-tip {
+  position: fixed;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.65rem;
+  min-width: 11rem;
+  max-width: 16rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--cad-border);
+  border-radius: 8px;
+  background: var(--cad-surface);
+  box-shadow: 0 8px 20px rgba(43, 43, 43, 0.14);
+  pointer-events: none;
+}
+
+.cad-appointment-tip[hidden] {
+  display: none !important;
+}
+
+.cad-appointment-tip__row {
+  display: contents;
+}
+
+.cad-appointment-tip__label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--cad-muted);
+}
+
+.cad-appointment-tip__value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cad-ink);
+  word-break: break-word;
+}
+
 .cad-appointment--cancelled,
 .cad-appointment--rejected {
   opacity: 0.65;
@@ -462,10 +540,6 @@
     --cad-time-width: 3.25rem;
     --cad-col-min: 7rem;
     min-height: 10rem;
-  }
-
-  .cad-appointment__service {
-    display: none;
   }
 }
 

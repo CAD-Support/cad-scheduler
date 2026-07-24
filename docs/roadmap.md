@@ -11,6 +11,8 @@
 - [x] Calendar date navigation (Previous / Today / Next / picker) — Sprint 2.1
 - [x] Scrollable calendar (sticky headers / time labels, horizontal overflow) — Sprint 2.2
 - [x] Dynamic day range (open hours ∪ appointments) — Sprint 2.3
+- [x] Adaptive appointment cards (height-based density, badges, hover tooltip) — Sprint 2.4
+- [ ] Appointment details panel (read-only) — Sprint 2.5
 - [ ] Inline appointment editor
 - [ ] Drag-and-drop rescheduling
 - [ ] Conflict detection across tables

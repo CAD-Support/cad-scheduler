@@ -205,6 +205,7 @@
         loading: true,
         error: null,
       });
+      CAD.editor?.clear?.();
       this.render();
 
       try {

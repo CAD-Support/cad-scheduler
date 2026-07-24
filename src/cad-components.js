@@ -7,41 +7,48 @@
   const CAD = global.CAD;
   if (!CAD) throw new Error('cad-core.js must be loaded before cad-components.js');
 
-  function formatTime(iso) {
-    const d = new Date(iso);
-    return Number.isNaN(d.getTime())
-      ? iso
-      : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  function availableHeightFromLayout(layout) {
+    const raw = layout?.height;
+    if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+    const parsed = parseFloat(String(raw ?? ''), 10);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
 
   CAD.components = {
+    /**
+     * Appointment card shell. Layout supplies pixel height; card content
+     * comes from CAD.cardRenderer (calendar does not decide card internals).
+     * @param {Record<string, unknown>} appointment
+     * @param {{ top: string, height: string }} layout
+     * @returns {HTMLButtonElement}
+     */
     appointmentBlock(appointment, layout) {
       const validationMode = CAD.Config.get('validationMode');
+      const availableHeight = availableHeightFromLayout(layout);
+      const density = CAD.cardRenderer
+        ? CAD.cardRenderer.densityForHeight(availableHeight)
+        : 'standard';
+
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = `cad-appointment cad-appointment--${appointment.status || 'default'}`;
+      btn.className = `cad-appointment cad-appointment--${appointment.status || 'default'} cad-appointment--${density}`;
       if (validationMode) {
         btn.classList.add('cad-appointment--validation');
       }
       btn.dataset.id = appointment.id;
       btn.dataset.tableId = appointment.tableId;
+      btn.dataset.density = density;
       btn.style.top = layout.top;
       btn.style.height = layout.height;
-      btn.setAttribute('aria-label', `${appointment.customer || 'Walk-in'}, ${appointment.service || 'Service'}`);
+      btn.setAttribute(
+        'aria-label',
+        `${appointment.customer || 'Walk-in'}, ${appointment.service || 'Service'}`
+      );
 
-      const time = document.createElement('span');
-      time.className = 'cad-appointment__time';
-      time.textContent = `${formatTime(appointment.start)} – ${formatTime(appointment.end)}`;
-
-      const customer = document.createElement('span');
-      customer.className = 'cad-appointment__customer';
-      customer.textContent = appointment.customer || 'Walk-in';
-
-      const service = document.createElement('span');
-      service.className = 'cad-appointment__service';
-      service.textContent = appointment.service || 'Service';
-
-      btn.append(time, customer, service);
+      if (CAD.cardRenderer) {
+        btn.append(CAD.cardRenderer.render(appointment, availableHeight));
+        CAD.cardRenderer.bindTooltip(btn, appointment);
+      }
 
       if (validationMode && appointment.id != null && appointment.id !== '') {
         const idLabel = document.createElement('span');

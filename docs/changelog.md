@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.4.0] — 2026-07-24
+
+### Added
+
+- **Adaptive appointment cards** — content density from rendered pixel height (compact / standard / large / xl), not CSS breakpoints ([Sprint 2.4](sprint-2.4-adaptive-cards.md))
+- `src/cad-card-renderer.js` (`CAD.cardRenderer.render(appointment, availableHeight)`)
+- Read-only status badges (arrived / paid / no-show) on extra-large cards
+- Desktop hover tooltip (customer, service, time, table, painters, status)
+- Appointment `painters` and `paid` from Bookly (Repository / Mapper additive fields)
+- Fixture: [`docs/fixtures/sprint-2.4-adaptive-cards.html`](fixtures/sprint-2.4-adaptive-cards.html)
+
+### Notes
+
+- Appointment details panel deferred to Sprint 2.5 (Calendar First — no permanent chrome outside the matrix)
+- `notes` (`internal_note`) remains in the payload for the upcoming details panel
+
 ## [2.2.2] — 2026-07-24
 
 ### Added

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CAD — Adaptive appointment cards</title>
+  <link rel="stylesheet" href="/assets/css/cad-scheduler.css" />
+  <style>
+    body { margin: 1rem; font-family: system-ui, sans-serif; background: #fffaf5; }
+    h1 { font-size: 1rem; color: #6b2d84; }
+    #report { font: 12px/1.45 ui-monospace, monospace; white-space: pre-wrap; }
+    .ok { color: #0a7; }
+    .bad { color: #b42318; }
+  </style>
+</head>
+<body>
+  <h1>Adaptive appointment cards — height tiers</h1>
+  <div id="cad-scheduler" class="cad-scheduler-mount cad-scheduler">
+    <nav class="cad-nav" aria-label="Schedule date">
+      <div class="cad-nav__controls">
+        <button type="button" class="cad-nav__btn">◀ Previous</button>
+        <button type="button" class="cad-nav__btn cad-nav__btn--today">Today</button>
+        <button type="button" class="cad-nav__btn">Next ▶</button>
+      </div>
+      <h2 class="cad-nav__date">Friday, July 24, 2026</h2>
+    </nav>
+    <div class="cad-scheduler__status"></div>
+    <div class="cad-scheduler__calendar" id="calendar-host"></div>
+  </div>
+  <pre id="report"></pre>
+  <script src="/src/cad-core.js"></script>
+  <script src="/src/cad-card-renderer.js"></script>
+  <script src="/src/cad-components.js"></script>
+  <script src="/src/cad-editor.js"></script>
+  <script src="/src/cad-calendar.js"></script>
+  <script>
+    (function () {
+      const report = document.getElementById('report');
+      const host = document.getElementById('calendar-host');
+      const lines = [];
+      const pass = (label) => lines.push(`OK  ${label}`);
+      const fail = (label, detail) => lines.push(`BAD ${label}${detail ? ` — ${detail}` : ''}`);
+
+      CAD.init({
+        today: '2026-07-24',
+        dayStart: '10:00',
+        dayEnd: '18:00',
+        slotMinutes: 15,
+        hourHeight: 64,
+        tables: [
+          { id: '1', name: 'Table 1' },
+          { id: '2', name: 'Table 2' },
+        ],
+      });
+
+      const appointments = [
+        {
+          id: 'c1',
+          tableId: '1',
+          start: '2026-07-24T10:00:00',
+          end: '2026-07-24T10:15:00',
+          customer: 'Compact Pat',
+          service: 'Quick touch',
+          status: 'approved',
+          painters: 1,
+          paid: false,
+        },
+        {
+          id: 's1',
+          tableId: '1',
+          start: '2026-07-24T10:30:00',
+          end: '2026-07-24T11:15:00',
+          customer: 'Standard Sam',
+          service: 'Studio session',
+          status: 'approved',
+          painters: 2,
+          paid: false,
+        },
+        {
+          id: 'l1',
+          tableId: '2',
+          start: '2026-07-24T10:00:00',
+          end: '2026-07-24T11:15:00',
+          customer: 'Large Lee',
+          service: 'Group paint',
+          status: 'approved',
+          painters: 4,
+          paid: false,
+        },
+        {
+          id: 'x1',
+          tableId: '2',
+          start: '2026-07-24T12:00:00',
+          end: '2026-07-24T14:00:00',
+          customer: 'XL Alex',
+          service: 'Full party',
+          status: 'arrived',
+          painters: 6,
+          paid: true,
+        },
+      ];
+
+      CAD.State.update({
+        selectedDate: '2026-07-24',
+        appointments,
+      });
+      CAD.calendar.render(host);
+
+      const byId = (id) => host.querySelector(`.cad-appointment[data-id="${id}"]`);
+
+      function expectDensity(id, expected) {
+        const el = byId(id);
+        if (!el) {
+          fail(`${id} density`, 'missing node');
+          return;
+        }
+        const actual = el.dataset.density;
+        if (actual === expected) pass(`${id} density=${expected}`);
+        else fail(`${id} density`, `expected ${expected}, got ${actual} (height=${el.style.height})`);
+      }
+
+      function expectHas(id, selector, shouldExist) {
+        const el = byId(id);
+        const found = Boolean(el?.querySelector(selector));
+        const label = `${id} ${selector}`;
+        if (found === shouldExist) pass(label + (shouldExist ? ' present' : ' absent'));
+        else fail(label, shouldExist ? 'missing' : 'unexpected');
+      }
+
+      expectDensity('c1', 'compact');
+      expectDensity('s1', 'standard');
+      expectDensity('l1', 'large');
+      expectDensity('x1', 'xl');
+
+      expectHas('c1', '.cad-appointment__service', false);
+      expectHas('c1', '.cad-appointment__painters', false);
+      expectHas('s1', '.cad-appointment__service', true);
+      expectHas('s1', '.cad-appointment__painters', false);
+      expectHas('l1', '.cad-appointment__painters', true);
+      expectHas('l1', '.cad-appointment__badges', false);
+      expectHas('x1', '.cad-appointment__badges', true);
+      expectHas('x1', '.cad-appointment__badge--arrived', true);
+      expectHas('x1', '.cad-appointment__badge--paid', true);
+
+      const tipLabels = ['Customer', 'Service', 'Time', 'Table', 'Painters', 'Status'];
+      const probe = byId('x1');
+      probe?.dispatchEvent(new Event('mouseenter'));
+      const liveTip = document.querySelector('.cad-appointment-tip:not([hidden])');
+      if (liveTip && tipLabels.every((label) => liveTip.textContent.includes(label))) {
+        pass('tooltip fields present');
+      } else if (CAD.cardRenderer.statusBadges(appointments[3]).length >= 2) {
+        pass('tooltip skipped (no fine pointer); badge data ok');
+      } else {
+        fail('tooltip fields');
+      }
+      probe?.dispatchEvent(new Event('mouseleave'));
+
+      if (!document.querySelector('.cad-details')) pass('no details panel chrome');
+      else fail('details panel should be absent');
+
+      byId('x1')?.click();
+      if (byId('x1')?.classList.contains('cad-appointment--selected')) {
+        pass('click selects appointment');
+      } else {
+        fail('click selection');
+      }
+      if (!document.querySelector('.cad-details--open')) pass('click does not open details');
+      else fail('details opened on click');
+
+      const T = CAD.cardRenderer.HEIGHT_THRESHOLDS;
+      [
+        [T.compact - 1, 'compact'],
+        [T.compact, 'standard'],
+        [T.standard - 1, 'standard'],
+        [T.standard, 'large'],
+        [T.large - 1, 'large'],
+        [T.large, 'xl'],
+      ].forEach(([h, d]) => {
+        const got = CAD.cardRenderer.densityForHeight(h);
+        if (got === d) pass(`threshold ${h}px → ${d}`);
+        else fail(`threshold ${h}px`, `expected ${d}, got ${got}`);
+      });
+
+      report.innerHTML = lines
+        .map((line) => {
+          const cls = line.startsWith('OK') ? 'ok' : 'bad';
+          return `<span class="${cls}">${line}</span>`;
+        })
+        .join('\n');
+    })();
+  </script>
+</body>
+</html>

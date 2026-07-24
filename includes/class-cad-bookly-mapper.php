@@ -62,6 +62,13 @@ class CAD_Bookly_Mapper {
 			}
 		}
 
+		$painters = (int) ( $row['number_of_persons'] ?? 1 );
+		if ( $painters < 1 ) {
+			$painters = 1;
+		}
+
+		$payment_status = strtolower( (string) ( $row['payment_status'] ?? '' ) );
+
 		return array(
 			'id'       => $id,
 			'tableId'  => $table_id,
@@ -70,6 +77,9 @@ class CAD_Bookly_Mapper {
 			'customer' => (string) ( $row['customer_name'] ?? '' ),
 			'service'  => (string) ( $row['service_title'] ?? '' ),
 			'status'   => (string) ( $row['appointment_status'] ?? '' ),
+			'painters' => $painters,
+			'paid'     => ( 'completed' === $payment_status ),
+			'notes'    => (string) ( $row['internal_note'] ?? '' ),
 		);
 	}
 

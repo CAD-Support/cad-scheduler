@@ -1,5 +1,5 @@
 /**
- * CAD Scheduler v2 — Editor
+ * CAD Scheduler v2 — Editor (selection only)
  */
 (function (global) {
   'use strict';

@@ -11,7 +11,7 @@
 defined( 'ABSPATH' ) || exit;
 
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '2.2.2' );
+	define( 'CAD_SCHEDULER_VERSION', '2.4.0' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -199,8 +199,9 @@ function cad_enqueue_assets() {
 	wp_enqueue_style( 'cad-scheduler', cad_scheduler_asset_url( 'assets/css/cad-scheduler.css' ), array(), $ver );
 	wp_enqueue_script( 'cad-core', $src . 'cad-core.js', array(), $ver, true );
 	wp_enqueue_script( 'cad-api', $src . 'cad-api.js', array( 'cad-core' ), $ver, true );
-	wp_enqueue_script( 'cad-components', $src . 'cad-components.js', array( 'cad-core' ), $ver, true );
 	wp_enqueue_script( 'cad-editor', $src . 'cad-editor.js', array( 'cad-core' ), $ver, true );
+	wp_enqueue_script( 'cad-card-renderer', $src . 'cad-card-renderer.js', array( 'cad-core' ), $ver, true );
+	wp_enqueue_script( 'cad-components', $src . 'cad-components.js', array( 'cad-core', 'cad-card-renderer' ), $ver, true );
 	wp_enqueue_script( 'cad-calendar', $src . 'cad-calendar.js', array( 'cad-core', 'cad-components' ), $ver, true );
 	wp_enqueue_script( 'cad-ui', $src . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar' ), $ver, true );
 	wp_enqueue_script( 'cad-navigation', $src . 'cad-navigation.js', array( 'cad-core', 'cad-ui' ), $ver, true );
