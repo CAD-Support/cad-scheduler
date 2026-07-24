@@ -212,6 +212,26 @@
   text-overflow: ellipsis;
 }
 
+.cad-appointment__id {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cad-teal);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.05rem 0.25rem;
+  border-radius: 0.15rem;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.cad-appointment--validation {
+  padding-right: 2.25rem;
+}
+
 .cad-appointment__service {
   font-size: 0.6875rem;
   color: var(--cad-muted);

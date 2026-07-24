@@ -49,12 +49,31 @@ add_filter( 'cad_scheduler_diagnostics_enabled', '__return_true' );
 
 Shows a confirmation panel below the scheduler when all components are healthy.
 
+## Validation Mode
+
+Optional overlay that displays Bookly appointment IDs (`#123`) on each CAD block for side-by-side parity testing. **Off by default.**
+
+```php
+add_filter( 'cad_scheduler_validation_mode_enabled', '__return_true' );
+```
+
+Disable when validation is complete:
+
+```php
+remove_filter( 'cad_scheduler_validation_mode_enabled', '__return_true' );
+// or
+add_filter( 'cad_scheduler_validation_mode_enabled', '__return_false' );
+```
+
+See [Sprint 1.7 — Live Validation](sprint-1.7-live-validation.md) and the [Validation Checklist](validation-checklist.md).
+
 **Filters:**
 
 | Filter | Purpose |
 |--------|---------|
 | `cad_scheduler_health` | Add or modify health issues |
 | `cad_scheduler_diagnostics_enabled` | Force diagnostic panel when healthy |
+| `cad_scheduler_validation_mode_enabled` | Show appointment ID on each block (default `false`) |
 
 ## Page
 

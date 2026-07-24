@@ -16,9 +16,13 @@
 
   CAD.components = {
     appointmentBlock(appointment, layout) {
+      const validationMode = CAD.Config.get('validationMode');
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = `cad-appointment cad-appointment--${appointment.status || 'default'}`;
+      if (validationMode) {
+        btn.classList.add('cad-appointment--validation');
+      }
       btn.dataset.id = appointment.id;
       btn.dataset.tableId = appointment.tableId;
       btn.style.top = layout.top;
@@ -38,6 +42,15 @@
       service.textContent = appointment.service || 'Service';
 
       btn.append(time, customer, service);
+
+      if (validationMode && appointment.id != null && appointment.id !== '') {
+        const idLabel = document.createElement('span');
+        idLabel.className = 'cad-appointment__id';
+        idLabel.textContent = `#${appointment.id}`;
+        idLabel.setAttribute('aria-hidden', 'true');
+        btn.append(idLabel);
+      }
+
       return btn;
     },
 

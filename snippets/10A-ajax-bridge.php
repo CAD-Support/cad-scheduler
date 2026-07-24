@@ -100,6 +100,10 @@ function cad_scheduler_diagnostics_enabled() {
 	return (bool) apply_filters( 'cad_scheduler_diagnostics_enabled', false );
 }
 
+function cad_scheduler_validation_mode_enabled() {
+	return (bool) apply_filters( 'cad_scheduler_validation_mode_enabled', false );
+}
+
 /**
  * @param array<int, array{code?: string, message?: string, fix?: string}> $issues
  */
@@ -184,8 +188,9 @@ function cad_enqueue_assets() {
 			'dayEnd'       => '20:00',
 			'slotMinutes'  => 15,
 			'hourHeight'   => 64,
-			'health'       => cad_scheduler_health_for_config(),
-			'diagnostics'  => cad_scheduler_diagnostics_enabled(),
+			'health'         => cad_scheduler_health_for_config(),
+			'diagnostics'    => cad_scheduler_diagnostics_enabled(),
+			'validationMode' => cad_scheduler_validation_mode_enabled(),
 		)
 	);
 

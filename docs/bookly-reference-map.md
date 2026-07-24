@@ -4,6 +4,25 @@ Read-only reference library: `/bookly-reference`
 
 **Rules:** Never modify files under `/bookly-reference`. Use this map before implementing Bookly integrations in CAD Scheduler (`includes/`, `snippets/`, `src/`).
 
+## Bookly Reference Repository Layout
+
+The `bookly-reference` directory is divided into two purposes:
+
+- **Archive Zip files/** — Original CodeCanyon packages preserved for historical reference.
+- **Extracted source folders/** — The working reference used to inspect Bookly's implementation and compare CAD Scheduler behaviour.
+
+CAD Scheduler itself is developed entirely outside `bookly-reference`.
+
+```
+bookly-reference/
+├── Archive Zip files/     ← Original vendor ZIP packages
+├── bookly-addon-pro-10.2/
+├── bookly-addon-events-1.6/
+├── ...
+```
+
+**Important:** CAD Scheduler never executes or modifies code from Archive Zip files. These files are retained only as historical vendor artifacts. Development and comparison are performed against the extracted source directories.
+
 ---
 
 ## How to Use This Reference
@@ -80,11 +99,13 @@ The free/core plugin is present **only as a ZIP**, not as browsable source:
 
 All add-ons import core classes as `Bookly\Lib\...` and `Bookly\Backend\...`. For core calendar queries, appointment save flows, and entity definitions, extract that ZIP or inspect the live plugin on a WordPress install.
 
-### Archived add-on ZIPs (not extracted)
+### Bookly Archive (ZIP packages, not extracted)
 
-Present in `/bookly-reference` but not analyzed at source level (no extracted tree):
+Original vendor ZIP packages live in `/bookly-reference/Archive Zip files/`. See that folder’s [README](../bookly-reference/Archive%20Zip%20files/README.md).
 
-Locations, Packages, Recurring Appointments, Group Booking, Staff Cabinet, Service Extras, Service Schedule, Special Hours, Special Days, Waiting List, Tasks, Invoices, Files, Taxes, Stripe, PayPal, PayU, Outlook Calendar, Google Maps Address, Custom Duration, Multiply Appointments, Multisite, Mailchimp, Ratings, and duplicate ZIP copies of extracted add-ons.
+These ZIPs are **read-only** and **not part of the CAD Scheduler build**. Development and Bookly parity analysis use the extracted source folders under `/bookly-reference/`.
+
+Archive contents include: core Bookly, Locations, Packages, Recurring Appointments, Group Booking, Staff Cabinet, Service Extras, Service Schedule, Special Hours, Special Days, Waiting List, Tasks, Invoices, Files, Taxes, Stripe, PayPal, PayU, Outlook Calendar, Google Maps Address, Custom Duration, Multiply Appointments, Multisite, Mailchimp, Ratings, and duplicate ZIP copies of extracted add-ons.
 
 Re-extract a ZIP into `/bookly-reference` before inspecting if CAD needs that add-on.
 
@@ -815,6 +836,7 @@ These are defined in CAD Scheduler, not Bookly:
 | `cad_scheduler_get_schedule_capability` | `snippets/10A-ajax-bridge.php` | Filter required WP capability for schedule AJAX |
 | `cad_scheduler_health` | `snippets/10A-ajax-bridge.php` | Filter health-check issues (diagnostics) |
 | `cad_scheduler_diagnostics_enabled` | `snippets/10A-ajax-bridge.php` | Show diagnostic panel when install is healthy |
+| `cad_scheduler_validation_mode_enabled` | `snippets/10A-ajax-bridge.php` | Show appointment ID overlay on blocks (default `false`); see [Sprint 1.7](sprint-1.7-live-validation.md) |
 | `wp_ajax_cad_update_appointment` | `snippets/10A-ajax-bridge.php` | CAD update stub (future) |
 
 ---
