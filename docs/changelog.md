@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.0.0] — Planned (Sprint 3.0 Studio Operations)
+
+Planning kickoff only — **not shipped**. See [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md).
+
+### Planned
+
+- **P0 Undo** — Brief confirmation with Undo for status / drag / delete ([#2](https://github.com/CAD-Support/cad-scheduler/issues/2))
+- **P1 Drag & Drop** — Move across tables/time; Bookly save; conflicts; revert on failure ([#3](https://github.com/CAD-Support/cad-scheduler/issues/3))
+- **P2 Quick Add** — Click empty slot → create appointment via Bookly ([#4](https://github.com/CAD-Support/cad-scheduler/issues/4))
+- **P3 Lightspeed customer lookup** — Search LS on create; Bookly fallback ([#5](https://github.com/CAD-Support/cad-scheduler/issues/5))
+- **P4 Live Refresh** — Periodic reload preserving scroll, date, filters ([#6](https://github.com/CAD-Support/cad-scheduler/issues/6))
+- **P5 Filters** — Toolbar: Reservations, Birthdays, Events, Paid, Arrived, No Show ([#7](https://github.com/CAD-Support/cad-scheduler/issues/7))
+
+### Notes
+
+- Implementation has **not** started; `cad_update_appointment` remains a stub until P1
+- Permanent logic stays in `src/` (+ additive Provider/Repository); bridge stays enqueue/AJAX bootstrap only
+
 ## [2.6.0] — 2026-07-27
 
 ### Fixed

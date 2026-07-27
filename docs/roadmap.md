@@ -2,11 +2,11 @@
 
 ## Phase 1 — Foundation
 
-- [ ] AJAX bridge snippet (`10A-ajax-bridge.php`)
-- [ ] Core module: config, state, Bookly API wrapper
-- [ ] Basic multi-table calendar grid (read-only)
+- [x] AJAX bridge snippet (`10A-ajax-bridge.php`)
+- [x] Core module: config, state, Bookly API wrapper
+- [x] Basic multi-table calendar grid (read-only)
 
-## Phase 2 — Editing
+## Phase 2 — Editing / Calendar UX (Sprints 2.1–2.6)
 
 - [x] Calendar date navigation (Previous / Today / Next / picker) — Sprint 2.1
 - [x] Scrollable calendar (sticky headers / time labels, horizontal overflow) — Sprint 2.2
@@ -16,11 +16,26 @@
 - [x] Service-aware appointment popover + normalized model — Sprint 2.5
 - [x] All visible Bookly resources as calendar columns — Sprint 2.5.1
 - [x] Scheduler UX polish (cards + popover + shared badges) — Sprint 2.6
-- [ ] Inline appointment editor
-- [ ] Drag-and-drop rescheduling
-- [ ] Conflict detection across tables
+- [ ] Inline appointment editor (partially superseded by Sprint 3 Quick Add / popover status)
+- [ ] Drag-and-drop rescheduling — **Sprint 3.0 P1**
+- [ ] Conflict detection across tables — **Sprint 3.0 P1**
 
-## Phase 3 — Studio Features
+## Sprint 3.0 — Studio Operations (planned)
+
+Make CAD the primary day-to-day scheduling UI. Planning doc: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md).
+
+| Priority | Item | Issue | Status |
+|----------|------|-------|--------|
+| **P0** | Undo (status / drag / delete) | [#2](https://github.com/CAD-Support/cad-scheduler/issues/2) | Planned |
+| **P1** | Drag & drop reschedule + Bookly save + conflicts | [#3](https://github.com/CAD-Support/cad-scheduler/issues/3) | Planned |
+| **P2** | Quick Add from empty slot | [#4](https://github.com/CAD-Support/cad-scheduler/issues/4) | Planned |
+| **P3** | Lightspeed customer lookup on create | [#5](https://github.com/CAD-Support/cad-scheduler/issues/5) | Planned |
+| **P4** | Live refresh (preserve scroll / date / filters) | [#6](https://github.com/CAD-Support/cad-scheduler/issues/6) | Planned |
+| **P5** | Toolbar filters (type + status) | [#7](https://github.com/CAD-Support/cad-scheduler/issues/7) | Planned |
+
+**Implementation has not started.**
+
+## Phase 3 — Studio Features (later)
 
 - [ ] Per-table availability rules
 - [ ] Staff assignment per table
