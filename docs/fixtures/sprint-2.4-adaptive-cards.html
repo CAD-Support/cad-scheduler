@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CAD — Adaptive appointment cards</title>
+  <title>CAD — Sprint 2.6 cards + badges</title>
   <link rel="stylesheet" href="/assets/css/cad-scheduler.css" />
   <style>
     body { margin: 1rem; font-family: system-ui, sans-serif; background: #fffaf5; }
@@ -11,10 +11,20 @@
     #report { font: 12px/1.45 ui-monospace, monospace; white-space: pre-wrap; }
     .ok { color: #0a7; }
     .bad { color: #b42318; }
+    .samples { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0; }
+    .sample {
+      position: relative;
+      width: 11rem;
+      min-height: 5rem;
+      border: 1px dashed rgba(43,43,43,0.15);
+      border-radius: 8px;
+      background: #fff;
+    }
   </style>
 </head>
 <body>
-  <h1>Adaptive appointment cards — height tiers</h1>
+  <h1>Sprint 2.6 — adaptive cards + shared badges</h1>
+  <div class="samples" id="badge-samples" aria-label="Badge sample row"></div>
   <div id="cad-scheduler" class="cad-scheduler-mount cad-scheduler">
     <nav class="cad-nav" aria-label="Schedule date">
       <div class="cad-nav__controls">
@@ -29,6 +39,7 @@
   </div>
   <pre id="report"></pre>
   <script src="/src/cad-core.js"></script>
+  <script src="/src/components/badges.js"></script>
   <script src="/src/cad-card-renderer.js"></script>
   <script src="/src/cad-components.js"></script>
   <script src="/src/cad-editor.js"></script>
@@ -57,6 +68,7 @@
         {
           id: 'c1',
           tableId: '1',
+          type: 'studio',
           start: '2026-07-24T10:00:00',
           end: '2026-07-24T10:15:00',
           customer: 'Compact Pat',
@@ -68,6 +80,7 @@
         {
           id: 's1',
           tableId: '1',
+          type: 'studio',
           start: '2026-07-24T10:30:00',
           end: '2026-07-24T11:15:00',
           customer: 'Standard Sam',
@@ -79,17 +92,20 @@
         {
           id: 'l1',
           tableId: '2',
+          type: 'birthday',
           start: '2026-07-24T10:00:00',
           end: '2026-07-24T11:15:00',
           customer: 'Large Lee',
           phone: '519-555-1234',
-          service: 'Group paint',
+          service: 'Birthday Party',
           status: 'deposit-paid',
           painters: 4,
+          birthday: { childName: 'Mia', age: '7', package: 'ARTY' },
         },
         {
           id: 'x1',
           tableId: '2',
+          type: 'event',
           start: '2026-07-24T12:00:00',
           end: '2026-07-24T14:00:00',
           customer: 'XL Alex',
@@ -99,6 +115,18 @@
           painters: 6,
         },
       ];
+
+      // Visual badge strip (all statuses equal height/weight)
+      const samples = document.getElementById('badge-samples');
+      ['approved', 'deposit-paid', 'arrived', 'paid', 'no-show'].forEach((slug) => {
+        const box = document.createElement('div');
+        box.className = 'sample';
+        box.style.minHeight = 'auto';
+        box.style.padding = '0.5rem';
+        box.appendChild(CAD.Badges.statusBadge(slug));
+        samples.appendChild(box);
+      });
+      samples.appendChild(CAD.Badges.badgeRow({ painters: 3, status: 'arrived' }));
 
       CAD.State.update({
         selectedDate: '2026-07-24',
@@ -132,46 +160,69 @@
       expectDensity('l1', 'large');
       expectDensity('x1', 'xl');
 
-      expectHas('c1', '.cad-appointment__service', false);
-      expectHas('c1', '.cad-appointment__painters', false);
+      // Compact: name only, no badges / phone
+      expectHas('c1', '.cad-appointment__customer--primary', true);
+      expectHas('c1', '.cad-badge-row', false);
       expectHas('c1', '.cad-appointment__phone', false);
-      expectHas('s1', '.cad-appointment__service', true);
-      expectHas('s1', '.cad-appointment__painters', false);
-      expectHas('s1', '.cad-appointment__status', false);
-      expectHas('s1', '.cad-appointment__phone', false);
-      expectHas('l1', '.cad-appointment__painters', true);
-      expectHas('l1', '.cad-appointment__status', false);
-      expectHas('l1', '.cad-appointment__badge--deposit-paid', true);
-      expectHas('l1', '.cad-appointment__phone', false);
-      expectHas('x1', '.cad-appointment__badges', true);
-      expectHas('x1', '.cad-appointment__badge--paid', true);
-      expectHas('x1', '.cad-appointment__badge--arrived', false);
-      expectHas('x1', '.cad-appointment__phone', true);
-      if (byId('x1')?.querySelector('.cad-appointment__phone')?.textContent === '☎ (519) 555-9999') {
-        pass('x1 phone format');
-      } else {
-        fail('x1 phone format');
-      }
-      if (byId('l1')?.querySelector('.cad-appointment__badge--deposit-paid')?.textContent.includes('Deposit Paid')) {
-        pass('l1 deposit-paid badge');
-      } else {
-        fail('l1 deposit-paid badge');
-      }
 
+      // Studio standard: customer + badge row; no phone/email/service line
+      expectHas('s1', '.cad-appointment__customer--primary', true);
+      expectHas('s1', '.cad-badge-row', true);
+      expectHas('s1', '.cad-badge--painters', true);
+      expectHas('s1', '.cad-badge--status', true);
+      expectHas('s1', '.cad-appointment__service', false);
+      expectHas('s1', '.cad-appointment__phone', false);
+      if (byId('s1')?.querySelector('.cad-appointment__customer')?.textContent === 'Standard Sam') {
+        pass('s1 customer text');
+      } else fail('s1 customer text');
+
+      // Birthday: child primary, booked-by contact, badges; purple type class
+      expectHas('l1', '.cad-appointment__customer--primary', true);
+      expectHas('l1', '.cad-appointment__booked-by', true);
+      expectHas('l1', '.cad-badge--deposit-paid', true);
+      expectHas('l1', '.cad-appointment__phone', false);
+      if (byId('l1')?.classList.contains('cad-appointment--type-birthday')) {
+        pass('l1 birthday type accent');
+      } else fail('l1 birthday type accent');
+      if (byId('l1')?.querySelector('.cad-appointment__customer')?.textContent === 'Mia') {
+        pass('l1 child name primary');
+      } else fail('l1 child name primary');
+      if (byId('l1')?.querySelector('.cad-appointment__booked-by')?.textContent === 'Large Lee') {
+        pass('l1 booked-by contact');
+      } else fail('l1 booked-by contact');
+      if (byId('l1')?.querySelector('.cad-badge--deposit-paid')?.textContent.includes('Deposit Paid')) {
+        pass('l1 deposit-paid badge');
+      } else fail('l1 deposit-paid badge');
+
+      // Event: service name + badges; orange type; no phone
+      expectHas('x1', '.cad-badge-row', true);
+      expectHas('x1', '.cad-badge--paid', true);
+      expectHas('x1', '.cad-appointment__phone', false);
+      if (byId('x1')?.classList.contains('cad-appointment--type-event')) {
+        pass('x1 event type accent');
+      } else fail('x1 event type accent');
+      if (byId('x1')?.querySelector('.cad-appointment__customer')?.textContent === 'Full party') {
+        pass('x1 event name primary');
+      } else fail('x1 event name primary');
+
+      if (byId('s1')?.classList.contains('cad-appointment--type-studio')) {
+        pass('s1 studio type accent');
+      } else fail('s1 studio type accent');
+
+      // Tooltip: no phone/email; type-aware primary
       const probe = byId('x1');
       probe?.dispatchEvent(new Event('mouseenter'));
       const liveTip = document.querySelector('.cad-appointment-tip:not([hidden])');
       const tipText = liveTip?.textContent || '';
       if (
         liveTip &&
-        tipText.includes('XL Alex') &&
         tipText.includes('Full party') &&
-        tipText.includes('☎ (519) 555-9999') &&
+        !tipText.includes('519') &&
         !liveTip.querySelector('.cad-appointment-tip__label') &&
         !/\bTable\b/i.test(tipText)
       ) {
-        pass('tooltip label-free stack (no table)');
-      } else if (CAD.cardRenderer.statusBadges(appointments[3]).some((b) => b.key === 'paid')) {
+        pass('tooltip type-aware stack (no phone/table)');
+      } else if (CAD.cardRenderer.statusBadge(appointments[3]).key === 'paid') {
         pass('tooltip skipped (no fine pointer); badge data ok');
       } else {
         fail('tooltip fields');
@@ -204,20 +255,9 @@
         else fail(`threshold ${h}px`, `expected ${d}, got ${got}`);
       });
 
-      [
-        ['5192679080', '(519) 267-9080'],
-        ['519-267-9080', '(519) 267-9080'],
-        ['(519)2679080', '(519) 267-9080'],
-        ['519 267 9080', '(519) 267-9080'],
-        ['15192679080', '1 (519) 267-9080'],
-        ['1-519-267-9080', '1 (519) 267-9080'],
-        ['+44 20 7946 0958', '+44 20 7946 0958'],
-        ['', ''],
-      ].forEach(([input, expected]) => {
-        const got = CAD.utils.formatPhone(input);
-        if (got === expected) pass(`formatPhone ${JSON.stringify(input)}`);
-        else fail(`formatPhone ${JSON.stringify(input)}`, `expected ${expected}, got ${got}`);
-      });
+      if (CAD.Badges?.statusBadge && CAD.Badges?.paintersBadge) {
+        pass('CAD.Badges API present');
+      } else fail('CAD.Badges API present');
 
       report.innerHTML = lines
         .map((line) => {

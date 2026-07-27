@@ -9,9 +9,9 @@
   if (!CAD) throw new Error('cad-core.js must be loaded before components/status-panel.js');
 
   const STATUS_ACTIONS = Object.freeze([
-    { slug: 'approved', icon: '✓', label: 'Confirmed' },
+    { slug: 'approved', icon: '🟢', label: 'Approved' },
     { slug: 'deposit-paid', icon: '💰', label: 'Deposit Paid' },
-    { slug: 'arrived', icon: '🟢', label: 'Arrived' },
+    { slug: 'arrived', icon: '✅', label: 'Arrived' },
     { slug: 'paid', icon: '💲', label: 'Paid' },
     { slug: 'no-show', icon: '❌', label: 'No Show' },
   ]);

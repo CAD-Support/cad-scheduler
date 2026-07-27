@@ -1,5 +1,5 @@
 /**
- * Event renderer placeholder (appointment.type === 'event').
+ * Event renderer — sectioned popover body (Sprint 2.6).
  * @module renderers/event-renderer
  */
 (function (global) {
@@ -19,15 +19,25 @@
      */
     render(appointment) {
       const body = document.createDocumentFragment();
-      body.appendChild(H.el('div', 'cad-popover__eyebrow', 'Event'));
-      H.appendIdentity(body, appointment);
-      if (appointment.service) {
-        body.appendChild(H.el('div', 'cad-popover__service', appointment.service));
-      }
-      H.appendDivider(body);
-      body.appendChild(H.el('div', 'cad-popover__line', H.paintersLabel(appointment)));
-      H.appendDivider(body);
-      H.appendField(body, 'Status', H.statusLine(appointment));
+
+      H.appendBookedBy(body, appointment);
+
+      H.appendSection(body, 'Event Details', '📅', (section) => {
+        let any = false;
+        if (appointment.service) {
+          any = H.appendField(section, 'Service', appointment.service, '🖌') || any;
+        }
+        any =
+          H.appendField(
+            section,
+            'Time',
+            H.formatTimeRange(appointment),
+            '🕒'
+          ) || any;
+        any = H.appendAttendance(section, appointment, { showTotalAttending: true }) || any;
+        return any;
+      });
+
       return {
         title: appointment.service || 'Event',
         body,

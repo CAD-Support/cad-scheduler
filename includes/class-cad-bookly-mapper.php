@@ -22,16 +22,24 @@ if ( class_exists( 'CAD_Bookly_Mapper', false ) ) {
 
 class CAD_Bookly_Mapper {
 
+	/**
+	 * Map Bookly staff rows to CAD table columns.
+	 * Preserves repository order (Bookly position). Output is { id, name } only.
+	 *
+	 * @param array $rows Staff rows from the repository.
+	 * @return array<int, array{id: string, name: string}>
+	 */
 	public function map_staff_tables( array $rows ) {
 		$tables = array();
 		foreach ( $rows as $row ) {
 			$id = (string) ( $row['id'] ?? '' );
-			if ( $id ) {
-				$tables[] = array(
-					'id'   => $id,
-					'name' => (string) ( $row['full_name'] ?? '' ),
-				);
+			if ( '' === $id ) {
+				continue;
 			}
+			$tables[] = array(
+				'id'   => $id,
+				'name' => (string) ( $row['full_name'] ?? '' ),
+			);
 		}
 		return $tables;
 	}

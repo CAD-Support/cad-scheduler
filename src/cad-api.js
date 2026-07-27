@@ -61,6 +61,27 @@
         status,
       });
     },
+
+    /**
+     * Pipeline dump with plain-text summary.
+     * Prints the report (including UI column count when the grid is present).
+     */
+    async debugStaffPipeline() {
+      const result = await api.request('cad_debug_staff_pipeline');
+      const payload = result?.data || {};
+      const report = payload.report || payload;
+      const uiCount = document.querySelectorAll('.cad-matrix__table-label').length;
+      if (CAD.StaffPipelineReport?.finalize) {
+        const { summary } = CAD.StaffPipelineReport.finalize(report, uiCount);
+        CAD.StaffPipelineReport.show(summary);
+        return { ...result, data: { ...payload, summary, report } };
+      }
+      if (payload.summary) {
+        // eslint-disable-next-line no-console
+        console.warn(payload.summary);
+      }
+      return result;
+    },
   });
 
   CAD.API = api;

@@ -206,7 +206,8 @@ If appointment timing is wrong on the grid, inspect in that order: repository SQ
 
 **CAD aligned with Bookly:**
 
-- Staff query excludes `archive` only (includes `public` and `private`) — `includes/class-cad-bookly-repository.php`
+- Staff query excludes `archive` only (includes `public` and `private`; NULL/empty treated as visible) — `includes/class-cad-bookly-repository.php`
+- Staff columns ordered by Bookly `position` — same file; see [Sprint 2.5.1](sprint-2.5.1-all-bookly-resources.md)
 - Appointment end time — see [End Time Calculation](#end-time-calculation) above
 
 ---

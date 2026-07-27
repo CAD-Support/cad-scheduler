@@ -1,6 +1,5 @@
 /**
- * Studio reservation renderer (appointment.type === 'studio').
- * Fallback for unknown appointment types.
+ * Studio reservation renderer — sectioned popover body (Sprint 2.6).
  * @module renderers/reservation-renderer
  */
 (function (global) {
@@ -20,15 +19,25 @@
      */
     render(appointment) {
       const body = document.createDocumentFragment();
-      body.appendChild(H.el('div', 'cad-popover__eyebrow', 'Studio Reservation'));
-      H.appendIdentity(body, appointment);
-      if (appointment.service) {
-        body.appendChild(H.el('div', 'cad-popover__service', appointment.service));
-      }
-      H.appendDivider(body);
-      body.appendChild(H.el('div', 'cad-popover__line', H.paintersLabel(appointment)));
-      H.appendDivider(body);
-      H.appendField(body, 'Status', H.statusLine(appointment));
+
+      H.appendBookedBy(body, appointment);
+
+      H.appendSection(body, 'Reservation Details', '🪑', (section) => {
+        let any = false;
+        if (appointment.service) {
+          any = H.appendField(section, 'Service', appointment.service, '🖌') || any;
+        }
+        any =
+          H.appendField(
+            section,
+            'Time',
+            H.formatTimeRange(appointment),
+            '🕒'
+          ) || any;
+        any = H.appendAttendance(section, appointment) || any;
+        return any;
+      });
+
       return {
         title: 'Studio Reservation',
         body,

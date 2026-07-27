@@ -252,6 +252,66 @@
   }
 
   /**
+   * Pin column tracks with a literal repeat count (not only --cad-table-count).
+   * Some WP/browser combos drop `repeat(var(--n), …)` while still painting ~7 auto tracks.
+   * @param {HTMLElement} el
+   * @param {number} tableCount
+   */
+  function applyColumnTracks(el, tableCount) {
+    const n = Math.max(0, Number(tableCount) || 0);
+    el.style.setProperty('--cad-table-count', String(n));
+    el.style.display = 'grid';
+    el.style.alignItems = 'start';
+    el.style.gridTemplateColumns =
+      `var(--cad-time-width) repeat(${n}, minmax(var(--cad-col-min), 1fr))`;
+    el.style.minWidth =
+      `max(100%, calc(var(--cad-time-width) + (${n} * var(--cad-col-min))))`;
+  }
+
+  /**
+   * TEMP DEBUG Sprint 2.5.1 — remove after live column-count verified
+   * @param {HTMLElement} head
+   * @param {HTMLElement} body
+   * @param {number} tableCount
+   * @param {Array<{ id: string, name: string }>} tables
+   */
+  function debugColumnCounts(head, body, tableCount, tables) {
+    const headerCount = head.querySelectorAll('.cad-matrix__table-label').length;
+    const bodyColumnCount = body.querySelectorAll(':scope > .cad-matrix__lane').length;
+    console.log(
+      'Rendering columns:',
+      tables.map((t) => t && t.name)
+    );
+    console.log('Header DOM nodes:', headerCount);
+    console.log('Body column DOM nodes:', bodyColumnCount);
+    console.log('TEMP DEBUG --cad-table-count:', String(tableCount));
+    try {
+      console.log(
+        'TEMP DEBUG gridTemplateColumns:',
+        getComputedStyle(head).gridTemplateColumns
+      );
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  /**
+   * Active resource columns: prefer latest schedule State; Config only as fallback.
+   * @returns {Array<{ id: string, name: string }>}
+   */
+  function resolveTables() {
+    const stateTables = CAD.State.get('tables');
+    if (Array.isArray(stateTables) && stateTables.length > 0) {
+      return stateTables;
+    }
+    const configTables = CAD.Config.get('tables');
+    if (Array.isArray(configTables) && configTables.length > 0) {
+      return configTables;
+    }
+    return Array.isArray(stateTables) ? stateTables : [];
+  }
+
+  /**
    * @param {Array<{ id: string, name: string }>} tables
    * @returns {HTMLElement}
    */
@@ -367,7 +427,8 @@
         return;
       }
 
-      const tables = CAD.Config.get('tables') ?? [];
+      // Always rebuild from State after schedule load; Config only if State empty.
+      const tables = resolveTables();
       const stateAppointments = CAD.State.get('appointments');
       const appointments = Array.isArray(stateAppointments) ? stateAppointments : [];
       const metrics = gridMetrics(appointments);
@@ -389,10 +450,20 @@
       scroll.tabIndex = 0;
       scroll.setAttribute('role', 'region');
       scroll.setAttribute('aria-label', 'Studio schedule');
+      scroll.style.maxWidth = '100%';
+      scroll.style.overflowX = 'auto';
+      scroll.style.overflowY = 'auto';
       applyGridVariables(scroll, metrics, tables.length);
-      scroll.append(buildHeaderRow(tables), buildBodyRow(tables, appointments, metrics));
 
+      const head = buildHeaderRow(tables);
+      const body = buildBodyRow(tables, appointments, metrics);
+      applyColumnTracks(head, tables.length);
+      applyColumnTracks(body, tables.length);
+
+      scroll.append(head, body);
       container.appendChild(scroll);
+      // TEMP DEBUG Sprint 2.5.1 — remove after live column-count verified
+      debugColumnCounts(head, body, tables.length, tables);
       CAD.editor?.bind(container);
     },
   };

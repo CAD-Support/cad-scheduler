@@ -184,6 +184,19 @@
   margin-top: 0.35rem;
 }
 
+.cad-staff-pipeline-report {
+  margin: 0.75rem 0 1rem;
+  padding: 0.85rem 1rem;
+  max-height: 22rem;
+  overflow: auto;
+  border: 1px solid #7a5c00;
+  border-radius: var(--cad-radius, 6px);
+  background: #fff8e6;
+  color: #3d2e00;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
 .cad-matrix__empty {
   padding: 2rem;
   text-align: center;
@@ -203,6 +216,7 @@
 .cad-scheduler__calendar,
 .cad-matrix {
   min-width: 0;
+  max-width: 100%;
   width: 100%;
 }
 
@@ -210,6 +224,8 @@
 .cad-matrix__scroll {
   --cad-time-width: 4.5rem;
   --cad-col-min: 9rem;
+  /* Fallback only — JS sets the live count on every rebuild */
+  --cad-table-count: 1;
   --cad-z-lane: 0;
   --cad-z-times: 3;
   --cad-z-head: 4;
@@ -218,6 +234,7 @@
   box-sizing: border-box;
   display: block;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   /* Explicit height (not max-height alone) so WP flex/grid parents cannot grow this with content */
   height: var(--cad-scroll-height);
@@ -242,6 +259,8 @@
  * Shared track: grow with the viewport when few tables, but never compress
  * below --cad-col-min (horizontal scroll kicks in for many tables).
  * align-items: start keeps sticky grid items from stretch-breaking in Safari.
+ * JS also pins grid-template-columns with a literal repeat(N) on head/body so
+ * live CDN CSS that only uses repeat(var(--cad-table-count)) cannot stall at 7.
  */
 .cad-matrix__head,
 .cad-matrix__body {
@@ -364,7 +383,7 @@
   pointer-events: auto;
 }
 
-/* Appointment blocks — fully opaque (Sprint 2.4.1); grid never shows through */
+/* Appointment blocks — fully opaque (Sprint 2.4.1); type accent (Sprint 2.6) */
 .cad-appointment {
   position: absolute;
   z-index: 1;
@@ -377,15 +396,31 @@
   padding: 0.35rem 0.5rem;
   overflow: hidden;
   border: none;
-  border-left: 3px solid var(--cad-teal);
+  border-left: 3px solid var(--cad-type-accent, var(--cad-teal));
   border-radius: 8px;
-  /* Solid hex only — no alpha, no backdrop-filter */
   background-color: #ffffff;
-  background-image: linear-gradient(180deg, #ffffff 0%, #d9f0f2 100%);
+  background-image: linear-gradient(180deg, #ffffff 0%, var(--cad-type-wash, #d9f0f2) 100%);
   box-shadow: var(--cad-shadow);
   text-align: left;
   cursor: pointer;
   transition: box-shadow 0.15s ease;
+  --cad-type-accent: var(--cad-teal);
+  --cad-type-wash: #d9f0f2;
+}
+
+.cad-appointment--type-studio {
+  --cad-type-accent: var(--cad-teal);
+  --cad-type-wash: #d9f0f2;
+}
+
+.cad-appointment--type-birthday {
+  --cad-type-accent: var(--cad-purple);
+  --cad-type-wash: #f0e6f5;
+}
+
+.cad-appointment--type-event {
+  --cad-type-accent: var(--cad-orange);
+  --cad-type-wash: #fde8d8;
 }
 
 .cad-appointment:hover {
@@ -404,7 +439,7 @@
 .cad-appointment__time {
   font-size: 0.625rem;
   font-weight: 600;
-  color: var(--cad-teal);
+  color: var(--cad-type-accent, var(--cad-teal));
   text-transform: uppercase;
 }
 
@@ -412,6 +447,22 @@
   font-size: 0.8125rem;
   font-weight: 700;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Primary name (child / customer / event) — largest line on the card */
+.cad-appointment__customer--primary {
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.cad-appointment__booked-by {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--cad-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -456,44 +507,77 @@
   text-overflow: ellipsis;
 }
 
+/* Shared badges (Sprint 2.6 Final) — cards + popover */
+.cad-badge-row,
 .cad-appointment__badges {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 0.15rem;
-  margin-top: 0.05rem;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+  max-width: 100%;
 }
 
-.cad-appointment__badge {
+.cad-badge {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
-  gap: 0.1rem;
-  padding: 0.02rem 0.22rem;
-  border-radius: 3px;
-  font-size: 0.5rem;
+  justify-content: center;
+  gap: 0.2rem;
+  height: 1.35rem;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1;
   white-space: nowrap;
-  background: #e8f6f7;
-  color: var(--cad-muted);
+  vertical-align: middle;
 }
 
-.cad-appointment__badge--arrived {
-  background: #e8f6f7;
+/* Secondary — painter count */
+.cad-badge--painters {
+  min-width: 2.5rem;
+  background: #eef2f4;
+  color: var(--cad-ink);
+  font-weight: 600;
+  opacity: 0.92;
 }
 
-.cad-appointment__badge--no-show {
-  background: #f8e8e7;
-  color: #8a3a32;
+/* Primary — status (equal metrics for every label) */
+.cad-badge--status {
+  min-width: 5.75rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 0 0 1px rgba(43, 43, 43, 0.08);
+  background: #d4eef1;
+  color: #007a82;
 }
 
-.cad-appointment__badge--paid {
-  background: #e5f5ef;
-  color: #2a6b55;
+.cad-badge--approved,
+.cad-badge--confirmed {
+  background: #d4eef1;
+  color: #007a82;
 }
 
-.cad-appointment__badge--deposit-paid {
-  background: #f5f0e0;
-  color: #6b5a2a;
+.cad-badge--arrived {
+  background: #c8f0d8;
+  color: #146b3a;
+}
+
+.cad-badge--no-show {
+  background: #f5d4d1;
+  color: #8a2e26;
+}
+
+.cad-badge--paid {
+  background: #c9ebd9;
+  color: #1f5c45;
+}
+
+.cad-badge--deposit-paid {
+  background: #f3e4b8;
+  color: #6b5218;
 }
 
 .cad-appointment__status {
@@ -590,7 +674,9 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  width: min(22rem, 100%);
+  /* Fixed presentation width (~350px); shrink only on narrow viewports */
+  width: 350px;
+  max-width: 100%;
   max-height: min(90vh, 40rem);
   overflow: hidden;
   border: 1px solid var(--cad-border);
@@ -600,22 +686,38 @@
   opacity: 1;
 }
 
-.cad-popover__header {
+/* Type ribbon — Crock A Doodle accents (replaces plain header) */
+.cad-popover__ribbon {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   flex-shrink: 0;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid var(--cad-border);
-  background: #ffffff;
+  min-height: 2.75rem;
+  padding: 0.7rem 0.85rem 0.7rem 1rem;
+  border-bottom: 1px solid transparent;
+  background: var(--cad-teal);
+  color: #ffffff;
 }
 
-.cad-popover__title {
+.cad-popover__ribbon[data-type='studio'] {
+  background: var(--cad-teal);
+}
+
+.cad-popover__ribbon[data-type='birthday'] {
+  background: var(--cad-purple);
+}
+
+.cad-popover__ribbon[data-type='event'] {
+  background: var(--cad-orange);
+}
+
+.cad-popover__ribbon-label {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 700;
-  color: var(--cad-purple);
+  line-height: 1.25;
+  color: inherit;
 }
 
 .cad-popover__close {
@@ -624,7 +726,7 @@
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--cad-ink);
+  color: inherit;
   font: inherit;
   font-size: 1.5rem;
   line-height: 1;
@@ -632,24 +734,56 @@
 }
 
 .cad-popover__close:hover {
-  background: color-mix(in srgb, #fff 70%, var(--cad-purple) 30%);
-  color: var(--cad-purple);
+  background: rgba(255, 255, 255, 0.22);
+  color: inherit;
 }
 
 .cad-popover__body,
 .cad-popover__footer {
-  padding: 0.85rem 1rem;
+  padding: 0.75rem 1rem 1rem;
   background: #ffffff;
 }
 
 .cad-popover__body {
   overflow: auto;
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
 .cad-popover__footer {
   flex-shrink: 0;
   border-top: 1px solid var(--cad-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.cad-popover__section {
+  margin: 0;
+  padding: 0;
+}
+
+.cad-popover__section-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cad-muted);
+}
+
+.cad-popover__section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cad-popover__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
 }
 
 .cad-popover__eyebrow {
@@ -660,11 +794,11 @@
 }
 
 .cad-popover__customer {
-  font-size: 1.125rem;
+  font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.25;
   color: var(--cad-ink);
-  margin-bottom: 0.25rem;
+  margin: 0;
 }
 
 .cad-popover__line,
@@ -675,7 +809,12 @@
   font-weight: 400;
   line-height: 1.35;
   color: var(--cad-ink);
-  margin: 0.15rem 0;
+  margin: 0;
+}
+
+.cad-popover__field-value--lg {
+  font-size: 1.125rem;
+  font-weight: 700;
 }
 
 .cad-popover__service {
@@ -683,7 +822,6 @@
 }
 
 .cad-popover__field-label {
-  margin-top: 0.55rem;
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -695,6 +833,11 @@
   border: 0;
   border-top: 1px solid var(--cad-border);
   margin: 0.75rem 0;
+}
+
+.cad-popover__section-body > .cad-badge {
+  align-self: flex-start;
+  margin-bottom: 0.35rem;
 }
 
 .cad-popover__statuses {
@@ -724,6 +867,49 @@
   border-color: var(--cad-teal);
   background: #e8f6f7;
   color: var(--cad-teal);
+}
+
+.cad-popover__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.cad-popover__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--cad-border);
+  background: #ffffff;
+  color: var(--cad-ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cad-popover__action--edit {
+  border-color: color-mix(in srgb, var(--cad-orange) 55%, var(--cad-border));
+  background: color-mix(in srgb, #fff 85%, var(--cad-orange) 15%);
+  color: var(--cad-purple);
+}
+
+.cad-popover__action--edit:hover {
+  border-color: var(--cad-orange);
+}
+
+.cad-popover__action--delete {
+  border-color: color-mix(in srgb, #b42318 35%, var(--cad-border));
+  color: #8a3a32;
+}
+
+.cad-popover__action--delete:hover {
+  border-color: #b42318;
+  background: #fef3f2;
 }
 
 .cad-popover__bookly {
@@ -764,6 +950,7 @@
 
   .cad-popover__panel {
     width: 100%;
+    max-width: 100%;
     max-height: 92vh;
   }
 }

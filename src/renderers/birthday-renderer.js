@@ -1,5 +1,5 @@
 /**
- * Birthday party renderer (appointment.type === 'birthday').
+ * Birthday party renderer — sectioned popover body (Sprint 2.6).
  * @module renderers/birthday-renderer
  */
 (function (global) {
@@ -31,27 +31,42 @@
           ? appointment.birthday
           : {};
 
-      body.appendChild(H.el('div', 'cad-popover__eyebrow', '🎂 Birthday Party'));
-      H.appendIdentity(body, appointment);
-      H.appendDivider(body);
-
-      if (bday.childName || ageDisplay(bday.age)) {
-        body.appendChild(H.el('div', 'cad-popover__field-label', 'Birthday Child'));
+      H.appendSection(body, 'Child', '🎂', (section) => {
+        let any = false;
         if (bday.childName) {
-          body.appendChild(
-            H.el('div', 'cad-popover__field-value', String(bday.childName))
+          section.appendChild(
+            H.el('div', 'cad-popover__field-value cad-popover__field-value--lg', String(bday.childName))
           );
+          any = true;
         }
         const ageText = ageDisplay(bday.age);
         if (ageText) {
-          body.appendChild(H.el('div', 'cad-popover__line', ageText));
+          section.appendChild(H.el('div', 'cad-popover__line', ageText));
+          any = true;
         }
-      }
+        return any;
+      });
 
-      H.appendField(body, 'Package', bday.package);
-      body.appendChild(H.el('div', 'cad-popover__line', H.paintersLabel(appointment)));
-      H.appendDivider(body);
-      H.appendField(body, 'Status', H.statusLine(appointment));
+      H.appendBookedBy(body, appointment);
+
+      H.appendSection(body, 'Party Details', '🎉', (section) => {
+        let any = false;
+        if (appointment.service) {
+          any = H.appendField(section, 'Service', appointment.service, '🖌') || any;
+        }
+        any =
+          H.appendField(
+            section,
+            'Time',
+            H.formatTimeRange(appointment),
+            '🕒'
+          ) || any;
+        any = H.appendField(section, 'Package', bday.package, '📦') || any;
+        any =
+          H.appendAttendance(section, appointment, { showTotalAttending: true }) ||
+          any;
+        return any;
+      });
 
       return {
         title: 'Birthday Party',

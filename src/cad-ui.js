@@ -220,7 +220,22 @@
         if (result?.success === false) {
           throw new Error(result.data?.message || 'Failed to load schedule');
         }
-        CAD.State.set('appointments', result.data?.appointments ?? []);
+        const payload = result.data || {};
+        // Always rebuild columns from this schedule response — never keep a stale
+        // page-load cadConfig.tables list (CDN builds historically ignored data.tables).
+        if (Array.isArray(payload.tables)) {
+          const tables = payload.tables.slice();
+          CAD.Config.merge({ tables });
+          CAD.State.set('tables', tables);
+          // Some CDN builds read window.cadConfig.tables directly.
+          if (typeof window !== 'undefined' && window.cadConfig) {
+            window.cadConfig.tables = tables;
+          }
+        }
+        CAD.State.set('appointments', payload.appointments ?? []);
+        if (payload.staffPipeline) {
+          this._lastStaffPipeline = payload.staffPipeline;
+        }
       } catch (err) {
         if (isAbortError(err) || seq !== this._loadSeq) {
           return this;
@@ -231,9 +246,26 @@
         if (seq === this._loadSeq) {
           CAD.State.set('loading', false);
           this.render();
+          this.reportStaffPipeline();
         }
       }
 
+      return this;
+    },
+
+    /**
+     * When diagnostics are on, print a one-run staff pipeline summary (Bookly → UI).
+     */
+    reportStaffPipeline() {
+      if (!CAD.Config.get('diagnostics')) return this;
+      const pipeline = this._lastStaffPipeline;
+      if (!pipeline || !CAD.StaffPipelineReport) return this;
+
+      const uiCount = this.calendarEl
+        ? this.calendarEl.querySelectorAll('.cad-matrix__table-label').length
+        : 0;
+      const { summary } = CAD.StaffPipelineReport.finalize(pipeline, uiCount);
+      CAD.StaffPipelineReport.show(summary);
       return this;
     },
   };

@@ -57,6 +57,8 @@ assets/         Static assets (css, images)
 - [Sprint 2.4.1 — Card Readability](docs/sprint-2.4.1-card-readability.md)
 - [Sprint 2.5 — Normalized Appointment Model](docs/sprint-2.5-normalized-appointment-model.md)
 - [Sprint 2.5 — Appointment Popover](docs/sprint-2.5-appointment-popover.md)
+- [Sprint 2.5.1 — All Bookly Resources](docs/sprint-2.5.1-all-bookly-resources.md)
+- [Sprint 2.6 — Scheduler UX Polish](docs/sprint-2.6-ux-polish.md)
 
 ## Snippets
 

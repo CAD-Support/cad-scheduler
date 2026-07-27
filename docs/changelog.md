@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.6.0] — 2026-07-27
+
+### Fixed
+
+- **Column count from schedule payload** — rebuild headers/grid from `CAD.State.get('tables')` on every load (fixes stale 7-column `cadConfig` while AJAX returns 9); bridge replaces CDN `calendar.render` so live pins rebuild from State, not page-load Config
+- **Nine columns clipped to seven** — pin `grid-template-columns` with a literal `repeat(N, …)` on head/body (CDN `repeat(var(--cad-table-count))` + scrollport clipping could hide cols 8–9); bridge force-rebuild applies the same inline tracks for paste+refresh on 2.4.1
+
+### Changed
+
+- **Appointment cards** — max ~4 lines; birthday prioritizes child name; painter badge + dominant status badge; no phone/email; Crock A Doodle type accents (teal / purple / orange) ([Sprint 2.6](sprint-2.6-ux-polish.md))
+- **Shared badges** — `CAD.Badges` (`.cad-badge` / `--painters` / `--status`) used on cards, helpers, and popover; equal height/weight for every status label
+- **Popover** — colored type ribbon; fixed ~350px width; section order Type → Child → Booked By → Details → Status → Internal Notes → Actions; empty sections hidden
+
+### Notes
+
+- Presentation only — normalized appointment model and backend APIs unchanged
+- Leave WordPress `CAD_SCHEDULER_VERSION` at the live CDN pin until this tag is on jsDelivr
+
+## [2.5.1] — 2026-07-27
+
+### Fixed
+
+- **All visible Bookly resources as columns** — staff query excludes archived only (NULL-safe); order follows Bookly `position` ([Sprint 2.5.1](sprint-2.5.1-all-bookly-resources.md))
+- Schedule payload includes `tables` additively so columns refresh with each load (no hardcoded resource names)
+
+### Added
+
+- **Staff pipeline diagnostics** — plain-text summary (Bookly → UI counts, missing IDs/reasons, failing layer); panel + `CAD.API.debugStaffPipeline()`
+
+### Notes
+
+- Leave WordPress `CAD_SCHEDULER_VERSION` at the live CDN pin until this tag is on jsDelivr
+- Paste updated Repository / Mapper / Provider snippets for live QA
+
 ## [2.5.0] — 2026-07-27
 
 ### Added

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CAD — Sprint 2.5 normalized popover</title>
+  <title>CAD — Sprint 2.5/2.6 normalized popover</title>
   <link rel="stylesheet" href="/assets/css/cad-scheduler.css" />
   <style>
     body { margin: 1rem; font-family: system-ui, sans-serif; background: #fffaf5; }
@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Sprint 2.5 — normalized model + service-aware popover</h1>
+  <h1>Sprint 2.5/2.6 — normalized model + ribbon popover + badges</h1>
   <div id="cad-scheduler" class="cad-scheduler-mount cad-scheduler">
     <div class="cad-scheduler__status"></div>
     <div class="cad-scheduler__calendar" id="calendar-host"></div>
@@ -22,6 +22,7 @@
   <pre id="report"></pre>
   <script src="/src/cad-core.js"></script>
   <script src="/src/cad-api.js"></script>
+  <script src="/src/components/badges.js"></script>
   <script src="/src/cad-card-renderer.js"></script>
   <script src="/src/cad-components.js"></script>
   <script src="/src/renderers/helpers.js"></script>
@@ -116,27 +117,86 @@
       if (pop && !pop.hidden) pass('popover opens on select');
       else fail('popover opens on select');
 
-      if (/Birthday Child/i.test(bodyText) && /Emma/.test(bodyText) && /Turning 10/.test(bodyText)) {
+      if (/Child/i.test(bodyText) && /Emma/.test(bodyText) && /Turning 10/.test(bodyText)) {
         pass('birthday nest rendered by name');
       } else fail('birthday nest rendered by name', bodyText.slice(0, 200));
 
       if (/ARTY-Tile Package/.test(bodyText)) pass('package rendered');
       else fail('package rendered');
 
-      if (/\(519\) 267-9080/.test(bodyText) || /☎ \(519\) 267-9080/.test(document.querySelector('.cad-popover')?.innerText || '')) {
+      if (/Booked By/i.test(bodyText) && /Lindsey Mueller/.test(bodyText)) {
+        pass('booked by section');
+      } else fail('booked by section');
+
+      if (/\(519\) 267-9080/.test(document.querySelector('.cad-popover')?.innerText || '') ||
+          /☎ \(519\) 267-9080/.test(document.querySelector('.cad-popover')?.innerText || '')) {
         pass('phone formatted in popover');
       } else fail('phone formatted in popover');
+
+      if (/Painters/i.test(document.querySelector('.cad-popover')?.innerText || '')) {
+        pass('painters label');
+      } else fail('painters label');
 
       if (!/79073|Appointment ID|Table 2|json_data/i.test(document.querySelector('.cad-popover')?.innerText || '')) {
         pass('popover omits id/table/raw ids');
       } else fail('popover omits id/table/raw ids');
 
+      // Birthday ribbon + shared status badge
+      const bdayRibbon = document.querySelector('.cad-popover__ribbon');
+      const bdayRibbonLabel = document.querySelector('.cad-popover__ribbon-label')?.textContent || '';
+      if (
+        bdayRibbon?.dataset.type === 'birthday' &&
+        /Birthday Party/i.test(bdayRibbonLabel)
+      ) {
+        pass('birthday type ribbon');
+      } else fail('birthday type ribbon', bdayRibbonLabel);
+
+      if (document.querySelector('.cad-popover__footer .cad-badge--status')) {
+        pass('status uses CAD.Badges chip');
+      } else fail('status uses CAD.Badges chip');
+
+      if (/Internal Notes/i.test(document.querySelector('.cad-popover')?.innerText || '') &&
+          /Bring cake/.test(document.querySelector('.cad-popover')?.innerText || '')) {
+        pass('internal notes when present');
+      } else fail('internal notes when present');
+
       // Studio renderer
       CAD.editor.select('s1');
       const studioBody = document.querySelector('.cad-popover__body')?.innerText || '';
-      if (/Studio Reservation/.test(studioBody) && !/Birthday Child/.test(studioBody)) {
+      const studioRibbon = document.querySelector('.cad-popover__ribbon-label')?.textContent || '';
+      if (
+        /Studio Reservation/i.test(studioRibbon) &&
+        document.querySelector('.cad-popover__ribbon')?.dataset.type === 'studio' &&
+        !/Turning 10/.test(studioBody) &&
+        !/Emma/.test(studioBody)
+      ) {
         pass('studio layout for studio type');
       } else fail('studio layout');
+
+      if (!/Internal Notes/i.test(document.querySelector('.cad-popover')?.innerText || '')) {
+        pass('empty notes section hidden');
+      } else fail('empty notes section hidden');
+
+      if (bdayBtn?.classList.contains('cad-appointment--type-birthday')) {
+        pass('birthday type accent class');
+      } else fail('birthday type accent class');
+
+      if (studioBtn?.classList.contains('cad-appointment--type-studio')) {
+        pass('studio type accent class');
+      } else fail('studio type accent class');
+
+      if (
+        !studioBtn?.querySelector('.cad-appointment__phone') &&
+        studioBtn?.querySelector('.cad-badge-row')
+      ) {
+        pass('cards omit phone and show badges');
+      } else fail('cards omit phone and show badges');
+
+      const panel = document.querySelector('.cad-popover__panel');
+      const panelW = panel ? Math.round(panel.getBoundingClientRect().width) : 0;
+      if (panelW >= 340 && panelW <= 360) pass(`popover width ${panelW}px`);
+      else if (panelW > 0 && panelW <= 360) pass(`popover width ${panelW}px (narrow viewport)`);
+      else fail('popover width', String(panelW));
 
       // ESC closes
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));

@@ -29,20 +29,41 @@
         ? CAD.cardRenderer.densityForHeight(availableHeight)
         : 'standard';
 
+      const type = String(appointment.type || 'studio')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '');
+      const typeClass =
+        type === 'birthday' || type === 'event' ? type : 'studio';
+
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = `cad-appointment cad-appointment--${appointment.status || 'default'} cad-appointment--${density}`;
+      btn.className = [
+        'cad-appointment',
+        `cad-appointment--${appointment.status || 'default'}`,
+        `cad-appointment--${density}`,
+        `cad-appointment--type-${typeClass}`,
+      ].join(' ');
       if (validationMode) {
         btn.classList.add('cad-appointment--validation');
       }
       btn.dataset.id = appointment.id;
       btn.dataset.tableId = appointment.tableId;
+      btn.dataset.type = typeClass;
       btn.dataset.density = density;
       btn.style.top = layout.top;
       btn.style.height = layout.height;
+
+      const childName =
+        typeClass === 'birthday' &&
+        appointment.birthday &&
+        typeof appointment.birthday === 'object'
+          ? String(appointment.birthday.childName || '').trim()
+          : '';
+      const primary =
+        childName || appointment.customer || 'Walk-in';
       btn.setAttribute(
         'aria-label',
-        `${appointment.customer || 'Walk-in'}, ${appointment.service || 'Service'}`
+        `${primary}, ${appointment.service || 'Service'}`
       );
 
       if (CAD.cardRenderer) {

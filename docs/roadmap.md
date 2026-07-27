@@ -14,6 +14,8 @@
 - [x] Adaptive appointment cards (height-based density, badges, hover tooltip) — Sprint 2.4
 - [x] Card readability (opaque appointment backgrounds) — Sprint 2.4.1
 - [x] Service-aware appointment popover + normalized model — Sprint 2.5
+- [x] All visible Bookly resources as calendar columns — Sprint 2.5.1
+- [x] Scheduler UX polish (cards + popover + shared badges) — Sprint 2.6
 - [ ] Inline appointment editor
 - [ ] Drag-and-drop rescheduling
 - [ ] Conflict detection across tables

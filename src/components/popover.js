@@ -1,8 +1,6 @@
 /**
- * Appointment popover shell (Calendar First).
- * Positioning, open/close, focus, and shared chrome only — never booking-type logic.
- * Looks up CAD.Renderers.get(appointment.type); unknown types → studio renderer.
- *
+ * Appointment popover shell — Sprint 2.6 final (presentation only).
+ * Colored type ribbon + shared sections. No booking-type body logic.
  * @module components/popover
  */
 (function (global) {
@@ -11,11 +9,23 @@
   const CAD = global.CAD;
   if (!CAD) throw new Error('cad-core.js must be loaded before components/popover.js');
 
+  const TYPE_RIBBON = Object.freeze({
+    studio: { label: 'Studio Reservation', icon: '🎨' },
+    birthday: { label: 'Birthday Party', icon: '🎂' },
+    event: { label: 'Event', icon: '🎉' },
+  });
+
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
     if (text != null && text !== '') node.textContent = text;
     return node;
+  }
+
+  function appointmentType(appointment) {
+    const type = String(appointment?.type || 'studio').toLowerCase();
+    if (type === 'birthday' || type === 'event') return type;
+    return 'studio';
   }
 
   function booklyEditUrl(appointment) {
@@ -33,9 +43,24 @@
     }
   }
 
+  function appendFooterSection(footer, title, icon, fill) {
+    const section = el('section', 'cad-popover__section cad-popover__section--footer');
+    const heading = el(
+      'h3',
+      'cad-popover__section-title',
+      icon ? `${icon} ${title}` : title
+    );
+    const body = el('div', 'cad-popover__section-body');
+    section.append(heading, body);
+    const ok = fill(body);
+    if (ok === false || !body.childNodes.length) return;
+    footer.appendChild(section);
+  }
+
   CAD.Popover = {
     root: null,
     panel: null,
+    ribbon: null,
     body: null,
     footer: null,
     appointment: null,
@@ -55,26 +80,27 @@
       backdrop.addEventListener('click', () => this.close());
 
       const panel = el('div', 'cad-popover__panel');
-      const header = el('div', 'cad-popover__header');
-      const title = el('h2', 'cad-popover__title', 'Appointment');
+      const ribbon = el('div', 'cad-popover__ribbon');
+      const ribbonLabel = el('span', 'cad-popover__ribbon-label', 'Appointment');
       const closeBtn = el('button', 'cad-popover__close', '×');
       closeBtn.type = 'button';
       closeBtn.setAttribute('aria-label', 'Close');
       closeBtn.addEventListener('click', () => this.close());
-      header.append(title, closeBtn);
+      ribbon.append(ribbonLabel, closeBtn);
 
       const body = el('div', 'cad-popover__body');
       const footer = el('div', 'cad-popover__footer');
 
-      panel.append(header, body, footer);
+      panel.append(ribbon, body, footer);
       root.append(backdrop, panel);
       document.body.appendChild(root);
 
       this.root = root;
       this.panel = panel;
+      this.ribbon = ribbon;
+      this._ribbonLabel = ribbonLabel;
       this.body = body;
       this.footer = footer;
-      this._title = title;
 
       if (!this._bound) {
         document.addEventListener('keydown', (event) => {
@@ -93,25 +119,23 @@
       return Boolean(this.root && !this.root.hidden);
     },
 
-    /**
-     * Open shell and fill type-agnostic chrome.
-     * Looks up renderer from registry by appointment.type (no if/switch).
-     * @param {Record<string, unknown>} appointment Normalized CAD appointment
-     */
     render(appointment) {
       this.init();
       if (!appointment) return this;
 
       this.appointment = appointment;
+      const type = appointmentType(appointment);
+      const ribbonMeta = TYPE_RIBBON[type] || TYPE_RIBBON.studio;
 
-      const renderer = CAD.Renderers?.get
-        ? CAD.Renderers.get(appointment.type)
-        : null;
+      const renderer = CAD.Renderers?.get ? CAD.Renderers.get(type) : null;
       const view = renderer?.render
         ? renderer.render(appointment)
-        : { title: 'Appointment', body: document.createDocumentFragment() };
+        : { title: ribbonMeta.label, body: document.createDocumentFragment() };
 
-      this._title.textContent = view.title || 'Appointment';
+      this.root.dataset.type = type;
+      this.ribbon.dataset.type = type;
+      this._ribbonLabel.textContent = `${ribbonMeta.icon} ${view.title || ribbonMeta.label}`;
+
       this.body.replaceChildren();
       if (view.body) this.body.append(view.body);
 
@@ -122,7 +146,6 @@
       return this;
     },
 
-    /** Alias for render — used by cad-editor selection. */
     open(appointment) {
       return this.render(appointment);
     },
@@ -141,29 +164,49 @@
       return this;
     },
 
-    /** Shared chrome for every type: notes, status actions, Open in Bookly. */
     renderChrome(appointment) {
       this.footer.replaceChildren();
 
+      appendFooterSection(this.footer, 'Status', '🏷', (body) => {
+        if (CAD.Badges?.statusBadge) {
+          body.appendChild(CAD.Badges.statusBadge(appointment));
+        } else if (CAD.RendererHelpers?.appendStatusBadge) {
+          CAD.RendererHelpers.appendStatusBadge(body, appointment);
+        }
+        if (CAD.StatusPanel?.render) {
+          body.appendChild(
+            CAD.StatusPanel.render(appointment, (slug) => this.setStatus(slug))
+          );
+        }
+        return true;
+      });
+
       const notes = String(appointment.notes ?? '').trim();
       if (notes) {
-        this.footer.appendChild(el('div', 'cad-popover__field-label', '📝 Notes'));
-        this.footer.appendChild(el('div', 'cad-popover__notes', notes));
-        this.footer.appendChild(el('hr', 'cad-popover__rule'));
+        appendFooterSection(this.footer, 'Internal Notes', '📝', (body) => {
+          body.appendChild(el('div', 'cad-popover__notes', notes));
+          return true;
+        });
       }
 
-      if (CAD.StatusPanel?.render) {
-        this.footer.appendChild(
-          CAD.StatusPanel.render(appointment, (slug) => this.setStatus(slug))
-        );
-      }
-      this.footer.appendChild(el('hr', 'cad-popover__rule'));
+      appendFooterSection(this.footer, 'Actions', '⚡', (body) => {
+        const actions = el('div', 'cad-popover__actions');
+        const edit = el('a', 'cad-popover__action cad-popover__action--edit', '✏ Edit');
+        edit.href = booklyEditUrl(appointment);
+        edit.target = '_blank';
+        edit.rel = 'noopener noreferrer';
+        actions.appendChild(edit);
 
-      const bookly = el('a', 'cad-popover__bookly', '✏ Open in Bookly');
-      bookly.href = booklyEditUrl(appointment);
-      bookly.target = '_blank';
-      bookly.rel = 'noopener noreferrer';
-      this.footer.appendChild(bookly);
+        const del = el('button', 'cad-popover__action cad-popover__action--delete', '🗑 Delete');
+        del.type = 'button';
+        del.title = 'Open in Bookly to delete';
+        del.addEventListener('click', () => {
+          window.open(booklyEditUrl(appointment), '_blank', 'noopener,noreferrer');
+        });
+        actions.appendChild(del);
+        body.appendChild(actions);
+        return true;
+      });
     },
 
     async setStatus(slug) {
