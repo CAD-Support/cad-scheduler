@@ -77,6 +77,14 @@ See [Sprint 1.7 — Live Validation](sprint-1.7-live-validation.md) and the [Val
 | `cad_scheduler_day_start` | Default open time `HH:MM` (default `08:00`) |
 | `cad_scheduler_day_end` | Default close time `HH:MM` (default `20:00`) |
 | `cad_scheduler_open_hours` | Weekly map `0–6 → { start, end }` or `null` (closed) |
+| `cad_scheduler_custom_field_map` | PHP map of semantic names → Bookly custom field IDs (birthday child/age/package) |
+| `cad_scheduler_custom_fields_select_sql` | SQL expression for CA custom-field JSON (default `ca.custom_fields`) |
+| `cad_scheduler_appointment_type` | Override `studio` / `birthday` / `event` detection |
+| `cad_scheduler_appointment` | Filter one normalized appointment |
+| `cad_scheduler_appointments` | Filter appointments list for a date |
+| `cad_scheduler_bookly_edit_url` | Base URL for “Open in Bookly” |
+| `cad_scheduler_allowed_appointment_statuses` | Allowed status slugs for popover updates |
+| `cad_scheduler_update_status_capability` | Capability for status AJAX (default `edit_posts`) |
 
 ## Page
 

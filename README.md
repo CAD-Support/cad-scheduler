@@ -38,9 +38,12 @@ assets/         Static assets (css, images)
 | `cad-ui.js` | Shell + load orchestration |
 | `cad-navigation.js` | Previous / Today / Next / date picker |
 | `cad-card-renderer.js` | Height-based adaptive appointment cards |
+| `renderers/` | Popover body layouts by `appointment.type` (reservation / birthday / event) |
+| `components/popover.js` | Ephemeral appointment popover shell |
+| `components/status-panel.js` | Quick status buttons (custom status slugs) |
 | `cad-calendar.js` | v2 matrix grid |
 | `cad-components.js` | Appointment block shell |
-| `cad-editor.js` | Selection |
+| `cad-editor.js` | Selection + `CAD.Popover.render` |
 
 ## Documentation
 
@@ -52,6 +55,8 @@ assets/         Static assets (css, images)
 - [Sprint 2.3 — Dynamic Day Range](docs/sprint-2.3-dynamic-day-range.md)
 - [Sprint 2.4 — Adaptive Appointment Cards](docs/sprint-2.4-adaptive-cards.md)
 - [Sprint 2.4.1 — Card Readability](docs/sprint-2.4.1-card-readability.md)
+- [Sprint 2.5 — Normalized Appointment Model](docs/sprint-2.5-normalized-appointment-model.md)
+- [Sprint 2.5 — Appointment Popover](docs/sprint-2.5-appointment-popover.md)
 
 ## Snippets
 

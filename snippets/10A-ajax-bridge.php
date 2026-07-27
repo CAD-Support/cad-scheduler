@@ -206,8 +206,15 @@ function cad_enqueue_assets() {
 	wp_enqueue_script( 'cad-editor', $src . 'cad-editor.js', array( 'cad-core' ), $ver, true );
 	wp_enqueue_script( 'cad-card-renderer', $src . 'cad-card-renderer.js', array( 'cad-core' ), $ver, true );
 	wp_enqueue_script( 'cad-components', $src . 'cad-components.js', array( 'cad-core', 'cad-card-renderer' ), $ver, true );
+	wp_enqueue_script( 'cad-renderer-helpers', $src . 'renderers/helpers.js', array( 'cad-core', 'cad-card-renderer' ), $ver, true );
+	wp_enqueue_script( 'cad-renderer-registry', $src . 'renderers/registry.js', array( 'cad-core' ), $ver, true );
+	wp_enqueue_script( 'cad-renderer-reservation', $src . 'renderers/reservation-renderer.js', array( 'cad-renderer-helpers', 'cad-renderer-registry' ), $ver, true );
+	wp_enqueue_script( 'cad-renderer-birthday', $src . 'renderers/birthday-renderer.js', array( 'cad-renderer-helpers', 'cad-renderer-registry' ), $ver, true );
+	wp_enqueue_script( 'cad-renderer-event', $src . 'renderers/event-renderer.js', array( 'cad-renderer-helpers', 'cad-renderer-registry' ), $ver, true );
+	wp_enqueue_script( 'cad-status-panel', $src . 'components/status-panel.js', array( 'cad-core' ), $ver, true );
+	wp_enqueue_script( 'cad-popover', $src . 'components/popover.js', array( 'cad-core', 'cad-api', 'cad-renderer-registry', 'cad-renderer-reservation', 'cad-renderer-birthday', 'cad-renderer-event', 'cad-status-panel' ), $ver, true );
 	wp_enqueue_script( 'cad-calendar', $src . 'cad-calendar.js', array( 'cad-core', 'cad-components' ), $ver, true );
-	wp_enqueue_script( 'cad-ui', $src . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar' ), $ver, true );
+	wp_enqueue_script( 'cad-ui', $src . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-popover' ), $ver, true );
 	wp_enqueue_script( 'cad-navigation', $src . 'cad-navigation.js', array( 'cad-core', 'cad-ui' ), $ver, true );
 
 	wp_localize_script(
@@ -223,6 +230,10 @@ function cad_enqueue_assets() {
 			'openHours'      => cad_scheduler_open_hours(),
 			'slotMinutes'    => 15,
 			'hourHeight'     => 64,
+			'booklyEditUrl'  => apply_filters(
+				'cad_scheduler_bookly_edit_url',
+				admin_url( 'admin.php?page=bookly-calendar' )
+			),
 			'health'         => cad_scheduler_health_for_config(),
 			'diagnostics'    => cad_scheduler_diagnostics_enabled(),
 			'validationMode' => cad_scheduler_validation_mode_enabled(),
@@ -231,7 +242,7 @@ function cad_enqueue_assets() {
 
 	wp_add_inline_script(
 		'cad-navigation',
-		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui||!CAD.Navigation)return;CAD.init(window.cadConfig||{});var m=document.getElementById('cad-scheduler');if(!m)return;CAD.ui.mount('#cad-scheduler');if(m.querySelector('.cad-scheduler__diagnostics'))return;CAD.Navigation.init();CAD.ui.load(CAD.Config.get('today'));});})();"
+		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui||!CAD.Navigation)return;CAD.init(window.cadConfig||{});var m=document.getElementById('cad-scheduler');if(!m)return;CAD.ui.mount('#cad-scheduler');if(m.querySelector('.cad-scheduler__diagnostics'))return;CAD.Navigation.init();CAD.Popover&&CAD.Popover.init();CAD.ui.load(CAD.Config.get('today'));});})();"
 	);
 }
 
@@ -294,6 +305,74 @@ function cad_ajax_get_schedule() {
 	wp_send_json_success( $provider->get_schedule( $date ) );
 }
 add_action( 'wp_ajax_cad_get_schedule', 'cad_ajax_get_schedule' );
+
+/**
+ * Allowed Bookly custom status slugs for CAD popover actions.
+ *
+ * @return string[]
+ */
+function cad_scheduler_allowed_appointment_statuses() {
+	$statuses = array(
+		'approved',
+		'confirmed',
+		'deposit-paid',
+		'arrived',
+		'paid',
+		'no-show',
+		'noshow',
+	);
+	/**
+	 * Filter allowed status slugs for cad_update_appointment_status.
+	 *
+	 * @param string[] $statuses
+	 */
+	$filtered = apply_filters( 'cad_scheduler_allowed_appointment_statuses', $statuses );
+	return is_array( $filtered ) ? $filtered : $statuses;
+}
+
+function cad_ajax_update_appointment_status() {
+	check_ajax_referer( 'cad_scheduler', 'nonce' );
+
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'message' => 'Authentication required.' ), 403 );
+	}
+
+	$capability = apply_filters( 'cad_scheduler_update_status_capability', 'edit_posts' );
+	if ( ! current_user_can( $capability ) ) {
+		wp_send_json_error( array( 'message' => 'Insufficient permissions.' ), 403 );
+	}
+
+	$provider = cad_schedule_provider();
+	if ( ! $provider ) {
+		wp_send_json_error( array( 'message' => 'CAD modules not loaded.' ), 500 );
+	}
+
+	$appointment_id = sanitize_text_field( wp_unslash( $_POST['appointment_id'] ?? '' ) );
+	$status         = sanitize_text_field( wp_unslash( $_POST['status'] ?? '' ) );
+	$status         = strtolower( str_replace( array( ' ', '_' ), '-', $status ) );
+
+	if ( '' === $appointment_id ) {
+		wp_send_json_error( array( 'message' => 'Invalid appointment.' ), 400 );
+	}
+
+	$allowed = array_map( 'strval', cad_scheduler_allowed_appointment_statuses() );
+	if ( ! in_array( $status, $allowed, true ) ) {
+		wp_send_json_error( array( 'message' => 'Invalid status.' ), 400 );
+	}
+
+	$ok = $provider->update_appointment_status( $appointment_id, $status );
+	if ( ! $ok ) {
+		wp_send_json_error( array( 'message' => 'Could not update status.' ), 500 );
+	}
+
+	wp_send_json_success(
+		array(
+			'appointment_id' => $appointment_id,
+			'status'         => $status,
+		)
+	);
+}
+add_action( 'wp_ajax_cad_update_appointment_status', 'cad_ajax_update_appointment_status' );
 
 function cad_ajax_update_appointment() {
 	check_ajax_referer( 'cad_scheduler', 'nonce' );

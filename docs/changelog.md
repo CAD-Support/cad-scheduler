@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.5.0] — 2026-07-27
+
+### Added
+
+- **Normalized appointment model** — mapper emits `type`, `serviceId`, `birthday` / `studio` / `event` nests; custom-field IDs stay in PHP ([model](sprint-2.5-normalized-appointment-model.md))
+- **Service-aware appointment popover** — `CAD.Popover.render(appointment)` → `CAD.Renderers.render(appointment)` by `appointment.type`
+- Frontend layout: `src/renderers/` (reservation / birthday / event) + `src/components/` (popover / status-panel)
+- Status actions update Bookly custom statuses via `cad_update_appointment_status` (no payment-table join)
+- Filters: `cad_scheduler_custom_field_map`, `cad_scheduler_appointment_type`, `cad_scheduler_appointment`, `cad_scheduler_appointments`, `cad_scheduler_custom_fields_select_sql`
+- Fixtures: [`docs/fixtures/sprint-2.5-popover.html`](fixtures/sprint-2.5-popover.html), [`docs/fixtures/verify-mapper-normalize.php`](fixtures/verify-mapper-normalize.php)
+
+### Notes
+
+- The normalized appointment object is the **public API** between backend and frontend — prefer additive property changes; Repository/Mapper may evolve internally ([stability](sprint-2.5-normalized-appointment-model.md#public-api-stability))
+- Leave WordPress `CAD_SCHEDULER_VERSION` at **2.4.1** until this release is tagged and verified on jsDelivr
+- Legacy `src/cad-popover.js` / `src/cad-renderers.js` are deprecation stubs only
+
 ## [2.4.2] — 2026-07-27
 
 ### Fixed

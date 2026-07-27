@@ -181,3 +181,7 @@ wp-content/uploads/
 # Bookly reference (local extract only — not committed)
 bookly-reference/core-extract/
 bookly-reference/bookly-addon-*/
+docs/fixtures/verify-mapper-normalize.php
+docs/fixtures/_verify-out.txt.err
+docs/changelog.md
+docs/changelog.md

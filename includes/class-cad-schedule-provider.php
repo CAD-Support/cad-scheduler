@@ -4,6 +4,10 @@
  *
  * Code Snippets: priority 12 — paste entire file.
  *
+ * Exposes the normalized appointment model to AJAX / the frontend.
+ * This output is the public API contract — keep it stable and additive.
+ * Repository and Mapper may change internally; do not leak Bookly schema here.
+ *
  * @package CAD_Scheduler
  */
 
@@ -31,11 +35,31 @@ class CAD_Schedule_Provider {
 	}
 
 	public function get_schedule( $date ) {
+		$appointments = $this->mapper->map_appointments(
+			$this->repository->get_appointments_for_date( $date )
+		);
+
+		/**
+		 * Filter the full normalized appointments list for a date.
+		 *
+		 * @param array  $appointments Normalized CAD appointments.
+		 * @param string $date         Y-m-d.
+		 */
+		$appointments = apply_filters( 'cad_scheduler_appointments', $appointments, $date );
+
 		return array(
 			'date'         => $date,
-			'appointments' => $this->mapper->map_appointments(
-				$this->repository->get_appointments_for_date( $date )
-			),
+			'appointments' => is_array( $appointments ) ? $appointments : array(),
 		);
+	}
+
+	/**
+	 * @param string $appointment_id
+	 * @param string $status
+	 * @return bool
+	 */
+	public function update_appointment_status( $appointment_id, $status ) {
+		$result = $this->repository->update_appointment_status( $appointment_id, $status );
+		return false !== $result;
 	}
 }

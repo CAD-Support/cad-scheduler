@@ -50,6 +50,17 @@
     getSchedule(date, options = {}) {
       return api.request('cad_get_schedule', { date }, options);
     },
+
+    /**
+     * @param {string|number} appointmentId
+     * @param {string} status Bookly custom status slug
+     */
+    updateAppointmentStatus(appointmentId, status) {
+      return api.request('cad_update_appointment_status', {
+        appointment_id: appointmentId,
+        status,
+      });
+    },
   });
 
   CAD.API = api;

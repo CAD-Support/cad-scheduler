@@ -564,6 +564,193 @@
   border-left-color: var(--cad-orange);
 }
 
+/* Sprint 2.5 — appointment popover (ephemeral; Calendar First) */
+.cad-popover {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.cad-popover[hidden] {
+  display: none !important;
+}
+
+.cad-popover__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(43, 43, 43, 0.35);
+}
+
+.cad-popover__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(22rem, 100%);
+  max-height: min(90vh, 40rem);
+  overflow: hidden;
+  border: 1px solid var(--cad-border);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(43, 43, 43, 0.2);
+  opacity: 1;
+}
+
+.cad-popover__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--cad-border);
+  background: #ffffff;
+}
+
+.cad-popover__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cad-purple);
+}
+
+.cad-popover__close {
+  margin: 0;
+  padding: 0.1rem 0.45rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cad-ink);
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cad-popover__close:hover {
+  background: color-mix(in srgb, #fff 70%, var(--cad-purple) 30%);
+  color: var(--cad-purple);
+}
+
+.cad-popover__body,
+.cad-popover__footer {
+  padding: 0.85rem 1rem;
+  background: #ffffff;
+}
+
+.cad-popover__body {
+  overflow: auto;
+  flex: 1 1 auto;
+}
+
+.cad-popover__footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--cad-border);
+}
+
+.cad-popover__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--cad-teal);
+  margin-bottom: 0.35rem;
+}
+
+.cad-popover__customer {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--cad-ink);
+  margin-bottom: 0.25rem;
+}
+
+.cad-popover__line,
+.cad-popover__service,
+.cad-popover__field-value,
+.cad-popover__notes {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--cad-ink);
+  margin: 0.15rem 0;
+}
+
+.cad-popover__service {
+  color: var(--cad-muted);
+}
+
+.cad-popover__field-label {
+  margin-top: 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--cad-muted);
+}
+
+.cad-popover__rule {
+  border: 0;
+  border-top: 1px solid var(--cad-border);
+  margin: 0.75rem 0;
+}
+
+.cad-popover__statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.cad-popover__status-btn {
+  margin: 0;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--cad-border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--cad-ink);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cad-popover__status-btn:hover {
+  border-color: var(--cad-teal);
+}
+
+.cad-popover__status-btn--active {
+  border-color: var(--cad-teal);
+  background: #e8f6f7;
+  color: var(--cad-teal);
+}
+
+.cad-popover__bookly {
+  display: inline-flex;
+  margin-top: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--cad-orange) 55%, var(--cad-border));
+  background: color-mix(in srgb, #fff 85%, var(--cad-orange) 15%);
+  color: var(--cad-purple);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cad-popover__bookly:hover {
+  border-color: var(--cad-orange);
+}
+
+.cad-popover__notes {
+  white-space: pre-wrap;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--cad-border);
+  border-radius: 8px;
+  background: #fafafa;
+}
+
 @media (max-width: 768px) {
   .cad-scheduler {
     --cad-scroll-height: min(65vh, calc(100dvh - 16rem));
@@ -573,6 +760,11 @@
     --cad-time-width: 3.25rem;
     --cad-col-min: 7rem;
     min-height: 10rem;
+  }
+
+  .cad-popover__panel {
+    width: 100%;
+    max-height: 92vh;
   }
 }
 
