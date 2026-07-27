@@ -10,6 +10,11 @@
 
 - **Phone display formatting** — `CAD.utils.formatPhone()` formats North American numbers for cards and tooltips only (Bookly data unchanged)
 
+### Changed
+
+- **Paid badge** — driven by Bookly custom status slug `paid` (same as Arrived / No Show); removed `bookly_payments` join and `paid` boolean mapping
+- **Deposit Paid badge** — custom status slug `deposit-paid` → 💰 Deposit Paid
+
 ## [2.4.1] — 2026-07-24
 
 ### Fixed

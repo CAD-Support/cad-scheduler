@@ -63,8 +63,8 @@
   }
 
   /**
-   * Read-only status indicators. Confirmed/approved show no booking badge
-   * unless paid (paid is independent of confirmation).
+   * Read-only operational status badges from Bookly custom status slug
+   * (same mechanism for Arrived, Paid, and No Show).
    * @param {Record<string, unknown>} appointment
    * @returns {Array<{ key: string, icon: string, label: string }>}
    */
@@ -77,12 +77,12 @@
 
     if (slug === 'arrived') {
       badges.push({ key: 'arrived', icon: '🟢', label: 'Arrived' });
+    } else if (slug === 'paid') {
+      badges.push({ key: 'paid', icon: '💲', label: 'Paid' });
+    } else if (slug === 'deposit-paid' || slug === 'depositpaid') {
+      badges.push({ key: 'deposit-paid', icon: '💰', label: 'Deposit Paid' });
     } else if (slug === 'no-show' || slug === 'noshow') {
       badges.push({ key: 'no-show', icon: '❌', label: 'No Show' });
-    }
-
-    if (appointment.paid === true || appointment.paid === 1 || appointment.paid === '1') {
-      badges.push({ key: 'paid', icon: '💲', label: 'Paid' });
     }
 
     return badges;

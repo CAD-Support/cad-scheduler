@@ -64,7 +64,6 @@
           service: 'Quick touch',
           status: 'approved',
           painters: 1,
-          paid: false,
         },
         {
           id: 's1',
@@ -76,7 +75,6 @@
           service: 'Studio session',
           status: 'approved',
           painters: 2,
-          paid: false,
         },
         {
           id: 'l1',
@@ -86,9 +84,8 @@
           customer: 'Large Lee',
           phone: '519-555-1234',
           service: 'Group paint',
-          status: 'approved',
+          status: 'deposit-paid',
           painters: 4,
-          paid: false,
         },
         {
           id: 'x1',
@@ -98,9 +95,8 @@
           customer: 'XL Alex',
           phone: '519-555-9999',
           service: 'Full party',
-          status: 'arrived',
+          status: 'paid',
           painters: 6,
-          paid: true,
         },
       ];
 
@@ -144,21 +140,22 @@
       expectHas('s1', '.cad-appointment__status', false);
       expectHas('s1', '.cad-appointment__phone', false);
       expectHas('l1', '.cad-appointment__painters', true);
-      expectHas('l1', '.cad-appointment__status', true);
+      expectHas('l1', '.cad-appointment__status', false);
+      expectHas('l1', '.cad-appointment__badge--deposit-paid', true);
       expectHas('l1', '.cad-appointment__phone', false);
       expectHas('x1', '.cad-appointment__badges', true);
-      expectHas('x1', '.cad-appointment__badge--arrived', true);
       expectHas('x1', '.cad-appointment__badge--paid', true);
+      expectHas('x1', '.cad-appointment__badge--arrived', false);
       expectHas('x1', '.cad-appointment__phone', true);
       if (byId('x1')?.querySelector('.cad-appointment__phone')?.textContent === '☎ (519) 555-9999') {
         pass('x1 phone format');
       } else {
         fail('x1 phone format');
       }
-      if (byId('l1')?.querySelector('.cad-appointment__status')?.textContent === '✓ Confirmed') {
-        pass('l1 status confirmed');
+      if (byId('l1')?.querySelector('.cad-appointment__badge--deposit-paid')?.textContent.includes('Deposit Paid')) {
+        pass('l1 deposit-paid badge');
       } else {
-        fail('l1 status confirmed');
+        fail('l1 deposit-paid badge');
       }
 
       const probe = byId('x1');
@@ -174,7 +171,7 @@
         !/\bTable\b/i.test(tipText)
       ) {
         pass('tooltip label-free stack (no table)');
-      } else if (CAD.cardRenderer.statusBadges(appointments[3]).length >= 2) {
+      } else if (CAD.cardRenderer.statusBadges(appointments[3]).some((b) => b.key === 'paid')) {
         pass('tooltip skipped (no fine pointer); badge data ok');
       } else {
         fail('tooltip fields');

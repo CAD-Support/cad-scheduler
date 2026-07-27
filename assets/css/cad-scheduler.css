@@ -491,6 +491,11 @@
   color: #2a6b55;
 }
 
+.cad-appointment__badge--deposit-paid {
+  background: #f5f0e0;
+  color: #6b5a2a;
+}
+
 .cad-appointment__status {
   color: var(--cad-muted);
 }

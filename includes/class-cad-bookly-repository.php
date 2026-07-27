@@ -55,7 +55,6 @@ class CAD_Bookly_Repository {
 				a.internal_note,
 				ca.status AS appointment_status,
 				ca.number_of_persons,
-				p.status AS payment_status,
 				COALESCE(NULLIF(c.full_name, ''), TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, '')))) AS customer_name,
 				c.phone AS customer_phone,
 				s.title AS service_title, s.duration AS service_duration
@@ -63,7 +62,6 @@ class CAD_Bookly_Repository {
 			INNER JOIN {$wpdb->prefix}bookly_customer_appointments ca ON ca.appointment_id = a.id
 			LEFT JOIN {$wpdb->prefix}bookly_customers c ON c.id = ca.customer_id
 			LEFT JOIN {$wpdb->prefix}bookly_services s ON s.id = a.service_id
-			LEFT JOIN {$wpdb->prefix}bookly_payments p ON p.id = ca.payment_id
 			WHERE DATE(a.start_date) = %s
 			ORDER BY a.start_date ASC";
 

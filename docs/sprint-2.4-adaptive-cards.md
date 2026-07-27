@@ -24,14 +24,17 @@ Thresholds live in `CAD.cardRenderer.HEIGHT_THRESHOLDS`.
 
 ## Status indicators (read-only)
 
-Shown on large and xl. Badges when applicable; otherwise `✓ Confirmed`.
+Shown on large and xl. Driven by Bookly **custom status** slug on the customer appointment (`ca.status`). Confirmed / approved show `✓ Confirmed` (no badge).
 
-| Indicator | When |
-|-----------|------|
-| 🟢 Arrived | Status slug `arrived` |
-| ❌ No Show | Status slug `no-show` / `noshow` |
-| 💲 Paid | Bookly payment status `completed` |
-| ✓ Confirmed | Approved / confirmed with no special badges |
+| Indicator | Status slug |
+|-----------|-------------|
+| 🟢 Arrived | `arrived` |
+| 💲 Paid | `paid` |
+| 💰 Deposit Paid | `deposit-paid` |
+| ❌ No Show | `no-show` / `noshow` |
+| ✓ Confirmed | `approved` / `confirmed` (or empty) |
+
+No payment-table mapping — operational badges use Bookly custom status slugs only (ready for Lightspeed-driven status updates later).
 
 No editing in this sprint.
 
@@ -64,8 +67,9 @@ The calendar must not decide which fields appear on a card.
 Repository / mapper expose:
 
 - `painters` ← `bookly_customer_appointments.number_of_persons`
-- `paid` ← payment row status `completed`
+- `status` ← Bookly customer-appointment status (custom statuses: arrived / paid / deposit-paid / no-show)
 - `notes` ← `internal_note` (kept for Sprint 2.5 details panel)
+- `phone` ← `bookly_customers.phone` (display-formatted in UI only)
 
 ## Out of scope (Sprint 2.5+)
 
