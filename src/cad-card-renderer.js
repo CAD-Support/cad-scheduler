@@ -118,6 +118,14 @@
     tipEl = el('div', 'cad-appointment-tip');
     tipEl.setAttribute('role', 'tooltip');
     tipEl.hidden = true;
+    // Inline locks — WordPress/Elementor themes often restyle [role=tooltip].
+    tipEl.style.setProperty('opacity', '1', 'important');
+    tipEl.style.setProperty('background', '#ffffff', 'important');
+    tipEl.style.setProperty('background-color', '#ffffff', 'important');
+    tipEl.style.setProperty('background-image', 'none', 'important');
+    tipEl.style.setProperty('backdrop-filter', 'none', 'important');
+    tipEl.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+    tipEl.style.setProperty('filter', 'none', 'important');
     document.body.appendChild(tipEl);
     return tipEl;
   }

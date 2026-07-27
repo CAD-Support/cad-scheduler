@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.4.2] — 2026-07-27
+
+### Fixed
+
+- **Tooltip opacity** — hover tooltip forces solid `#ffffff` background (`opacity: 1`, no backdrop-filter) so the calendar grid cannot show through
+
 ## [2.4.1] — 2026-07-24
 
 ### Fixed
