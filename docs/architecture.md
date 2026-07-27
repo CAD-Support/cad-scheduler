@@ -26,7 +26,7 @@ WordPress + Bookly (backend)
 
 ### cad-core.js
 
-Central configuration (`CAD.Config`), state (`CAD.State`), and `CAD.init()`.
+Central configuration (`CAD.Config`), state (`CAD.State`), display helpers (`CAD.utils`, e.g. `formatPhone`), and `CAD.init()`.
 
 ### cad-api.js
 

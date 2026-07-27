@@ -40,6 +40,31 @@
     error(...args) { console.error('[CAD]', ...args); },
   });
 
+  /**
+   * Display-only helpers. Never mutate Bookly / API payloads.
+   */
+  CAD.utils = Object.freeze({
+    /**
+     * Format a phone for UI display (North American when recognizable).
+     * @param {unknown} phone
+     * @returns {string}
+     */
+    formatPhone(phone) {
+      const raw = String(phone ?? '').trim();
+      if (!raw) return '';
+
+      const cleaned = raw.replace(/[\s\-().]/g, '');
+      if (/^\d{10}$/.test(cleaned)) {
+        return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+      }
+      if (/^1\d{10}$/.test(cleaned)) {
+        return `1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+      }
+
+      return raw;
+    },
+  });
+
   CAD.init = function (options = {}) {
     CAD.Config.merge(options);
     return CAD;

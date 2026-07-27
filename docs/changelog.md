@@ -6,6 +6,10 @@
 
 - **Tooltip opacity** — hover tooltip forces solid `#ffffff` background (`opacity: 1`, no backdrop-filter) so the calendar grid cannot show through
 
+### Added
+
+- **Phone display formatting** — `CAD.utils.formatPhone()` formats North American numbers for cards and tooltips only (Bookly data unchanged)
+
 ## [2.4.1] — 2026-07-24
 
 ### Fixed

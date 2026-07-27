@@ -54,10 +54,12 @@
     return String(appointment.phone ?? '').trim();
   }
 
-  /** @returns {string} Display line e.g. "☎ 519-555-1234", or "" when empty */
+  /** @returns {string} Display line e.g. "☎ (519) 267-9080", or "" when empty */
   function phoneLabel(appointment) {
     const phone = phoneValue(appointment);
-    return phone ? `☎ ${phone}` : '';
+    if (!phone) return '';
+    const formatted = CAD.utils?.formatPhone ? CAD.utils.formatPhone(phone) : phone;
+    return `☎ ${formatted}`;
   }
 
   /**

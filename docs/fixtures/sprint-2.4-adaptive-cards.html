@@ -150,7 +150,7 @@
       expectHas('x1', '.cad-appointment__badge--arrived', true);
       expectHas('x1', '.cad-appointment__badge--paid', true);
       expectHas('x1', '.cad-appointment__phone', true);
-      if (byId('x1')?.querySelector('.cad-appointment__phone')?.textContent === '☎ 519-555-9999') {
+      if (byId('x1')?.querySelector('.cad-appointment__phone')?.textContent === '☎ (519) 555-9999') {
         pass('x1 phone format');
       } else {
         fail('x1 phone format');
@@ -169,7 +169,7 @@
         liveTip &&
         tipText.includes('XL Alex') &&
         tipText.includes('Full party') &&
-        tipText.includes('☎ 519-555-9999') &&
+        tipText.includes('☎ (519) 555-9999') &&
         !liveTip.querySelector('.cad-appointment-tip__label') &&
         !/\bTable\b/i.test(tipText)
       ) {
@@ -205,6 +205,21 @@
         const got = CAD.cardRenderer.densityForHeight(h);
         if (got === d) pass(`threshold ${h}px → ${d}`);
         else fail(`threshold ${h}px`, `expected ${d}, got ${got}`);
+      });
+
+      [
+        ['5192679080', '(519) 267-9080'],
+        ['519-267-9080', '(519) 267-9080'],
+        ['(519)2679080', '(519) 267-9080'],
+        ['519 267 9080', '(519) 267-9080'],
+        ['15192679080', '1 (519) 267-9080'],
+        ['1-519-267-9080', '1 (519) 267-9080'],
+        ['+44 20 7946 0958', '+44 20 7946 0958'],
+        ['', ''],
+      ].forEach(([input, expected]) => {
+        const got = CAD.utils.formatPhone(input);
+        if (got === expected) pass(`formatPhone ${JSON.stringify(input)}`);
+        else fail(`formatPhone ${JSON.stringify(input)}`, `expected ${expected}, got ${got}`);
       });
 
       report.innerHTML = lines
