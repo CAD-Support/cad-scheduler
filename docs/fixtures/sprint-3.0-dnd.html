@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CAD — Sprint 3.0 P1 drag &amp; drop</title>
+  <link rel="stylesheet" href="/assets/css/cad-scheduler.css" />
+  <style>
+    body { margin: 1rem; font-family: system-ui, sans-serif; background: #fffaf5; }
+    h1 { font-size: 1rem; color: #6b2d84; }
+    #report { font: 12px/1.45 ui-monospace, monospace; white-space: pre-wrap; margin-top: 1rem; }
+    .ok { color: #0a7; }
+    .bad { color: #b42318; }
+    .hint { color: #5c5c5c; font-size: 0.875rem; max-width: 42rem; }
+  </style>
+</head>
+<body>
+  <h1>Sprint 3.0 P1 — Drag &amp; drop reschedule (snap + revert)</h1>
+  <p class="hint">
+    Drag the appointment to another table or time. A mocked API rejects moves onto
+    <strong>Table 2 at 11:00</strong> so you can verify UI revert + error notification.
+    Other drops succeed without WordPress.
+  </p>
+  <div id="cad-scheduler" class="cad-scheduler-mount cad-scheduler">
+    <div class="cad-scheduler__status"></div>
+    <div class="cad-scheduler__calendar" id="calendar-host"></div>
+  </div>
+  <pre id="report"></pre>
+
+  <script src="/src/cad-core.js"></script>
+  <script src="/src/cad-api.js"></script>
+  <script src="/src/components/badges.js"></script>
+  <script src="/src/cad-card-renderer.js"></script>
+  <script src="/src/cad-components.js"></script>
+  <script src="/src/cad-editor.js"></script>
+  <script src="/src/cad-calendar.js"></script>
+  <script src="/src/cad-notify.js"></script>
+  <script src="/src/cad-dnd.js"></script>
+  <script>
+    (function () {
+      const report = document.getElementById('report');
+      const host = document.getElementById('calendar-host');
+      const lines = [];
+      const pass = (label) => lines.push('OK  ' + label);
+      const fail = (label, detail) => lines.push('BAD ' + label + (detail ? ' — ' + detail : ''));
+
+      CAD.init({
+        today: '2026-07-28',
+        dayStart: '09:00',
+        dayEnd: '17:00',
+        slotMinutes: 15,
+        hourHeight: 64,
+        tables: [
+          { id: '1', name: 'Table 1' },
+          { id: '2', name: 'Table 2' },
+          { id: '3', name: 'Table 3' },
+        ],
+      });
+
+      CAD.State.update({
+        selectedDate: '2026-07-28',
+        tables: CAD.Config.get('tables'),
+        appointments: [
+          {
+            id: 'a1',
+            tableId: '1',
+            type: 'studio',
+            customer: 'Ada Lovelace',
+            service: 'Studio Session',
+            status: 'approved',
+            painters: 2,
+            start: '2026-07-28T10:00:00',
+            end: '2026-07-28T11:00:00',
+          },
+        ],
+      });
+
+      // Mock Bookly save path: conflict on Table 2 @ 11:00.
+      CAD.API.updateAppointment = async function mockUpdate(params) {
+        await new Promise((r) => setTimeout(r, 200));
+        const start = String(params.start || '');
+        const staff = String(params.staffId || '');
+        if (staff === '2' && start.indexOf('11:00:00') !== -1) {
+          return {
+            success: false,
+            data: {
+              ok: false,
+              code: 'conflict',
+              message: 'That time conflicts with another appointment on this table.',
+            },
+          };
+        }
+        const [datePart, timePart] = start.split(' ');
+        const hhmm = (timePart || '10:00:00').slice(0, 5);
+        const startIso = datePart + 'T' + hhmm + ':00';
+        const endIso = datePart + 'T' + String(Number(hhmm.slice(0, 2)) + 1).padStart(2, '0') + hhmm.slice(2) + ':00';
+        return {
+          success: true,
+          data: {
+            ok: true,
+            appointment: {
+              id: String(params.appointmentId),
+              tableId: staff,
+              type: 'studio',
+              customer: 'Ada Lovelace',
+              service: 'Studio Session',
+              status: 'approved',
+              painters: 2,
+              start: startIso,
+              end: endIso,
+            },
+          },
+        };
+      };
+
+      CAD.calendar.render(host);
+
+      const card = host.querySelector('.cad-appointment');
+      if (card) pass('appointment card rendered');
+      else fail('appointment card rendered');
+
+      if (typeof CAD.DnD?.bind === 'function') pass('CAD.DnD.bind available');
+      else fail('CAD.DnD.bind available');
+
+      if (typeof CAD.notify?.show === 'function') pass('CAD.notify.show available');
+      else fail('CAD.notify.show available');
+
+      if (host.dataset.cadDndBound === '1') pass('DnD bound on calendar host');
+      else fail('DnD bound on calendar host');
+
+      // Programmatic conflict revert (no pointer needed for CI/smoke).
+      (async function smokeConflictRevert() {
+        const before = CAD.State.get('appointments')[0];
+        CAD.State.set('appointments', [
+          { ...before, tableId: '2', start: '2026-07-28T11:00:00', end: '2026-07-28T12:00:00' },
+        ]);
+        CAD.calendar.render(host);
+
+        const result = await CAD.API.updateAppointment({
+          appointmentId: 'a1',
+          staffId: '2',
+          start: '2026-07-28 11:00:00',
+        });
+
+        if (result.success === false && result.data?.code === 'conflict') {
+          pass('mock API returns conflict for Table 2 @ 11:00');
+          CAD.State.set('appointments', [before]);
+          CAD.calendar.render(host);
+          CAD.notify.show(result.data.message, 'error');
+          const restored = CAD.State.get('appointments')[0];
+          if (String(restored.tableId) === '1' && String(restored.start).indexOf('T10:00') !== -1) {
+            pass('state restored after conflict');
+          } else {
+            fail('state restored after conflict', JSON.stringify(restored));
+          }
+        } else {
+          fail('mock API returns conflict for Table 2 @ 11:00');
+        }
+
+        // Success path smoke.
+        const ok = await CAD.API.updateAppointment({
+          appointmentId: 'a1',
+          staffId: '3',
+          start: '2026-07-28 13:00:00',
+        });
+        if (ok.success && ok.data?.appointment?.tableId === '3') {
+          CAD.State.set('appointments', [ok.data.appointment]);
+          CAD.calendar.render(host);
+          CAD.notify.show('Appointment moved.', 'success');
+          pass('mock API success updates appointment to Table 3 @ 13:00');
+        } else {
+          fail('mock API success path');
+        }
+
+        report.textContent = lines.join('\n');
+        report.className = lines.some((l) => l.indexOf('BAD') === 0) ? 'bad' : 'ok';
+      })();
+    })();
+  </script>
+</body>
+</html>

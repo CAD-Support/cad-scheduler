@@ -249,6 +249,7 @@
     container.style.setProperty('--cad-table-count', String(tableCount));
     container.style.setProperty('--cad-grid-height', `${metrics.gridHeight}px`);
     container.style.setProperty('--cad-slot-height', `${metrics.slotHeight}px`);
+    container.style.setProperty('--cad-day-start-min', String(metrics.startMin));
   }
 
   /**

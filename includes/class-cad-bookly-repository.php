@@ -291,6 +291,50 @@ class CAD_Bookly_Repository {
 	}
 
 	/**
+	 * Load one appointment row (same shape as get_appointments_for_date) by id.
+	 *
+	 * @param string|int $appointment_id Bookly appointment id.
+	 * @return array<string, mixed>|null
+	 */
+	public function get_appointment_by_id( $appointment_id ) {
+		global $wpdb;
+
+		if ( ! self::is_available() ) {
+			return null;
+		}
+
+		$appointment_id = (string) $appointment_id;
+		if ( '' === $appointment_id ) {
+			return null;
+		}
+
+		$custom_fields_sql = $this->custom_fields_select_sql();
+
+		$sql = "SELECT
+				a.id, a.staff_id, a.service_id, a.start_date,
+				DATE_ADD(a.end_date, INTERVAL COALESCE(a.extras_duration, 0) SECOND) AS end_date,
+				a.internal_note,
+				ca.status AS appointment_status,
+				ca.number_of_persons,
+				{$custom_fields_sql} AS custom_fields_json,
+				COALESCE(NULLIF(c.full_name, ''), TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, '')))) AS customer_name,
+				c.phone AS customer_phone,
+				s.title AS service_title, s.duration AS service_duration
+			FROM {$wpdb->prefix}bookly_appointments a
+			INNER JOIN {$wpdb->prefix}bookly_customer_appointments ca ON ca.appointment_id = a.id
+			LEFT JOIN {$wpdb->prefix}bookly_customers c ON c.id = ca.customer_id
+			LEFT JOIN {$wpdb->prefix}bookly_services s ON s.id = a.service_id
+			WHERE a.id = %s
+			ORDER BY ca.id ASC
+			LIMIT 1";
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( $sql, $appointment_id ), ARRAY_A );
+
+		return is_array( $row ) ? $row : null;
+	}
+
+	/**
 	 * Update Bookly custom status on all customer-appointment rows for an appointment.
 	 *
 	 * @param string $appointment_id Bookly appointment id.

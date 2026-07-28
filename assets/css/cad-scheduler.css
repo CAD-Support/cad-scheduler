@@ -33,6 +33,31 @@
   color: #b42318;
 }
 
+.cad-scheduler__status--success {
+  color: #0f6b4c;
+}
+
+/* Drag & drop reschedule (Sprint 3 P1) */
+body.cad-dnd-active {
+  cursor: grabbing;
+  user-select: none;
+}
+
+body.cad-dnd-active .cad-appointment {
+  cursor: grabbing;
+}
+
+.cad-appointment--dragging {
+  opacity: 0.35;
+}
+
+.cad-appointment--ghost {
+  z-index: 5;
+  opacity: 0.92;
+  box-shadow: 0 8px 20px rgba(43, 43, 43, 0.18);
+  pointer-events: none !important;
+}
+
 /* Date navigation — Sprint 2.1 (stays outside the calendar scrollport) */
 .cad-nav {
   position: relative;

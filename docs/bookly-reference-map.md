@@ -822,11 +822,72 @@ When changing `includes/class-cad-bookly-repository.php` or mapper:
 4. **Collaborative / Compound** — if multi-staff or multi-segment bookings appear wrong on grid
 5. **Events** — if non-appointment blocks should appear on calendar
 
-When implementing CAD appointment **save/update** (future):
+When implementing CAD appointment **save/update**:
 
-1. **Core** appointment edit dialog AJAX (extract ZIP)
-2. **Customer Cabinet** `saveReschedule` flow
-3. **Pro** backend appointment proxies
+1. **Core** `Backend\Components\Dialogs\Appointment\Edit\Ajax` (extract ZIP) — see [Appointment save path](#appointment-save-path-admin-edit)
+2. **Customer Cabinet** `saveReschedule` flow (frontend reschedule; creates/cancels CA rows)
+3. **Pro** `Lib\ProxyProviders\Shared` + `Common::syncWithCalendars`
+
+---
+
+## Appointment save path (admin edit)
+
+Verified against Bookly core **27.2** (`codecanyon-…-bookly-booking-plugin-….zip` → inner `bookly-responsive-appointment-booking-tool.27.2.zip`).
+
+### AJAX endpoint
+
+| Item | Value |
+|------|--------|
+| **WP action** | `bookly_save_appointment_form` (Bookly `Lib\Base\Ajax` naming) |
+| **Class** | `Bookly\Backend\Components\Dialogs\Appointment\Edit\Ajax` |
+| **Method** | `saveAppointmentForm()` |
+| **Permissions** | `staff`, `supervisor` |
+
+Related:
+
+| Action | Method | Role |
+|--------|--------|------|
+| `bookly_check_appointment_errors` | `checkAppointmentErrors()` | Pre-save validation / conflicts |
+| `bookly_get_data_for_appointment` | `getDataForAppointment()` | Load form for edit |
+| `bookly_get_day_schedule` | `getDaySchedule()` | Reschedule day slots |
+
+### Controller flow
+
+`saveAppointmentForm()` is a thin wrapper: it reads POST params and delegates to:
+
+```php
+Bookly\Lib\Utils\Appointment::save(
+  $appointment_id, $staff_id, $service_id, $custom_service_name, $custom_service_price,
+  $location_id, $skip_date, $start_date, $end_date, $repeat, $schedule, $reschedule_type,
+  $customers, $notification, $internal_note, $created_from
+);
+```
+
+Conflict / schedule checks use:
+
+```php
+Bookly\Lib\Utils\Appointment::checkTime(
+  $appointment_id, $start_date, $end_date, $staff_id, $service_id, $location_id, $customers
+);
+```
+
+`checkTime` returns flags including `date_interval_not_available` (staff/time overlap — **hard conflict**).
+
+### What `Utils\Appointment::save()` does (single appointment edit)
+
+1. Validates start/end, staff, service (or custom service name).
+2. Capacity check via `StaffService`.
+3. Loads/creates `Entities\Appointment`, sets staff / service / start / end / extras duration / note.
+4. `$appointment->save()` then `$appointment->saveCustomerAppointments( $customers )`.
+5. **Integrations:** `Proxy\Shared::syncOnlineMeeting()` + `Utils\Common::syncWithCalendars()` → Google (`Proxy\Pro::syncGoogleCalendarEvent`) and Outlook.
+6. **Notifications:** when `$notification` is truthy, `Notifications\Booking\Sender::sendForCA( … )` (plus waiting-list proxies); may return a notification **queue** token for deferred send UI.
+7. Clears sent reminders when start time changes (`_deleteSentReminders`).
+
+### CAD reuse strategy (Sprint 3 P1)
+
+CAD **`cad_update_appointment`** must call `Bookly\Lib\Utils\Appointment::checkTime` + `::save` (not raw `$wpdb` updates) so notifications and calendar sync keep working. Rebuild the `$customers` array from existing `CustomerAppointment` rows; change only staff + start/end (preserve duration from stored `end_date - start_date`).
+
+Customer Cabinet `saveReschedule` is a **different** path (cancel + recreate CA) — useful reference for conflict SQL, not the primary CAD admin save target.
 
 ---
 
@@ -843,7 +904,8 @@ These are defined in CAD Scheduler, not Bookly:
 | `cad_scheduler_health` | `snippets/10A-ajax-bridge.php` | Filter health-check issues (diagnostics) |
 | `cad_scheduler_diagnostics_enabled` | `snippets/10A-ajax-bridge.php` | Show diagnostic panel when install is healthy |
 | `cad_scheduler_validation_mode_enabled` | `snippets/10A-ajax-bridge.php` | Show appointment ID overlay on blocks (default `false`); see [Sprint 1.7](sprint-1.7-live-validation.md) |
-| `wp_ajax_cad_update_appointment` | `snippets/10A-ajax-bridge.php` | CAD update stub (future) |
+| `wp_ajax_cad_update_appointment` | `snippets/10A-ajax-bridge.php` | Reschedule via Bookly `Utils\Appointment::save` (Sprint 3 P1) |
+| `cad_scheduler_reschedule_notify` | `includes/class-cad-schedule-provider.php` | Whether drag/reschedule sends Bookly notifications (default `true`) |
 
 ---
 

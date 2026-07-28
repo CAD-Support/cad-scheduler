@@ -414,4 +414,313 @@ class CAD_Schedule_Provider {
 		$result = $this->repository->update_appointment_status( $appointment_id, $status );
 		return false !== $result;
 	}
+
+	/**
+	 * Reschedule an appointment via Bookly's admin save path
+	 * (`Bookly\Lib\Utils\Appointment::checkTime` + `::save`).
+	 *
+	 * Updates staff (table) and start time; preserves stored duration
+	 * (`end_date - start_date`). Does not overwrite conflicting slots.
+	 *
+	 * @param string|int      $appointment_id Bookly appointment id.
+	 * @param string|int      $staff_id       Target Bookly staff / CAD table id.
+	 * @param string          $start_date     WP-local `Y-m-d H:i:s` or ISO-8601.
+	 * @param string|null     $end_date       Optional; when null, duration is preserved.
+	 * @return array{
+	 *   ok: bool,
+	 *   code?: string,
+	 *   message?: string,
+	 *   appointment?: array|null,
+	 *   conflicts?: array,
+	 *   errors?: array,
+	 *   bookly?: array
+	 * }
+	 */
+	public function update_appointment( $appointment_id, $staff_id, $start_date, $end_date = null ) {
+		$appointment_id = (int) $appointment_id;
+		$staff_id       = (int) $staff_id;
+
+		if ( $appointment_id <= 0 ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_appointment',
+				'message' => 'Invalid appointment.',
+			);
+		}
+		if ( $staff_id <= 0 ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_staff',
+				'message' => 'Invalid table / staff.',
+			);
+		}
+
+		$start_mysql = $this->normalize_bookly_datetime( $start_date );
+		if ( ! $start_mysql ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_start',
+				'message' => 'Invalid start time.',
+			);
+		}
+
+		if ( ! class_exists( '\Bookly\Lib\Entities\Appointment', false )
+			|| ! class_exists( '\Bookly\Lib\Utils\Appointment', false )
+		) {
+			return array(
+				'ok'      => false,
+				'code'    => 'bookly_unavailable',
+				'message' => 'Bookly appointment APIs are not available.',
+			);
+		}
+
+		$appointment = new \Bookly\Lib\Entities\Appointment();
+		if ( ! $appointment->load( $appointment_id ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'not_found',
+				'message' => 'Appointment not found.',
+			);
+		}
+
+		$old_start = $appointment->getStartDate();
+		$old_end   = $appointment->getEndDate();
+		if ( ! $old_start || ! $old_end ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'missing_times',
+				'message' => 'Appointment has no start/end time.',
+			);
+		}
+
+		if ( null !== $end_date && '' !== (string) $end_date ) {
+			$end_mysql = $this->normalize_bookly_datetime( $end_date );
+			if ( ! $end_mysql ) {
+				return array(
+					'ok'      => false,
+					'code'    => 'invalid_end',
+					'message' => 'Invalid end time.',
+				);
+			}
+		} else {
+			$duration = max( 60, strtotime( $old_end ) - strtotime( $old_start ) );
+			try {
+				$start_dt  = new DateTimeImmutable( $start_mysql, wp_timezone() );
+				$end_mysql = $start_dt->modify( '+' . $duration . ' seconds' )->format( 'Y-m-d H:i:s' );
+			} catch ( Exception $e ) {
+				return array(
+					'ok'      => false,
+					'code'    => 'invalid_start',
+					'message' => 'Invalid start time.',
+				);
+			}
+		}
+
+		if ( strtotime( $end_mysql ) <= strtotime( $start_mysql ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_interval',
+				'message' => 'End time must be after start time.',
+			);
+		}
+
+		$customers = $this->customers_payload_for_save( $appointment );
+		if ( empty( $customers ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'no_customers',
+				'message' => 'Appointment has no customers to save.',
+			);
+		}
+
+		$service_id = $appointment->getServiceId();
+		$service_id = $service_id ? (int) $service_id : null;
+		$location_id = $appointment->getLocationId() ? (int) $appointment->getLocationId() : 0;
+
+		$check = \Bookly\Lib\Utils\Appointment::checkTime(
+			$appointment_id,
+			$start_mysql,
+			$end_mysql,
+			$staff_id,
+			$service_id ? $service_id : 0,
+			$location_id,
+			$customers
+		);
+
+		if ( ! empty( $check['date_interval_not_available'] ) ) {
+			return array(
+				'ok'        => false,
+				'code'      => 'conflict',
+				'message'   => 'That time conflicts with another appointment on this table.',
+				'conflicts' => is_array( $check ) ? $check : array(),
+			);
+		}
+
+		/**
+		 * Whether CAD reschedule should trigger Bookly notifications.
+		 *
+		 * @param bool   $notify
+		 * @param int    $appointment_id
+		 * @param string $start_mysql
+		 * @param int    $staff_id
+		 */
+		$notify = (bool) apply_filters(
+			'cad_scheduler_reschedule_notify',
+			true,
+			$appointment_id,
+			$start_mysql,
+			$staff_id
+		);
+
+		$custom_name  = $appointment->getCustomServiceName();
+		$custom_price = $appointment->getCustomServicePrice();
+		// Save without Bookly's deferred notification queue UI; send directly below when $notify.
+		$bookly = \Bookly\Lib\Utils\Appointment::save(
+			$appointment_id,
+			$staff_id,
+			null === $service_id ? null : $service_id,
+			$custom_name,
+			null === $custom_price || '' === $custom_price ? '' : $custom_price,
+			$location_id,
+			0,
+			$start_mysql,
+			$end_mysql,
+			array( 'enabled' => false ),
+			array(),
+			'current',
+			$customers,
+			0,
+			$appointment->getInternalNote(),
+			'backend'
+		);
+
+		if ( empty( $bookly['success'] ) ) {
+			$errors  = isset( $bookly['errors'] ) && is_array( $bookly['errors'] ) ? $bookly['errors'] : array();
+			$message = 'Could not save appointment.';
+			if ( ! empty( $errors['time_interval'] ) && is_string( $errors['time_interval'] ) ) {
+				$message = $errors['time_interval'];
+			} elseif ( ! empty( $errors['db'] ) && is_string( $errors['db'] ) ) {
+				$message = $errors['db'];
+			} elseif ( ! empty( $errors['overflow_capacity'] ) ) {
+				$message = 'Not enough capacity for this table/service.';
+			}
+
+			return array(
+				'ok'      => false,
+				'code'    => 'save_failed',
+				'message' => $message,
+				'errors'  => $errors,
+				'bookly'  => $bookly,
+			);
+		}
+
+		if ( $notify
+			&& class_exists( '\Bookly\Lib\Notifications\Booking\Sender', false )
+			&& method_exists( '\Bookly\Lib\Notifications\Booking\Sender', 'sendForCA' )
+		) {
+			$saved = new \Bookly\Lib\Entities\Appointment();
+			if ( $saved->load( $appointment_id ) ) {
+				foreach ( $saved->getCustomerAppointments( true ) as $ca ) {
+					\Bookly\Lib\Notifications\Booking\Sender::sendForCA( $ca, $saved, array(), true );
+				}
+			}
+		}
+
+		$row    = $this->repository->get_appointment_by_id( $appointment_id );
+		$mapped = $row ? $this->mapper->map_appointment( $row ) : null;
+
+		return array(
+			'ok'          => true,
+			'appointment' => $mapped,
+			'conflicts'   => is_array( $check ) ? $check : array(),
+			'bookly'      => array(
+				'success' => true,
+				'notified' => $notify,
+			),
+		);
+	}
+
+	/**
+	 * Build Bookly save() customer rows from existing customer appointments.
+	 *
+	 * @param \Bookly\Lib\Entities\Appointment $appointment
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function customers_payload_for_save( $appointment ) {
+		$customers = array();
+		$cas       = $appointment->getCustomerAppointments( true );
+		if ( ! is_array( $cas ) || empty( $cas ) ) {
+			return array();
+		}
+
+		foreach ( $cas as $ca ) {
+			$custom_fields = json_decode( (string) $ca->getCustomFields(), true );
+			$extras        = json_decode( (string) $ca->getExtras(), true );
+			if ( ! is_array( $custom_fields ) ) {
+				$custom_fields = array();
+			}
+			if ( ! is_array( $extras ) ) {
+				$extras = array();
+			}
+
+			$timezone = null;
+			if ( class_exists( '\Bookly\Lib\Proxy\Pro', false )
+				&& method_exists( '\Bookly\Lib\Proxy\Pro', 'getCustomerTimezone' )
+			) {
+				$timezone = \Bookly\Lib\Proxy\Pro::getCustomerTimezone(
+					$ca->getTimeZone(),
+					$ca->getTimeZoneOffset()
+				);
+			}
+
+			$customers[] = array(
+				'id'                => (int) $ca->getCustomerId(),
+				'ca_id'             => (int) $ca->getId(),
+				'custom_fields'     => $custom_fields,
+				'extras'            => $extras,
+				'number_of_persons' => (int) $ca->getNumberOfPersons(),
+				'notes'             => (string) $ca->getNotes(),
+				'status'            => (string) $ca->getStatus(),
+				'payment_id'        => $ca->getPaymentId(),
+				'payment_action'    => '',
+				'payment_for'       => 'current',
+				'series_id'         => $ca->getSeriesId(),
+				'timezone'          => $timezone,
+				'created_from'      => 'backend',
+			);
+		}
+
+		return $customers;
+	}
+
+	/**
+	 * Normalize a client datetime to Bookly/WP-local `Y-m-d H:i:s`.
+	 *
+	 * @param string $value
+	 * @return string|null
+	 */
+	private function normalize_bookly_datetime( $value ) {
+		$value = trim( (string) $value );
+		if ( '' === $value ) {
+			return null;
+		}
+
+		if ( preg_match( '/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?/', $value ) ) {
+			$value = str_replace( 'T', ' ', $value );
+			// Strip trailing timezone designator for plain local strings.
+			if ( preg_match( '/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2})(:\d{2})?/', $value, $m )
+				&& ! preg_match( '/[Zz]|[+-]\d{2}:?\d{2}$/', trim( $value ) )
+			) {
+				$base = $m[1] . ( isset( $m[2] ) && $m[2] ? $m[2] : ':00' );
+				return $base;
+			}
+		}
+
+		try {
+			$dt = new DateTimeImmutable( $value );
+			return $dt->setTimezone( wp_timezone() )->format( 'Y-m-d H:i:s' );
+		} catch ( Exception $e ) {
+			return null;
+		}
+	}
 }

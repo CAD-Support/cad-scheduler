@@ -1,23 +1,35 @@
 # Sprint 3.0 — Studio Operations (Planning)
 
-**Status:** Planned — kickoff only. **Implementation has not started.**
+**Status:** Phase 1 **P1 Drag & Drop shipped in 2.7.0**. P2 Quick Add not started.
 
-**Goal:** Make CAD Scheduler the primary day-to-day scheduling UI for studio staff so most appointment management no longer requires the Bookly calendar.
+**Goal:** Deliver a scheduler studios can use for **daily operations** before project handoff — view, create, move, edit, and update appointments **without opening the native Bookly calendar**.
 
-## GitHub issues
+## Reprioritization (2026-07-27)
 
-| Priority | Issue | Estimate | Depends on |
-|----------|-------|----------|------------|
-| **P0** Undo | [#2](https://github.com/CAD-Support/cad-scheduler/issues/2) | S–M · ~4–8h · 3 pts | — |
-| **P1** Drag & Drop | [#3](https://github.com/CAD-Support/cad-scheduler/issues/3) | XL · ~20–32h · 13 pts | Soft: P0 |
-| **P2** Quick Add | [#4](https://github.com/CAD-Support/cad-scheduler/issues/4) | L · ~12–20h · 8 pts | Soft: P1 write helpers |
-| **P3** Lightspeed lookup | [#5](https://github.com/CAD-Support/cad-scheduler/issues/5) | M · ~8–12h · 5 pts | **Hard: P2** |
-| **P4** Live Refresh | [#6](https://github.com/CAD-Support/cad-scheduler/issues/6) | S–M · ~4–8h · 3 pts | Soft: P5 |
-| **P5** Filters | [#7](https://github.com/CAD-Support/cad-scheduler/issues/7) | S · ~3–6h · 2 pts | Soft: P4 (re-apply) |
+Immediate focus is **Phase 1 (Critical)** only. Do not start Phase 2 work until Phase 1 is **complete and production-ready**.
 
-**Suggested build order:** P0 → P5 (parallel-friendly) → P1 backend → P1 DnD UI → P2 → P3 → P4 (or P4 earlier with stub filter state).
+| Phase | Priority | Issue | Estimate | Depends on |
+|-------|----------|-------|----------|------------|
+| **1 · Critical** | **P1** Drag & Drop | [#3](https://github.com/CAD-Support/cad-scheduler/issues/3) | XL · ~20–32h · 13 pts | — |
+| **1 · Critical** | **P2** Quick Add | [#4](https://github.com/CAD-Support/cad-scheduler/issues/4) | L · ~12–20h · 8 pts | Soft: P1 write helpers |
+| **2 · After Phase 1** | **P3** Undo | [#2](https://github.com/CAD-Support/cad-scheduler/issues/2) | S–M · ~4–8h · 3 pts | Soft: P1/P2 write paths |
+| **2 · After Phase 1** | **P4** Filters | [#7](https://github.com/CAD-Support/cad-scheduler/issues/7) | S · ~3–6h · 2 pts | Soft: P5 (re-apply) |
+| **2 · After Phase 1** | **P5** Live Refresh | [#6](https://github.com/CAD-Support/cad-scheduler/issues/6) | S–M · ~4–8h · 3 pts | Soft: P4 |
+| **2 · After Phase 1** | **P6** Lightspeed lookup | [#5](https://github.com/CAD-Support/cad-scheduler/issues/5) | M · ~8–12h · 5 pts | **Hard: P2** |
+
+**Suggested build order:** **P1** (backend + DnD UI) → **P2** → then **P3 → P4 → P5 → P6**.
 
 Labels: `sprint-3.0`, `enhancement`, `size/S|M|L|XL`.
+
+### Phase 1 non-negotiable: Bookly save/create flows
+
+P1 and P2 **must** use Bookly’s existing **save / create** flows wherever possible so:
+
+- notifications (SMS/email)
+- validation
+- Google Calendar / other Bookly integrations
+
+continue to fire. Prefer Bookly PHP/AJAX APIs over raw `$wpdb` writes. Document any unavoidable direct DB updates in the implementation PR.
 
 ---
 
@@ -33,6 +45,44 @@ Labels: `sprint-3.0`, `enhancement`, `size/S|M|L|XL`.
 
 ---
 
+## P1 implementation notes (Drag & Drop)
+
+### Bookly save path (research)
+
+See [Appointment save path](bookly-reference-map.md#appointment-save-path-admin-edit).
+
+| Layer | Detail |
+|-------|--------|
+| Admin AJAX | `bookly_save_appointment_form` → `Edit\Ajax::saveAppointmentForm()` |
+| Core API | `Bookly\Lib\Utils\Appointment::save()` / `::checkTime()` |
+| Sync | `Common::syncWithCalendars()` inside `save()` (Google / Outlook) |
+| Notify | CAD calls `Sender::sendForCA` after save (avoids admin notification-queue UI) |
+
+### CAD surfaces
+
+| Surface | Role |
+|---------|------|
+| `CAD_Schedule_Provider::update_appointment` | checkTime → save → optional notify; returns structured result |
+| `wp_ajax_cad_update_appointment` | Thin bridge: auth, sanitize, Provider, JSON |
+| `CAD.API.updateAppointment` | Front-end wrapper |
+| `CAD.DnD` + `CAD.notify` | Drag between lanes/times; optimistic UI; revert on failure |
+| Fixture | [`docs/fixtures/sprint-3.0-dnd.html`](fixtures/sprint-3.0-dnd.html) |
+
+### Behaviour
+
+- Duration preserved from Bookly `end_date - start_date` (extras duration unchanged).
+- Hard-block when `date_interval_not_available` (no silent overwrite).
+- Filter `cad_scheduler_reschedule_notify` (default `true`).
+- Single selected day only (multi-day drag deferred).
+
+### Still out of scope for P1
+
+- Quick Add / create (`cad_create_appointment`)
+- Undo toast stack (P3)
+- Collaborative/compound multi-segment move edge cases (document if encountered live)
+
+---
+
 ## Bookly / CAD API research summary
 
 ### Already shipped (reuse)
@@ -45,43 +95,23 @@ Labels: `sprint-3.0`, `enhancement`, `size/S|M|L|XL`.
 | Status UI | `src/components/status-panel.js`, popover `setStatus` | Optimistic status + re-render |
 | Delete / Edit links | Popover actions | Open Bookly manage URL — **no CAD delete API** |
 | Normalized model | Mapper / Sprint 2.5 | `type`, nests, `status`, `painters`, etc. |
-| Filters (WP) | `cad_scheduler_*` | Custom fields, appointment shape — **not** UI toolbar filters |
 
-### Stub / incomplete (Sprint 3 must replace or extend)
+### Sprint 3 status
 
-| Surface | Current behavior | Sprint 3 need |
-|---------|------------------|---------------|
-| `wp_ajax_cad_update_appointment` | Returns `{ updated: true }` **without DB write** | Real reschedule (staff/time) for **P1** |
-| CAD create appointment | **Missing** | **P2** `cad_create_appointment` (proposed) |
-| CAD delete appointment | **Missing** (Bookly deep-link only) | Optional later; P0 should leave undo hooks for delete |
-| Customer search | **Missing** | **P3** LS + Bookly fallback |
-| Live poll / filters | **Missing** | **P4** / **P5** client-side |
-
-### Bookly references to inspect before write paths
-
-From [`docs/bookly-reference-map.md`](bookly-reference-map.md):
-
-1. **Core** `Backend\Components\Dialogs\Appointment\Edit\Ajax` — admin create/save (extract core ZIP / live WP).
-2. **Customer Cabinet** `saveReschedule` / `getDaySchedule` — reschedule patterns.
-3. **Pro** `Lib\ProxyProviders\Shared` — notifications / query prep.
-4. **Pro** ModernBookingForm save — validation + notification reference (not necessarily call path).
-5. Entities / tables: `bookly_appointments`, `bookly_customer_appointments`, `bookly_customers`, `bookly_services`, `bookly_staff`.
-
-**Unknowns (document in implementation PRs):**
-
-- Whether CAD should call Bookly PHP APIs vs `$wpdb` so SMS/email/Google sync fire.
-- Collaborative / compound appointment move rules.
-- Lightspeed: **no in-repo client**; discover site plugin/credentials during P3 spike.
-- Multi-day visible range: CAD is currently **single selected day** — P1 “drag to another day” may mean date-nav + drop target or defer until multi-day UI.
+| Surface | Status |
+|---------|--------|
+| `wp_ajax_cad_update_appointment` | **P1** — Bookly `Utils\Appointment::save` |
+| CAD create appointment | **Missing** — P2 |
+| Customer search | **Missing** — P6 |
+| Live poll / filters | **Missing** — P5 / P4 |
 
 ### Proposed new CAD AJAX actions (additive)
 
 | Action | Priority | Provider responsibility |
 |--------|----------|-------------------------|
-| `cad_update_appointment` (real) | P1 | Reschedule staff/start/end; conflict check; optional notify |
-| `cad_create_appointment` | P2 | Create appointment + customer_appointment (+ custom fields/painters) |
-| `cad_search_customers` (name TBD) | P3 | LS search + Bookly fallback |
-| (optional) `cad_delete_appointment` | Later | Soft-delete / Bookly cancel — not required for P0 toast design |
+| `cad_update_appointment` (real) | **P1** | Reschedule via Bookly save; conflict check; notifications |
+| `cad_create_appointment` | **P2** | Create via Bookly create (+ custom fields/painters) |
+| `cad_search_customers` (name TBD) | **P6** | LS search + Bookly fallback |
 
 Bridge handlers must stay thin: nonce, capability, sanitize, call Provider, `wp_send_json_*`.
 
@@ -89,13 +119,12 @@ Bridge handlers must stay thin: nonce, capability, sanitize, call Provider, `wp_
 
 | Module | Priority |
 |--------|----------|
-| `CAD.Toast` / undo stack | P0 |
-| `CAD.DnD` + calendar bindings | P1 |
-| `CAD.QuickAdd` dialog | P2 |
-| Customer lookup field (in Quick Add) | P3 |
-| `CAD.LiveRefresh` | P4 |
-| `CAD.Filters` + toolbar | P5 |
-| Extend `CAD.API` only | all |
+| `CAD.DnD` + `CAD.notify` | **P1** (shipped in tree) |
+| `CAD.QuickAdd` dialog | **P2** |
+| `CAD.Toast` / undo stack | **P3** |
+| `CAD.Filters` + toolbar | **P4** |
+| `CAD.LiveRefresh` | **P5** |
+| Customer lookup field (in Quick Add) | **P6** |
 
 ---
 
@@ -103,21 +132,21 @@ Bridge handlers must stay thin: nonce, capability, sanitize, call Provider, `wp_
 
 | Priority | Fixture |
 |----------|---------|
-| P0 | `docs/fixtures/sprint-3.0-undo.html` |
-| P1 | `docs/fixtures/sprint-3.0-dnd.html` (+ optional PHP conflict fixture) |
+| P1 | `docs/fixtures/sprint-3.0-dnd.html` |
 | P2 | `docs/fixtures/sprint-3.0-quick-add.html` |
-| P3 | `docs/fixtures/sprint-3.0-customer-lookup.html` |
-| P4 | Manual QA checklist (optional JS mock) |
-| P5 | `docs/fixtures/sprint-3.0-filters.html` |
+| P3 | `docs/fixtures/sprint-3.0-undo.html` |
+| P4 | `docs/fixtures/sprint-3.0-filters.html` |
+| P5 | Manual QA checklist (optional JS mock) |
+| P6 | `docs/fixtures/sprint-3.0-customer-lookup.html` |
 
 ---
 
-## Out of scope for Sprint 3.0 kickoff
+## Out of scope for Sprint 3.0 kickoff / Phase 1
 
-- Implementing P0–P5 features
+- Implementing Phase 2 (P3–P6) before Phase 1 is production-ready
 - Removing CDN shim / TEMP DEBUG
 - Putting business logic in the bridge
-- Full Lightspeed customer **create** (document as future)
+- Full Lightspeed customer **create** (document as future; lookup is P6)
 - Multi-studio location filter (still Phase 3 roadmap item beyond this sprint’s P-list)
 
 ---

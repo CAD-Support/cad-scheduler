@@ -32,15 +32,29 @@
       const response = await fetch(String(CAD.Config.get('ajaxUrl') ?? ''), fetchOpts);
 
       const text = await response.text();
-      if (!response.ok) {
-        throw new Error(`Request failed (${response.status}): ${text.slice(0, 200)}`);
-      }
-
+      let parsed;
       try {
-        return JSON.parse(text);
+        parsed = JSON.parse(text);
       } catch (e) {
+        if (!response.ok) {
+          throw new Error(`Request failed (${response.status}): ${text.slice(0, 200)}`);
+        }
         throw new Error('Invalid JSON response from server');
       }
+
+      if (!response.ok) {
+        const message =
+          parsed?.data?.message ||
+          parsed?.message ||
+          `Request failed (${response.status})`;
+        const err = new Error(String(message));
+        err.payload = parsed?.data ?? parsed;
+        err.status = response.status;
+        err.response = parsed;
+        throw err;
+      }
+
+      return parsed;
     },
 
     /**
@@ -60,6 +74,27 @@
         appointment_id: appointmentId,
         status,
       });
+    },
+
+    /**
+     * Reschedule via Bookly save path (staff + start; duration preserved server-side).
+     * @param {{
+     *   appointmentId: string|number,
+     *   staffId: string|number,
+     *   start: string,
+     *   end?: string,
+     * }} params
+     */
+    updateAppointment(params) {
+      const data = {
+        appointment_id: params.appointmentId,
+        staff_id: params.staffId,
+        start: params.start,
+      };
+      if (params.end) {
+        data.end = params.end;
+      }
+      return api.request('cad_update_appointment', data);
     },
 
     /**
