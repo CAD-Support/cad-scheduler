@@ -115,13 +115,41 @@
     }
   }
 
-  function snapMinutes(lane, clientY, matrix) {
+  /**
+   * Snap using the appointment's TOP edge (clientY - grabOffsetY), not the cursor.
+   * @param {HTMLElement} lane
+   * @param {number} clientY pointer clientY
+   * @param {HTMLElement} matrix
+   * @param {number} grabOffsetY distance from card top to pointer at grab
+   * @returns {{
+   *   mouseY: number,
+   *   topEdgeY: number,
+   *   grabOffsetY: number,
+   *   rowIndex: number,
+   *   slotPx: number,
+   *   dayStartMin: number,
+   *   snappedMinutes: number
+   * }}
+   */
+  function resolveDropSnap(lane, clientY, matrix, grabOffsetY) {
     const blocks = lane.querySelector('.cad-matrix__blocks') || lane;
     const rect = blocks.getBoundingClientRect();
-    const y = clientY - rect.top;
+    const mouseY = clientY - rect.top;
+    const offset = Number(grabOffsetY) || 0;
+    const topEdgeY = mouseY - offset;
     const slotPx = slotHeightPx(matrix);
-    const slots = Math.max(0, Math.round(y / slotPx));
-    return dayStartMin(matrix) + slots * SLOT_MINUTES;
+    const rowIndex = Math.max(0, Math.round(topEdgeY / slotPx));
+    const dayStart = dayStartMin(matrix);
+    const snappedMinutes = dayStart + rowIndex * SLOT_MINUTES;
+    return {
+      mouseY,
+      topEdgeY,
+      grabOffsetY: offset,
+      rowIndex,
+      slotPx,
+      dayStartMin: dayStart,
+      snappedMinutes,
+    };
   }
 
   function laneFromPoint(clientX, clientY) {
@@ -157,6 +185,8 @@
     const lane = el.closest('.cad-matrix__lane');
     if (!lane) return;
 
+    const elRect = el.getBoundingClientRect();
+
     active = {
       pointerId: event.pointerId,
       appointmentId: String(appointmentId),
@@ -165,9 +195,12 @@
       originLane: lane,
       startClientX: event.clientX,
       startClientY: event.clientY,
+      /** Cursor offset from appointment TOP — drop/snap must use top edge, not cursor. */
+      grabOffsetY: event.clientY - elRect.top,
       durationMs: Math.max(60 * 1000, end.getTime() - start.getTime()),
       dragging: false,
       ghost: null,
+      lastSnap: null,
       snapshot: {
         id: appt.id,
         tableId: appt.tableId,
@@ -202,9 +235,9 @@
     if (!matrix) return;
 
     const lane = laneFromPoint(event.clientX, event.clientY) || active.originLane;
-    const minutes = snapMinutes(lane, event.clientY, matrix);
-    const slotPx = slotHeightPx(matrix);
-    const topPx = ((minutes - dayStartMin(matrix)) / SLOT_MINUTES) * slotPx;
+    const snap = resolveDropSnap(lane, event.clientY, matrix, active.grabOffsetY);
+    active.lastSnap = snap;
+    const topPx = ((snap.snappedMinutes - snap.dayStartMin) / SLOT_MINUTES) * snap.slotPx;
     const blocks = lane.querySelector('.cad-matrix__blocks');
 
     if (!active.ghost) {
@@ -220,26 +253,40 @@
 
     active.ghost.style.top = `${Math.max(0, topPx)}px`;
     active.ghost.dataset.tableId = lane.dataset.tableId || '';
+    active.ghost.dataset.snapMinutes = String(snap.snappedMinutes);
   }
 
   async function finishPointer(event) {
     if (!active || event.pointerId !== active.pointerId) return;
     const session = active;
     active = null;
-    endSessionVisual(session);
 
-    if (!session.dragging) return;
+    if (!session.dragging) {
+      endSessionVisual(session);
+      return;
+    }
 
     const matrix =
       session.originLane.closest('.cad-matrix') || document.querySelector('.cad-matrix');
     if (!matrix) {
+      endSessionVisual(session);
       reRender();
       return;
     }
 
+    // Prefer last preview snap (matches ghost). Recompute from TOP edge if needed.
     const lane = laneFromPoint(event.clientX, event.clientY) || session.originLane;
-    const tableId = String(lane.dataset.tableId || session.originTableId);
-    const minutes = snapMinutes(lane, event.clientY, matrix);
+    const snap =
+      session.lastSnap ||
+      resolveDropSnap(lane, event.clientY, matrix, session.grabOffsetY);
+    const tableId = String(
+      (session.ghost && session.ghost.dataset.tableId) ||
+        lane.dataset.tableId ||
+        session.originTableId
+    );
+
+    endSessionVisual(session);
+
     const selectedDate = String(
       CAD.State.get('selectedDate') || CAD.Config.get('today') || ''
     );
@@ -249,17 +296,48 @@
       return;
     }
 
-    const dropDate = dropDateFromMinutes(selectedDate, minutes);
-    const dayStartMinValue = dayStartMin(matrix);
-    const snappedMinutes = minutes;
-    const startMysql = toMysqlLocal(selectedDate, snappedMinutes);
-    const { startIso, endIso } = toIsoRange(selectedDate, snappedMinutes, session.durationMs);
+    const snappedMinutes = snap.snappedMinutes;
+    const finalMinutesForMysql = snappedMinutes;
+
+    // TEMP DEBUG — drop math (top-edge based) immediately before toMysqlLocal.
+    // eslint-disable-next-line no-console
+    console.log('[CAD DnD drop calc]', {
+      mouseY: snap.mouseY,
+      topEdgeY: snap.topEdgeY,
+      grabOffsetY: snap.grabOffsetY,
+      rowIndex: snap.rowIndex,
+      slotPx: snap.slotPx,
+      dayStartMin: snap.dayStartMin,
+      snappedMinutes,
+      finalMinutesForMysql,
+      reference: 'appointment top edge (clientY - grabOffsetY)',
+    });
+
+    const dropDate = dropDateFromMinutes(selectedDate, finalMinutesForMysql);
+    const startMysql = toMysqlLocal(selectedDate, finalMinutesForMysql);
+    const { startIso, endIso } = toIsoRange(
+      selectedDate,
+      finalMinutesForMysql,
+      session.durationMs
+    );
 
     const ajaxPayload = {
       appointmentId: session.appointmentId,
       staffId: tableId,
       start: startMysql,
     };
+
+    // eslint-disable-next-line no-console
+    console.log('[CAD DnD]', {
+      dropDate: selectedDate,
+      dropDateObject: dropDate,
+      hours: dropDate.getHours(),
+      dayStartMin: snap.dayStartMin,
+      snappedMinutes,
+      startMysql,
+      timezoneOffset: new Date().getTimezoneOffset(),
+      ajaxPayload,
+    });
 
     updateStateAppointment(session.appointmentId, {
       tableId,
@@ -269,19 +347,6 @@
     reRender();
 
     try {
-      // TEMP DEBUG — remove after +1h drop QA (auto-logs on every drop).
-      // eslint-disable-next-line no-console
-      console.log('[CAD DnD]', {
-        dropDate: selectedDate,
-        dropDateObject: dropDate,
-        hours: dropDate.getHours(),
-        dayStartMin: dayStartMinValue,
-        snappedMinutes,
-        startMysql,
-        timezoneOffset: new Date().getTimezoneOffset(),
-        ajaxPayload,
-      });
-
       const result = await CAD.API.updateAppointment(ajaxPayload);
 
       if (result?.success === false) {

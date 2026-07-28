@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.7.3] — 2026-07-28
+
+### Fixed
+
+- **DnD drop snap** — use appointment top edge (`topEdgeY = mouseY - grabOffsetY`) and prefer last preview snap (`lastSnap`) instead of raw cursor Y
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **2.7.3**
+
 ## [2.7.2] — 2026-07-28
 
 ### Fixed
