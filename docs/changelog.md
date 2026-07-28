@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.7.2] — 2026-07-28
+
+### Fixed
+
+- **DnD day-start alignment** — bridge TEMP `forceRebuildFromState` now sets `--cad-day-start-min` (was missing; snap fell back to 08:00 and could shift drops by ±1h)
+
+### Added
+
+- TEMP console logging on drop (`[CAD DnD]` payload) and render (`[CAD day-start]` alignment) for live timezone QA
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **2.7.2**
+- Remove TEMP debug logs after QA
+
 ## [2.7.1] — 2026-07-28
 
 ### Fixed

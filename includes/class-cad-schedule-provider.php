@@ -464,15 +464,32 @@ class CAD_Schedule_Provider {
 			);
 		}
 
-		if ( ! class_exists( '\Bookly\Lib\Entities\Appointment', false )
-			|| ! class_exists( '\Bookly\Lib\Utils\Appointment', false )
-		) {
+		// TEMP DEBUG — remove after live Bookly save-path QA.
+		error_log( '[CAD] Received start: ' . $start_date ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
+		$entity_class = '\Bookly\Lib\Entities\Appointment';
+		$utils_class  = '\Bookly\Lib\Utils\Appointment';
+		if ( ! class_exists( $entity_class ) ) {
 			return array(
 				'ok'      => false,
 				'code'    => 'bookly_unavailable',
-				'message' => 'Bookly appointment APIs are not available.',
+				'message' => 'Missing Bookly class: ' . $entity_class,
 			);
 		}
+		if ( ! class_exists( $utils_class ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'bookly_unavailable',
+				'message' => 'Missing Bookly class: ' . $utils_class,
+			);
+		}
+
+		// TEMP DEBUG — remove after live Bookly save-path QA.
+		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			'[CAD update_appointment] Bookly classes loaded: '
+			. $entity_class . ', '
+			. $utils_class
+		);
 
 		$appointment = new \Bookly\Lib\Entities\Appointment();
 		if ( ! $appointment->load( $appointment_id ) ) {
@@ -537,6 +554,9 @@ class CAD_Schedule_Provider {
 		$service_id = $service_id ? (int) $service_id : null;
 		$location_id = $appointment->getLocationId() ? (int) $appointment->getLocationId() : 0;
 
+		// TEMP DEBUG — remove after live Bookly save-path QA.
+		error_log( '[CAD] Before checkTime start: ' . $appointment->getStartDate() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
 		$check = \Bookly\Lib\Utils\Appointment::checkTime(
 			$appointment_id,
 			$start_mysql,
@@ -575,6 +595,9 @@ class CAD_Schedule_Provider {
 		$custom_name  = $appointment->getCustomServiceName();
 		$custom_price = $appointment->getCustomServicePrice();
 		// Save without Bookly's deferred notification queue UI; send directly below when $notify.
+		// TEMP DEBUG — remove after live Bookly save-path QA.
+		error_log( '[CAD] Before save start: ' . $appointment->getStartDate() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
 		$bookly = \Bookly\Lib\Utils\Appointment::save(
 			$appointment_id,
 			$staff_id,
@@ -593,6 +616,10 @@ class CAD_Schedule_Provider {
 			$appointment->getInternalNote(),
 			'backend'
 		);
+
+		// TEMP DEBUG — remove after live Bookly save-path QA.
+		$appointment->load( $appointment_id );
+		error_log( '[CAD] After save start: ' . $appointment->getStartDate() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 
 		if ( empty( $bookly['success'] ) ) {
 			$errors  = isset( $bookly['errors'] ) && is_array( $bookly['errors'] ) ? $bookly['errors'] : array();

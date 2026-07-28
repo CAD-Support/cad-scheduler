@@ -467,6 +467,38 @@
       debugColumnCounts(head, body, tables.length, tables);
       CAD.editor?.bind(container);
       CAD.DnD?.bind(container);
+
+      // TEMP DEBUG — compare --cad-day-start-min to open hours / first row / snap.
+      try {
+        const cssRaw = getComputedStyle(container)
+          .getPropertyValue('--cad-day-start-min')
+          .trim();
+        const cssMin = cssRaw === '' ? null : parseInt(cssRaw, 10);
+        const open = openHoursForDate(
+          String(CAD.State.get('selectedDate') || CAD.Config.get('today') || '')
+        );
+        const firstLabel = metrics.labels.find((l) => !!l) || null;
+        const snapFallback = 8 * 60;
+        // eslint-disable-next-line no-console
+        console.log('[CAD day-start]', {
+          cssVar: cssRaw,
+          cssMin,
+          metricsStartMin: metrics.startMin,
+          metricsDayStart: metrics.dayStart,
+          configDayStart: CAD.Config.get('dayStart'),
+          openHoursStartMin: open ? open.startMin : null,
+          firstVisibleLabel: firstLabel,
+          firstRowMinute: metrics.startMin,
+          snapUses: cssMin != null && !Number.isNaN(cssMin) ? cssMin : snapFallback,
+          snapFallbackIfMissing: snapFallback,
+          cssMatchesMetrics: cssMin === metrics.startMin,
+          snapMatchesMetrics:
+            (cssMin != null && !Number.isNaN(cssMin) ? cssMin : snapFallback) ===
+            metrics.startMin,
+        });
+      } catch (_e) {
+        /* ignore */
+      }
     },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

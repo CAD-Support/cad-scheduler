@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 // already available on jsDelivr. Do not increment before the release
 // has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '2.7.1' );
+	define( 'CAD_SCHEDULER_VERSION', '2.7.2' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -343,6 +343,7 @@ function cad_scheduler_tables_sync_inline_js() {
     if (metrics) {
       container.style.setProperty('--cad-grid-height', metrics.gridHeight + 'px');
       container.style.setProperty('--cad-slot-height', metrics.slotHeight + 'px');
+      container.style.setProperty('--cad-day-start-min', String(metrics.startMin));
     }
 
     var scroll = document.createElement('div');
@@ -359,6 +360,7 @@ function cad_scheduler_tables_sync_inline_js() {
     if (metrics) {
       scroll.style.setProperty('--cad-grid-height', metrics.gridHeight + 'px');
       scroll.style.setProperty('--cad-slot-height', metrics.slotHeight + 'px');
+      scroll.style.setProperty('--cad-day-start-min', String(metrics.startMin));
     }
 
     // Literal repeat(N) — CDN CSS uses repeat(var(--cad-table-count)) which can
@@ -466,6 +468,29 @@ function cad_scheduler_tables_sync_inline_js() {
 
     if (CAD.editor && typeof CAD.editor.bind === 'function') CAD.editor.bind(container);
     if (CAD.DnD && typeof CAD.DnD.bind === 'function') CAD.DnD.bind(container);
+
+    // TEMP DEBUG — day-start alignment (CSS var vs open hours vs first row vs snap).
+    try {
+      var cssRaw = window.getComputedStyle(container).getPropertyValue('--cad-day-start-min').trim();
+      var cssMin = cssRaw === '' ? null : parseInt(cssRaw, 10);
+      var openCfg = (CAD.Config && CAD.Config.get('dayStart')) || null;
+      var openMap = CAD.Config && CAD.Config.get('openHours');
+      var firstLabel = metrics && metrics.labels ? metrics.labels.find(function (l) { return !!l; }) : null;
+      console.log('[CAD day-start]', {
+        cssVar: cssRaw,
+        cssMin: cssMin,
+        metricsStartMin: metrics ? metrics.startMin : null,
+        metricsDayStart: metrics ? metrics.dayStart : null,
+        configDayStart: openCfg,
+        openHoursToday: openMap,
+        firstVisibleLabel: firstLabel,
+        snapUses: cssMin !== null && !isNaN(cssMin) ? cssMin : 8 * 60,
+        snapFallbackIfMissing: 8 * 60,
+        aligned:
+          metrics &&
+          cssMin === metrics.startMin
+      });
+    } catch (e2) {}
   }
 
   /** TEMPORARY: replace CDN calendar.render until version bump. */

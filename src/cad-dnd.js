@@ -37,6 +37,24 @@
   }
 
   /**
+   * Format a local wall-clock Date as Bookly/WP `Y-m-d H:i:s` (no UTC conversion).
+   * @param {Date} date
+   * @returns {string}
+   */
+  function formatBooklyDate(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      return '';
+    }
+    const y = date.getFullYear();
+    const mo = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const mi = String(date.getMinutes()).padStart(2, '0');
+    const s = String(date.getSeconds()).padStart(2, '0');
+    return `${y}-${mo}-${d} ${h}:${mi}:${s}`;
+  }
+
+  /**
    * @param {string} isoDate YYYY-MM-DD
    * @param {number} minutesFromMidnight
    * @returns {string} Y-m-d H:i:s
@@ -48,15 +66,27 @@
   }
 
   /**
+   * Local Date for a schedule day + minutes-from-midnight (studio wall clock).
+   * @param {string} isoDate
+   * @param {number} minutesFromMidnight
+   * @returns {Date}
+   */
+  function dropDateFromMinutes(isoDate, minutesFromMidnight) {
+    const date = new Date(`${isoDate}T00:00:00`);
+    date.setHours(0, 0, 0, 0);
+    date.setMinutes(minutesFromMidnight);
+    return date;
+  }
+
+  /**
    * @param {string} isoDate
    * @param {number} minutesFromMidnight
    * @param {number} durationMs
    */
   function toIsoRange(isoDate, minutesFromMidnight, durationMs) {
-    const start = new Date(`${isoDate}T00:00:00`);
-    start.setHours(0, 0, 0, 0);
-    start.setMinutes(minutesFromMidnight);
+    const start = dropDateFromMinutes(isoDate, minutesFromMidnight);
     const end = new Date(start.getTime() + durationMs);
+    // Optimistic State only — AJAX must NOT use toISOString() (UTC).
     return { startIso: start.toISOString(), endIso: end.toISOString() };
   }
 
@@ -219,8 +249,17 @@
       return;
     }
 
-    const startMysql = toMysqlLocal(selectedDate, minutes);
-    const { startIso, endIso } = toIsoRange(selectedDate, minutes, session.durationMs);
+    const dropDate = dropDateFromMinutes(selectedDate, minutes);
+    const dayStartMinValue = dayStartMin(matrix);
+    const snappedMinutes = minutes;
+    const startMysql = toMysqlLocal(selectedDate, snappedMinutes);
+    const { startIso, endIso } = toIsoRange(selectedDate, snappedMinutes, session.durationMs);
+
+    const ajaxPayload = {
+      appointmentId: session.appointmentId,
+      staffId: tableId,
+      start: startMysql,
+    };
 
     updateStateAppointment(session.appointmentId, {
       tableId,
@@ -230,11 +269,20 @@
     reRender();
 
     try {
-      const result = await CAD.API.updateAppointment({
-        appointmentId: session.appointmentId,
-        staffId: tableId,
-        start: startMysql,
+      // TEMP DEBUG — remove after +1h drop QA (auto-logs on every drop).
+      // eslint-disable-next-line no-console
+      console.log('[CAD DnD]', {
+        dropDate: selectedDate,
+        dropDateObject: dropDate,
+        hours: dropDate.getHours(),
+        dayStartMin: dayStartMinValue,
+        snappedMinutes,
+        startMysql,
+        timezoneOffset: new Date().getTimezoneOffset(),
+        ajaxPayload,
       });
+
+      const result = await CAD.API.updateAppointment(ajaxPayload);
 
       if (result?.success === false) {
         throw Object.assign(new Error(result.data?.message || 'Could not reschedule.'), {
