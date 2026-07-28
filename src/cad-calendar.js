@@ -466,6 +466,7 @@
       // TEMP DEBUG Sprint 2.5.1 — remove after live column-count verified
       debugColumnCounts(head, body, tables.length, tables);
       CAD.editor?.bind(container);
+      CAD.DnD?.bind(container);
     },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

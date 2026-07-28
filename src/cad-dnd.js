@@ -99,6 +99,8 @@
     return el?.closest?.('.cad-matrix__lane') || null;
   }
 
+  const APPOINTMENT_ROOT = 'button.cad-appointment';
+
   function endSessionVisual(session) {
     session.el.classList.remove('cad-appointment--dragging');
     if (session.ghost) {
@@ -110,7 +112,7 @@
 
   function onPointerDown(event) {
     if (event.button != null && event.button !== 0) return;
-    const el = event.target.closest?.('.cad-appointment');
+    const el = event.target.closest?.(APPOINTMENT_ROOT);
     if (!el || !event.currentTarget.contains(el)) return;
     if (event.target.closest('.cad-popover')) return;
 
@@ -277,7 +279,12 @@
   }
 
   CAD.DnD = {
+    /** Appointment card root rendered by CAD.components.appointmentBlock. */
+    appointmentSelector: APPOINTMENT_ROOT,
+
     /**
+     * Bind drag handlers on the calendar host (event delegation to button.cad-appointment).
+     * Safe to call after every CAD.calendar.render — no-ops if already bound.
      * @param {HTMLElement} container calendar host
      */
     bind(container) {
@@ -296,15 +303,4 @@
       container.addEventListener('pointercancel', onPointerCancel);
     },
   };
-
-  const prevRender = CAD.calendar?.render;
-  if (typeof prevRender === 'function') {
-    CAD.calendar.render = function patchedRender(container) {
-      prevRender.call(CAD.calendar, container);
-      if (container) {
-        delete container.dataset.cadDndBound;
-        CAD.DnD.bind(container);
-      }
-    };
-  }
 })(typeof window !== 'undefined' ? window : globalThis);

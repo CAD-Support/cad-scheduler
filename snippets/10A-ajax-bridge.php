@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 // already available on jsDelivr. Do not increment before the release
 // has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '2.7.0' );
+	define( 'CAD_SCHEDULER_VERSION', '2.7.1' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -465,6 +465,7 @@ function cad_scheduler_tables_sync_inline_js() {
     } catch (e) {}
 
     if (CAD.editor && typeof CAD.editor.bind === 'function') CAD.editor.bind(container);
+    if (CAD.DnD && typeof CAD.DnD.bind === 'function') CAD.DnD.bind(container);
   }
 
   /** TEMPORARY: replace CDN calendar.render until version bump. */

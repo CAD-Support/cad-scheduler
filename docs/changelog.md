@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.7.1] — 2026-07-28
+
+### Fixed
+
+- **Drag & drop initialization** — bind `CAD.DnD` from the calendar render lifecycle (and bridge `forceRebuildFromState` polyfill); remove the fragile `calendar.render` monkey-patch; use `button.cad-appointment`; prevent duplicate listeners
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **2.7.1**
+- Paste updated bridge (+ calendar/dnd via CDN) for live QA
+
 ## [2.7.0] — 2026-07-28
 
 ### Added
@@ -24,7 +35,7 @@ See [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md).
 
 ### Phase 1 — Critical
 
-- **P1 Drag & Drop** — Shipped in **2.7.0** ([#3](https://github.com/CAD-Support/cad-scheduler/issues/3))
+- **P1 Drag & Drop** — Shipped in **2.7.0**; init fix in **2.7.1** ([#3](https://github.com/CAD-Support/cad-scheduler/issues/3))
 - **P2 Quick Add** — Not started ([#4](https://github.com/CAD-Support/cad-scheduler/issues/4))
 
 ### Phase 2 — After Phase 1 is production-ready

@@ -31,7 +31,7 @@ P1/P2 **must** use Bookly save/create flows (notifications, validation, integrat
 
 | Priority | Item | Issue | Status |
 |----------|------|-------|--------|
-| **P1** | Drag & drop reschedule + Bookly save + conflicts | [#3](https://github.com/CAD-Support/cad-scheduler/issues/3) | **2.7.0** |
+| **P1** | Drag & drop reschedule + Bookly save + conflicts | [#3](https://github.com/CAD-Support/cad-scheduler/issues/3) | **2.7.0** / init fix **2.7.1** |
 | **P2** | Quick Add from empty slot (Bookly create) | [#4](https://github.com/CAD-Support/cad-scheduler/issues/4) | Planned |
 
 ### Phase 2 — After Phase 1 is production-ready
