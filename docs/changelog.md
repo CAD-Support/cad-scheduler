@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.7.4] — 2026-07-28
+
+### Added
+
+- **Debug-only** instrumentation for +60m drop investigation: `[CAD first-minute alignment]`, `[STEP 0]`–`[STEP 8]`, `[CAD row origin]` — **no drag/drop behavior changes**
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **2.7.4**
+- Remove TEMP debug logs after QA
+
 ## [2.7.3] — 2026-07-28
 
 ### Fixed

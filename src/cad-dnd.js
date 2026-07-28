@@ -276,6 +276,7 @@
 
     // Prefer last preview snap (matches ghost). Recompute from TOP edge if needed.
     const lane = laneFromPoint(event.clientX, event.clientY) || session.originLane;
+    const usedLastSnap = Boolean(session.lastSnap);
     const snap =
       session.lastSnap ||
       resolveDropSnap(lane, event.clientY, matrix, session.grabOffsetY);
@@ -284,6 +285,14 @@
         lane.dataset.tableId ||
         session.originTableId
     );
+
+    // Geometry for debug only (does not affect snap / payload).
+    const blocksEl = lane.querySelector('.cad-matrix__blocks') || lane;
+    const scrollEl = matrix.querySelector('.cad-matrix__scroll');
+    const headEl = matrix.querySelector('.cad-matrix__head');
+    const matrixTop = blocksEl.getBoundingClientRect().top;
+    const matrixScrollTop = scrollEl ? scrollEl.scrollTop : 0;
+    const headerHeight = headEl ? headEl.getBoundingClientRect().height : 0;
 
     endSessionVisual(session);
 
@@ -296,31 +305,24 @@
       return;
     }
 
+    // --- 2.7.4 TEMP DEBUG: instrumentation only — values unchanged from 2.7.3 ---
+    const pointerY = event.clientY;
+    const mouseY = snap.mouseY;
+    const topEdgeY = snap.topEdgeY;
+    const grabOffsetY = snap.grabOffsetY;
+    const rowIndex = snap.rowIndex;
+    const slotMinutes = SLOT_MINUTES;
+    const slotPx = snap.slotPx;
+    const dayStartMin = snap.dayStartMin;
     const snappedMinutes = snap.snappedMinutes;
-    const finalMinutesForMysql = snappedMinutes;
-
-    // TEMP DEBUG — drop math (top-edge based) immediately before toMysqlLocal.
-    // eslint-disable-next-line no-console
-    console.log('[CAD DnD drop calc]', {
-      mouseY: snap.mouseY,
-      topEdgeY: snap.topEdgeY,
-      grabOffsetY: snap.grabOffsetY,
-      rowIndex: snap.rowIndex,
-      slotPx: snap.slotPx,
-      dayStartMin: snap.dayStartMin,
-      snappedMinutes,
-      finalMinutesForMysql,
-      reference: 'appointment top edge (clientY - grabOffsetY)',
-    });
-
-    const dropDate = dropDateFromMinutes(selectedDate, finalMinutesForMysql);
-    const startMysql = toMysqlLocal(selectedDate, finalMinutesForMysql);
-    const { startIso, endIso } = toIsoRange(
-      selectedDate,
-      finalMinutesForMysql,
-      session.durationMs
-    );
-
+    const finalMinutes = snappedMinutes;
+    const cssDayStartMinRaw = getComputedStyle(matrix)
+      .getPropertyValue('--cad-day-start-min')
+      .trim();
+    const cssDayStartMin =
+      cssDayStartMinRaw === '' ? null : parseInt(cssDayStartMinRaw, 10);
+    const expected = rowIndex * slotMinutes + dayStartMin;
+    const startMysql = toMysqlLocal(selectedDate, finalMinutes);
     const ajaxPayload = {
       appointmentId: session.appointmentId,
       staffId: tableId,
@@ -328,16 +330,72 @@
     };
 
     // eslint-disable-next-line no-console
-    console.log('[CAD DnD]', {
-      dropDate: selectedDate,
-      dropDateObject: dropDate,
-      hours: dropDate.getHours(),
-      dayStartMin: snap.dayStartMin,
+    console.log('[STEP 0]', {
+      usedLastSnap,
+      pointerY,
+      mouseY,
+      topEdgeY,
+      grabOffsetY,
+      cssDayStartMin,
+    });
+    // eslint-disable-next-line no-console
+    console.log('[STEP 1]', {
+      pointerY,
+      mouseY,
+      topEdgeY,
+      grabOffsetY,
+      slotPx,
+    });
+    // eslint-disable-next-line no-console
+    console.log('[STEP 2]', {
+      rowIndex,
+      slotMinutes,
+    });
+    // eslint-disable-next-line no-console
+    console.log('[STEP 3]', {
+      dayStartMin,
+    });
+    // eslint-disable-next-line no-console
+    console.log('[STEP 4]', {
       snappedMinutes,
+    });
+    // eslint-disable-next-line no-console
+    console.log('[STEP 5]', {
+      finalMinutes,
+    });
+    // eslint-disable-next-line no-console
+    console.log('[STEP 6]', {
       startMysql,
-      timezoneOffset: new Date().getTimezoneOffset(),
+    });
+    // eslint-disable-next-line no-console
+    console.log('[STEP 6b]', {
+      expected,
+      snappedMinutes,
+    });
+    // eslint-disable-next-line no-console
+    console.log('[STEP 7]', {
       ajaxPayload,
     });
+    // eslint-disable-next-line no-console
+    console.log('[STEP 8]', {
+      timezoneOffset: new Date().getTimezoneOffset(),
+    });
+    // eslint-disable-next-line no-console
+    console.log('[CAD row origin]', {
+      matrixTop,
+      matrixScrollTop,
+      headerHeight,
+      pointerY,
+      calculatedY: topEdgeY,
+      rowIndex,
+    });
+    // --- end 2.7.4 TEMP DEBUG ---
+
+    const { startIso, endIso } = toIsoRange(
+      selectedDate,
+      finalMinutes,
+      session.durationMs
+    );
 
     updateStateAppointment(session.appointmentId, {
       tableId,

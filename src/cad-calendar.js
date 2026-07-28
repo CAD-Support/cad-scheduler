@@ -468,33 +468,40 @@
       CAD.editor?.bind(container);
       CAD.DnD?.bind(container);
 
-      // TEMP DEBUG — compare --cad-day-start-min to open hours / first row / snap.
+      // TEMP DEBUG 2.7.4 — first painted time label vs metrics/CSS day start.
       try {
-        const cssRaw = getComputedStyle(container)
+        const cssDayStartMinRaw = getComputedStyle(container)
           .getPropertyValue('--cad-day-start-min')
           .trim();
-        const cssMin = cssRaw === '' ? null : parseInt(cssRaw, 10);
-        const open = openHoursForDate(
-          String(CAD.State.get('selectedDate') || CAD.Config.get('today') || '')
-        );
-        const firstLabel = metrics.labels.find((l) => !!l) || null;
-        const snapFallback = 8 * 60;
+        const cssDayStartMin =
+          cssDayStartMinRaw === '' ? null : parseInt(cssDayStartMinRaw, 10);
+
+        const timeSlots = container.querySelectorAll('.cad-matrix__time-slot');
+        let firstHourLabel = null;
+        for (let i = 0; i < timeSlots.length; i += 1) {
+          const text = (timeSlots[i].textContent || '').trim();
+          if (text) {
+            firstHourLabel = text;
+            break;
+          }
+        }
+        const firstMatrixSlot = timeSlots[0]
+          ? String(timeSlots[0].textContent || '')
+          : null;
+        const dndWouldUse =
+          cssDayStartMin != null && !Number.isNaN(cssDayStartMin)
+            ? cssDayStartMin
+            : 8 * 60;
+
         // eslint-disable-next-line no-console
-        console.log('[CAD day-start]', {
-          cssVar: cssRaw,
-          cssMin,
+        console.log('[CAD first-minute alignment]', {
+          firstMatrixSlot,
+          firstHourLabel,
           metricsStartMin: metrics.startMin,
           metricsDayStart: metrics.dayStart,
-          configDayStart: CAD.Config.get('dayStart'),
-          openHoursStartMin: open ? open.startMin : null,
-          firstVisibleLabel: firstLabel,
-          firstRowMinute: metrics.startMin,
-          snapUses: cssMin != null && !Number.isNaN(cssMin) ? cssMin : snapFallback,
-          snapFallbackIfMissing: snapFallback,
-          cssMatchesMetrics: cssMin === metrics.startMin,
-          snapMatchesMetrics:
-            (cssMin != null && !Number.isNaN(cssMin) ? cssMin : snapFallback) ===
-            metrics.startMin,
+          cssDayStartMin,
+          dndWouldUse,
+          cssMatchesMetrics: cssDayStartMin === metrics.startMin,
         });
       } catch (_e) {
         /* ignore */

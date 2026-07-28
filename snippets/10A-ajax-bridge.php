@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 // already available on jsDelivr. Do not increment before the release
 // has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '2.7.3' );
+	define( 'CAD_SCHEDULER_VERSION', '2.7.4' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -469,26 +469,26 @@ function cad_scheduler_tables_sync_inline_js() {
     if (CAD.editor && typeof CAD.editor.bind === 'function') CAD.editor.bind(container);
     if (CAD.DnD && typeof CAD.DnD.bind === 'function') CAD.DnD.bind(container);
 
-    // TEMP DEBUG — day-start alignment (CSS var vs open hours vs first row vs snap).
+    // TEMP DEBUG 2.7.4 — first-minute alignment.
     try {
-      var cssRaw = window.getComputedStyle(container).getPropertyValue('--cad-day-start-min').trim();
-      var cssMin = cssRaw === '' ? null : parseInt(cssRaw, 10);
-      var openCfg = (CAD.Config && CAD.Config.get('dayStart')) || null;
-      var openMap = CAD.Config && CAD.Config.get('openHours');
-      var firstLabel = metrics && metrics.labels ? metrics.labels.find(function (l) { return !!l; }) : null;
-      console.log('[CAD day-start]', {
-        cssVar: cssRaw,
-        cssMin: cssMin,
+      var cssDayStartMinRaw = window.getComputedStyle(container).getPropertyValue('--cad-day-start-min').trim();
+      var cssDayStartMin = cssDayStartMinRaw === '' ? null : parseInt(cssDayStartMinRaw, 10);
+      var timeSlots = container.querySelectorAll('.cad-matrix__time-slot');
+      var firstMatrixSlot = timeSlots[0] ? String(timeSlots[0].textContent || '') : null;
+      var firstHourLabel = null;
+      for (var si = 0; si < timeSlots.length; si += 1) {
+        var st = (timeSlots[si].textContent || '').trim();
+        if (st) { firstHourLabel = st; break; }
+      }
+      var dndWouldUse = cssDayStartMin !== null && !isNaN(cssDayStartMin) ? cssDayStartMin : 8 * 60;
+      console.log('[CAD first-minute alignment]', {
+        firstMatrixSlot: firstMatrixSlot,
+        firstHourLabel: firstHourLabel,
         metricsStartMin: metrics ? metrics.startMin : null,
         metricsDayStart: metrics ? metrics.dayStart : null,
-        configDayStart: openCfg,
-        openHoursToday: openMap,
-        firstVisibleLabel: firstLabel,
-        snapUses: cssMin !== null && !isNaN(cssMin) ? cssMin : 8 * 60,
-        snapFallbackIfMissing: 8 * 60,
-        aligned:
-          metrics &&
-          cssMin === metrics.startMin
+        cssDayStartMin: cssDayStartMin,
+        dndWouldUse: dndWouldUse,
+        cssMatchesMetrics: metrics ? cssDayStartMin === metrics.startMin : false
       });
     } catch (e2) {}
   }
