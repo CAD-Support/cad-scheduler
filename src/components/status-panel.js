@@ -48,24 +48,38 @@
     /**
      * @param {Record<string, unknown>} appointment
      * @param {(slug: string) => void} onSelect
+     * @param {{ variant?: 'default'|'chips' }} [options]
      * @returns {HTMLElement}
      */
-    render(appointment, onSelect) {
-      const wrap = el('div', 'cad-popover__statuses');
+    render(appointment, onSelect, options) {
+      const variant = options?.variant === 'chips' ? 'chips' : 'default';
+      const wrap = el(
+        'div',
+        variant === 'chips' ? 'cad-status-chips' : 'cad-popover__statuses'
+      );
       wrap.setAttribute('role', 'group');
       wrap.setAttribute('aria-label', 'Appointment status');
       const current = normalizeStatus(appointment?.status);
 
       STATUS_ACTIONS.forEach((action) => {
+        const label =
+          variant === 'chips' ? action.label : `${action.icon} ${action.label}`;
         const btn = el(
           'button',
-          'cad-popover__status-btn',
-          `${action.icon} ${action.label}`
+          variant === 'chips'
+            ? 'cad-status-chips__btn'
+            : 'cad-popover__status-btn',
+          label
         );
         btn.type = 'button';
         btn.dataset.status = action.slug;
+        btn.title = `${action.icon} ${action.label}`;
         if (isActive(action.slug, current)) {
-          btn.classList.add('cad-popover__status-btn--active');
+          btn.classList.add(
+            variant === 'chips'
+              ? 'cad-status-chips__btn--active'
+              : 'cad-popover__status-btn--active'
+          );
         }
         btn.addEventListener('click', () => {
           if (typeof onSelect === 'function') onSelect(action.slug);

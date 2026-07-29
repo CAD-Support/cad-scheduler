@@ -1151,7 +1151,7 @@ body.cad-dnd-active .cad-appointment {
   filter: brightness(0.95);
 }
 
-/* Sprint 3.2 — Reservation Manager */
+/* Sprint 3.2 / 3.2.2 — Reservation Manager (desktop-first) */
 .cad-rm {
   position: fixed;
   inset: 0;
@@ -1159,7 +1159,7 @@ body.cad-dnd-active .cad-appointment {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.25rem;
 }
 
 .cad-rm[hidden] {
@@ -1169,7 +1169,7 @@ body.cad-dnd-active .cad-appointment {
 .cad-rm__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(43, 43, 43, 0.4);
+  background: rgba(43, 43, 43, 0.42);
 }
 
 .cad-rm__panel {
@@ -1177,13 +1177,13 @@ body.cad-dnd-active .cad-appointment {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  width: min(520px, 100%);
-  max-height: min(94vh, 52rem);
+  width: min(880px, 96vw);
+  max-height: min(92vh, 56rem);
   overflow: hidden;
   border: 1px solid var(--cad-border);
   border-radius: 12px;
   background: #ffffff;
-  box-shadow: 0 18px 48px rgba(43, 43, 43, 0.22);
+  box-shadow: 0 20px 56px rgba(43, 43, 43, 0.24);
 }
 
 .cad-rm__header {
@@ -1191,14 +1191,15 @@ body.cad-dnd-active .cad-appointment {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.8rem 1rem;
+  flex-shrink: 0;
+  padding: 0.85rem 1.15rem;
   background: var(--cad-purple);
   color: #ffffff;
 }
 
 .cad-rm__title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 700;
 }
 
@@ -1219,27 +1220,61 @@ body.cad-dnd-active .cad-appointment {
   background: rgba(255, 255, 255, 0.22);
 }
 
+.cad-rm__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
+  flex-shrink: 0;
+  padding: 0.55rem 1.15rem;
+  border-bottom: 1px solid var(--cad-border);
+  background: color-mix(in srgb, var(--cad-surface) 88%, var(--cad-purple) 12%);
+  color: var(--cad-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.cad-rm__summary-sep {
+  color: var(--cad-muted);
+  font-weight: 500;
+}
+
+.cad-rm__summary-part {
+  white-space: nowrap;
+}
+
 .cad-rm__form {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+}
+
+.cad-rm__scroll {
+  display: flex;
+  flex-direction: column;
   gap: 0.85rem;
-  padding: 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 1rem 1.15rem;
   overflow: auto;
 }
 
 .cad-rm__section {
   margin: 0;
-  padding: 0.75rem;
+  padding: 0.8rem 0.9rem;
   border: 1px solid var(--cad-border);
   border-radius: 10px;
   background: color-mix(in srgb, var(--cad-surface) 94%, var(--cad-purple) 6%);
 }
 
 .cad-rm__section-title {
-  margin: 0 0 0.65rem;
-  font-size: 0.75rem;
+  margin: 0 0 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--cad-purple);
 }
@@ -1247,10 +1282,14 @@ body.cad-dnd-active .cad-appointment {
 .cad-rm__section-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.65rem 0.75rem;
+  gap: 0.7rem 1rem;
 }
 
-.cad-rm__section--details .cad-rm__section-body,
+.cad-rm__section--details .cad-rm__section-body {
+  grid-template-columns: 1fr 1fr;
+}
+
+.cad-rm__section--res-notes .cad-rm__section-body,
 .cad-rm__section--notes .cad-rm__section-body,
 .cad-rm__section--status .cad-rm__section-body {
   grid-template-columns: 1fr;
@@ -1260,6 +1299,11 @@ body.cad-dnd-active .cad-appointment {
   display: flex;
   flex-direction: column;
   gap: 0.28rem;
+  min-width: 0;
+}
+
+.cad-rm__field--span {
+  grid-column: 1 / -1;
 }
 
 .cad-rm__label {
@@ -1280,7 +1324,7 @@ body.cad-dnd-active .cad-appointment {
   box-sizing: border-box;
   width: 100%;
   margin: 0;
-  padding: 0.5rem 0.6rem;
+  padding: 0.5rem 0.65rem;
   border: 1px solid var(--cad-border);
   border-radius: 8px;
   background: #ffffff;
@@ -1294,13 +1338,27 @@ body.cad-dnd-active .cad-appointment {
   outline-offset: 1px;
 }
 
-.cad-rm__input[readonly] {
-  background: #f7f7f7;
-  color: var(--cad-muted);
+.cad-rm__duration {
+  display: flex;
+  align-items: center;
+  min-height: 2.4rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cad-surface) 70%, #ffffff);
+  color: var(--cad-ink);
+  font-weight: 600;
+}
+
+.cad-rm__section--res-notes .cad-rm__textarea,
+.cad-rm__section--notes .cad-rm__textarea {
+  min-height: 4.5rem;
+  resize: vertical;
 }
 
 .cad-rm__empty {
   margin: 0;
+  grid-column: 1 / -1;
   color: var(--cad-muted);
   font-size: 0.875rem;
 }
@@ -1314,15 +1372,20 @@ body.cad-dnd-active .cad-appointment {
   font-size: 0.875rem;
 }
 
-.cad-rm__actions {
+.cad-rm__footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+  padding: 0.75rem 1.15rem;
+  border-top: 1px solid var(--cad-border);
+  background: #ffffff;
 }
 
 .cad-rm__btn {
   margin: 0;
-  padding: 0.55rem 0.95rem;
+  padding: 0.6rem 1.05rem;
   border: 1px solid var(--cad-border);
   border-radius: 8px;
   font: inherit;
@@ -1350,6 +1413,37 @@ body.cad-dnd-active .cad-appointment {
   filter: brightness(0.95);
 }
 
+.cad-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.cad-status-chips__btn {
+  margin: 0;
+  padding: 0.28rem 0.7rem;
+  border: 1px solid var(--cad-border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--cad-ink);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cad-status-chips__btn:hover {
+  border-color: var(--cad-teal);
+}
+
+.cad-status-chips__btn--active {
+  border-color: var(--cad-teal);
+  background: #e8f6f7;
+  color: var(--cad-teal);
+}
+
 @media (max-width: 768px) {
   .cad-scheduler {
     --cad-scroll-height: min(65vh, calc(100dvh - 16rem));
@@ -1369,8 +1463,13 @@ body.cad-dnd-active .cad-appointment {
     max-height: 92vh;
   }
 
-  .cad-rm__section-body {
+  .cad-rm__section-body,
+  .cad-rm__section--details .cad-rm__section-body {
     grid-template-columns: 1fr;
+  }
+
+  .cad-rm__summary-part {
+    white-space: normal;
   }
 }
 

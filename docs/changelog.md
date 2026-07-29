@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.2.2] — 2026-07-29
+
+### Changed
+
+- **Sprint 3.2.2 Reservation Manager UX** — wider desktop dialog (~880px), two-column layout, summary strip, sticky Save footer
+- 15-minute Start/End selects; duration display-only; painters dropdown from table capacity
+- Reservation Notes + Studio Notes; status chips; CAPTCHA / website helper fields hidden
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **3.2.2**; redeploy snippets **11** and **20**
+- Save logic unchanged — see [sprint-3.2.2-reservation-manager-ux.md](sprint-3.2.2-reservation-manager-ux.md)
+
 ## [3.2.1] — 2026-07-29
 
 ### Changed

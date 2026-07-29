@@ -24,24 +24,74 @@ class CAD_Bookly_Mapper {
 
 	/**
 	 * Map Bookly staff rows to CAD table columns.
-	 * Preserves repository order (Bookly position). Output is { id, name } only.
+	 * Preserves repository order (Bookly position).
 	 *
 	 * @param array $rows Staff rows from the repository.
-	 * @return array<int, array{id: string, name: string}>
+	 * @return array<int, array{id: string, name: string, capacity: int}>
 	 */
 	public function map_staff_tables( array $rows ) {
+		$capacities       = $this->staff_capacity_map();
+		$default_capacity = (int) apply_filters( 'cad_scheduler_default_table_capacity', 8 );
+		if ( $default_capacity < 1 ) {
+			$default_capacity = 8;
+		}
+
 		$tables = array();
 		foreach ( $rows as $row ) {
 			$id = (string) ( $row['id'] ?? '' );
 			if ( '' === $id ) {
 				continue;
 			}
+			$capacity = isset( $capacities[ $id ] ) ? (int) $capacities[ $id ] : $default_capacity;
+			$capacity = (int) apply_filters( 'cad_scheduler_table_capacity', $capacity, $id, $row );
+			if ( $capacity < 1 ) {
+				$capacity = $default_capacity;
+			}
 			$tables[] = array(
-				'id'   => $id,
-				'name' => (string) ( $row['full_name'] ?? '' ),
+				'id'       => $id,
+				'name'     => (string) ( $row['full_name'] ?? '' ),
+				'capacity' => $capacity,
 			);
 		}
 		return $tables;
+	}
+
+	/**
+	 * Max Group Booking capacity per staff from Bookly staff_services (when present).
+	 *
+	 * @return array<string, int>
+	 */
+	private function staff_capacity_map() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'bookly_staff_services';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( ! $exists ) {
+			return array();
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results(
+			"SELECT staff_id, MAX(capacity_max) AS capacity_max
+			FROM {$table}
+			WHERE capacity_max IS NOT NULL AND capacity_max > 0
+			GROUP BY staff_id",
+			ARRAY_A
+		);
+		if ( ! is_array( $rows ) ) {
+			return array();
+		}
+
+		$out = array();
+		foreach ( $rows as $row ) {
+			$id  = (string) ( $row['staff_id'] ?? '' );
+			$cap = (int) ( $row['capacity_max'] ?? 0 );
+			if ( '' !== $id && $cap > 0 ) {
+				$out[ $id ] = $cap;
+			}
+		}
+		return $out;
 	}
 
 	public function map_appointments( array $rows ) {
@@ -168,6 +218,11 @@ class CAD_Bookly_Mapper {
 			}
 			$fid = (string) ( $def['id'] ?? '' );
 			if ( '' === $fid ) {
+				continue;
+			}
+			$raw_type = strtolower( trim( (string) ( $def['type'] ?? 'text' ) ) );
+			// Staff admin UI — never surface website/CAPTCHA fields.
+			if ( in_array( $raw_type, array( 'captcha', 'captcha_v2', 'recaptcha', 'text-content' ), true ) ) {
 				continue;
 			}
 			$services = isset( $def['services'] ) && is_array( $def['services'] ) ? $def['services'] : array();
