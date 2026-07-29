@@ -353,9 +353,16 @@
 
     for (let i = 0; i < metrics.slotCount; i += 1) {
       const line = document.createElement('div');
-      line.className = 'cad-matrix__line';
+      const absMin = metrics.startMin + i * metrics.slotMinutes;
+      line.className =
+        absMin % 60 === 0 ? 'cad-matrix__line cad-matrix__line--hour' : 'cad-matrix__line';
       lines.appendChild(line);
     }
+
+    const scheduleLayer = document.createElement('div');
+    scheduleLayer.className = 'cad-matrix__schedule';
+    scheduleLayer.setAttribute('aria-hidden', 'true');
+    appendOutsideScheduleBands(scheduleLayer, table.id, metrics);
 
     const blocks = document.createElement('div');
     blocks.className = 'cad-matrix__blocks';
@@ -375,8 +382,54 @@
         );
       });
 
-    lane.append(lines, blocks);
+    lane.append(lines, scheduleLayer, blocks);
     return lane;
+  }
+
+  /**
+   * Grey bands for periods outside Bookly staff schedule (pointer-events: none).
+   * @param {HTMLElement} layer
+   * @param {string|number} staffId
+   * @param {ReturnType<typeof gridMetrics>} metrics
+   */
+  function appendOutsideScheduleBands(layer, staffId, metrics) {
+    const intervals = CAD.schedule?.intervalsForStaff
+      ? CAD.schedule.intervalsForStaff(staffId)
+      : null;
+    if (intervals == null) return;
+
+    const open = intervals
+      .map((iv) => ({
+        start: parseClock(String(iv.start || '')),
+        end: parseClock(String(iv.end || '')),
+      }))
+      .filter((iv) => iv.end > iv.start)
+      .sort((a, b) => a.start - b.start);
+
+    const closed = [];
+    let cursor = metrics.startMin;
+    open.forEach((iv) => {
+      const s = Math.max(metrics.startMin, iv.start);
+      const e = Math.min(metrics.startMin + metrics.rangeMin, iv.end);
+      if (s > cursor) {
+        closed.push({ start: cursor, end: s });
+      }
+      if (e > cursor) cursor = e;
+    });
+    const dayEnd = metrics.startMin + metrics.rangeMin;
+    if (cursor < dayEnd) {
+      closed.push({ start: cursor, end: dayEnd });
+    }
+
+    const pxPerMinute = metrics.gridHeight / metrics.rangeMin;
+    closed.forEach((band) => {
+      if (band.end <= band.start) return;
+      const el = document.createElement('div');
+      el.className = 'cad-matrix__outside-hours';
+      el.style.top = `${(band.start - metrics.startMin) * pxPerMinute}px`;
+      el.style.height = `${(band.end - band.start) * pxPerMinute}px`;
+      layer.appendChild(el);
+    });
   }
 
   /**

@@ -166,6 +166,16 @@
     },
 
     /**
+     * Delete a reservation via Bookly appointment delete path.
+     * @param {string|number} appointmentId
+     */
+    deleteReservation(appointmentId) {
+      return api.request('cad_delete_reservation', {
+        appointment_id: appointmentId,
+      });
+    },
+
+    /**
      * Pipeline dump with plain-text summary.
      * Prints the report (including UI column count when the grid is present).
      */

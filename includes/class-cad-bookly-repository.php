@@ -87,6 +87,240 @@ class CAD_Bookly_Repository {
 	}
 
 	/**
+	 * Open intervals per staff for a calendar date from Bookly weekly schedule + breaks.
+	 * Visual guidance only — does not affect Bookly save / checkTime.
+	 *
+	 * Bookly day_index: 1 = Sunday … 7 = Saturday (MySQL DAYOFWEEK).
+	 * Null start/end on a schedule item = day off.
+	 *
+	 * @param string          $date      Y-m-d.
+	 * @param array<int|string> $staff_ids Optional staff ids; empty = all visible staff.
+	 * @return array<string, array<int, array{start: string, end: string}>>
+	 */
+	public function get_staff_schedules_for_date( $date, array $staff_ids = array() ) {
+		global $wpdb;
+
+		$out = array();
+		if ( ! self::is_available() ) {
+			return $out;
+		}
+
+		$date = (string) $date;
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+			return $out;
+		}
+
+		if ( empty( $staff_ids ) ) {
+			foreach ( $this->get_staff_tables() as $row ) {
+				$id = (string) ( $row['id'] ?? '' );
+				if ( '' !== $id ) {
+					$staff_ids[] = $id;
+				}
+			}
+		}
+
+		$staff_ids = array_values(
+			array_unique(
+				array_filter(
+					array_map( 'strval', $staff_ids ),
+					static function ( $id ) {
+						return '' !== $id;
+					}
+				)
+			)
+		);
+		foreach ( $staff_ids as $id ) {
+			$out[ $id ] = array();
+		}
+		if ( empty( $staff_ids ) ) {
+			return $out;
+		}
+
+		$ssi_table = $wpdb->prefix . 'bookly_staff_schedule_items';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$ssi_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $ssi_table ) );
+		if ( ! $ssi_exists ) {
+			return $out;
+		}
+
+		// Bookly day_index matches MySQL DAYOFWEEK (1=Sunday … 7=Saturday).
+		$day_index = (int) gmdate( 'w', strtotime( $date . ' UTC' ) ) + 1;
+		// Prefer WP timezone wall-clock day-of-week when available.
+		if ( function_exists( 'wp_timezone' ) ) {
+			try {
+				$dt        = new DateTimeImmutable( $date . ' 12:00:00', wp_timezone() );
+				$day_index = (int) $dt->format( 'w' ) + 1;
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+				// Keep UTC fallback.
+			}
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $staff_ids ), '%d' ) );
+		$staff_ints   = array_map( 'intval', $staff_ids );
+		$params       = array_merge( array( $day_index ), $staff_ints );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+		$items = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, staff_id, start_time, end_time
+				FROM {$ssi_table}
+				WHERE day_index = %d AND staff_id IN ({$placeholders})",
+				$params
+			),
+			ARRAY_A
+		);
+		if ( ! is_array( $items ) || empty( $items ) ) {
+			return $out;
+		}
+
+		$item_ids = array();
+		$by_staff = array();
+		foreach ( $items as $item ) {
+			$sid = (string) ( $item['staff_id'] ?? '' );
+			if ( '' === $sid ) {
+				continue;
+			}
+			$item_id = (int) ( $item['id'] ?? 0 );
+			if ( $item_id > 0 ) {
+				$item_ids[] = $item_id;
+			}
+			$by_staff[ $sid ] = array(
+				'id'         => $item_id,
+				'start_time' => $item['start_time'] ?? null,
+				'end_time'   => $item['end_time'] ?? null,
+			);
+		}
+
+		$breaks_by_item = array();
+		$break_table    = $wpdb->prefix . 'bookly_schedule_item_breaks';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$break_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $break_table ) );
+		if ( $break_exists && ! empty( $item_ids ) ) {
+			$item_ids       = array_values( array_unique( array_map( 'intval', $item_ids ) ) );
+			$b_placeholders = implode( ',', array_fill( 0, count( $item_ids ), '%d' ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			$breaks = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT staff_schedule_item_id, start_time, end_time
+					FROM {$break_table}
+					WHERE staff_schedule_item_id IN ({$b_placeholders})
+					ORDER BY start_time ASC",
+					$item_ids
+				),
+				ARRAY_A
+			);
+			if ( is_array( $breaks ) ) {
+				foreach ( $breaks as $br ) {
+					$iid = (int) ( $br['staff_schedule_item_id'] ?? 0 );
+					if ( $iid <= 0 ) {
+						continue;
+					}
+					if ( ! isset( $breaks_by_item[ $iid ] ) ) {
+						$breaks_by_item[ $iid ] = array();
+					}
+					$breaks_by_item[ $iid ][] = array(
+						'start' => $this->normalize_schedule_time( $br['start_time'] ?? null ),
+						'end'   => $this->normalize_schedule_time( $br['end_time'] ?? null ),
+					);
+				}
+			}
+		}
+
+		foreach ( $staff_ids as $sid ) {
+			if ( ! isset( $by_staff[ $sid ] ) ) {
+				$out[ $sid ] = array();
+				continue;
+			}
+			$item  = $by_staff[ $sid ];
+			$start = $this->normalize_schedule_time( $item['start_time'] );
+			$end   = $this->normalize_schedule_time( $item['end_time'] );
+			// Null times = day off → empty open list (entire column grey).
+			if ( null === $start || null === $end || $start >= $end ) {
+				$out[ $sid ] = array();
+				continue;
+			}
+
+			$open = array(
+				array(
+					'start' => $start,
+					'end'   => $end,
+				),
+			);
+			$item_id = (int) ( $item['id'] ?? 0 );
+			if ( $item_id > 0 && ! empty( $breaks_by_item[ $item_id ] ) ) {
+				$open = $this->subtract_schedule_breaks( $open, $breaks_by_item[ $item_id ] );
+			}
+			$out[ $sid ] = $open;
+		}
+
+		return $out;
+	}
+
+	/**
+	 * @param mixed $time Bookly TIME / string / null.
+	 * @return string|null HH:MM or null when off / invalid.
+	 */
+	private function normalize_schedule_time( $time ) {
+		if ( null === $time || false === $time || '' === $time ) {
+			return null;
+		}
+		$raw = trim( (string) $time );
+		if ( '' === $raw || 'NULL' === strtoupper( $raw ) ) {
+			return null;
+		}
+		if ( preg_match( '/^(\d{1,2}):(\d{2})(?::\d{2})?$/', $raw, $m ) ) {
+			$h = (int) $m[1];
+			$i = (int) $m[2];
+			if ( $h > 24 || $i > 59 || ( 24 === $h && $i > 0 ) ) {
+				return null;
+			}
+			if ( 24 === $h ) {
+				return '24:00';
+			}
+			return sprintf( '%02d:%02d', $h, $i );
+		}
+		return null;
+	}
+
+	/**
+	 * @param array<int, array{start: string, end: string}> $intervals
+	 * @param array<int, array{start: string|null, end: string|null}> $breaks
+	 * @return array<int, array{start: string, end: string}>
+	 */
+	private function subtract_schedule_breaks( array $intervals, array $breaks ) {
+		foreach ( $breaks as $br ) {
+			$bs = $br['start'] ?? null;
+			$be = $br['end'] ?? null;
+			if ( null === $bs || null === $be || $bs >= $be ) {
+				continue;
+			}
+			$next = array();
+			foreach ( $intervals as $iv ) {
+				$s = $iv['start'];
+				$e = $iv['end'];
+				if ( $be <= $s || $bs >= $e ) {
+					$next[] = $iv;
+					continue;
+				}
+				if ( $bs > $s ) {
+					$next[] = array(
+						'start' => $s,
+						'end'   => $bs,
+					);
+				}
+				if ( $be < $e ) {
+					$next[] = array(
+						'start' => $be,
+						'end'   => $e,
+					);
+				}
+			}
+			$intervals = $next;
+		}
+		return array_values( $intervals );
+	}
+
+	/**
 	 * Full staff inventory for pipeline tracing (includes archived).
 	 * Does not hardcode names — returns whatever Bookly stores.
 	 *
@@ -254,6 +488,7 @@ class CAD_Bookly_Repository {
 		}
 
 		$custom_fields_sql = $this->custom_fields_select_sql();
+		$color_sql         = $this->service_color_select_sql();
 
 		$sql = "SELECT
 				a.id, a.staff_id, a.service_id, a.start_date,
@@ -264,7 +499,7 @@ class CAD_Bookly_Repository {
 				{$custom_fields_sql} AS custom_fields_json,
 				COALESCE(NULLIF(c.full_name, ''), TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, '')))) AS customer_name,
 				c.phone AS customer_phone,
-				s.title AS service_title, s.duration AS service_duration
+				s.title AS service_title, s.duration AS service_duration, {$color_sql}
 			FROM {$wpdb->prefix}bookly_appointments a
 			INNER JOIN {$wpdb->prefix}bookly_customer_appointments ca ON ca.appointment_id = a.id
 			LEFT JOIN {$wpdb->prefix}bookly_customers c ON c.id = ca.customer_id
@@ -309,6 +544,7 @@ class CAD_Bookly_Repository {
 		}
 
 		$custom_fields_sql = $this->custom_fields_select_sql();
+		$color_sql         = $this->service_color_select_sql();
 
 		$sql = "SELECT
 				a.id, a.staff_id, a.service_id, a.start_date,
@@ -326,7 +562,7 @@ class CAD_Bookly_Repository {
 				c.email AS customer_email,
 				COALESCE(NULLIF(c.full_name, ''), TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, '')))) AS customer_name,
 				c.phone AS customer_phone,
-				s.title AS service_title, s.duration AS service_duration
+				s.title AS service_title, s.duration AS service_duration, {$color_sql}
 			FROM {$wpdb->prefix}bookly_appointments a
 			INNER JOIN {$wpdb->prefix}bookly_customer_appointments ca ON ca.appointment_id = a.id
 			LEFT JOIN {$wpdb->prefix}bookly_customers c ON c.id = ca.customer_id
@@ -392,7 +628,7 @@ class CAD_Bookly_Repository {
 	/**
 	 * Active Bookly services for Quick Add / Reservation Manager.
 	 *
-	 * @return array<int, array{id: string, name: string, durationMinutes: int}>
+	 * @return array<int, array{id: string, name: string, durationMinutes: int, color: string|null}>
 	 */
 	public function get_services() {
 		global $wpdb;
@@ -413,6 +649,24 @@ class CAD_Bookly_Repository {
 			WHERE (visibility IS NULL OR visibility = '' OR visibility IN ('public','private','group','group_booking'))
 			ORDER BY position ASC, title ASC";
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$col_rows = $wpdb->get_results( "SHOW COLUMNS FROM {$table}", ARRAY_A );
+		$has_color = false;
+		if ( is_array( $col_rows ) ) {
+			foreach ( $col_rows as $col ) {
+				if ( isset( $col['Field'] ) && 'color' === $col['Field'] ) {
+					$has_color = true;
+					break;
+				}
+			}
+		}
+		if ( $has_color ) {
+			$sql = "SELECT id, title, duration, position, color
+				FROM {$table}
+				WHERE (visibility IS NULL OR visibility = '' OR visibility IN ('public','private','group','group_booking'))
+				ORDER BY position ASC, title ASC";
+		}
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$rows = $wpdb->get_results( $sql, ARRAY_A );
 		if ( ! is_array( $rows ) ) {
@@ -430,6 +684,7 @@ class CAD_Bookly_Repository {
 				'id'              => $id,
 				'name'            => (string) ( $row['title'] ?? ( 'Service ' . $id ) ),
 				'durationMinutes' => $duration_sec > 0 ? (int) max( 15, round( $duration_sec / 60 ) ) : 90,
+				'color'           => $this->normalize_hex_color( $row['color'] ?? null ),
 			);
 		}
 
@@ -440,6 +695,60 @@ class CAD_Bookly_Repository {
 		 */
 		$filtered = apply_filters( 'cad_scheduler_services', $out );
 		return is_array( $filtered ) ? array_values( $filtered ) : $out;
+	}
+
+	/**
+	 * Normalize Bookly service colour to #RRGGBB or null.
+	 *
+	 * @param mixed $color
+	 * @return string|null
+	 */
+	private function normalize_hex_color( $color ) {
+		if ( null === $color || false === $color || '' === $color ) {
+			return null;
+		}
+		$raw = trim( (string) $color );
+		if ( '' === $raw ) {
+			return null;
+		}
+		if ( '#' !== $raw[0] ) {
+			$raw = '#' . $raw;
+		}
+		if ( preg_match( '/^#([0-9A-Fa-f]{3})$/', $raw, $m ) ) {
+			$h = $m[1];
+			return strtoupper( '#' . $h[0] . $h[0] . $h[1] . $h[1] . $h[2] . $h[2] );
+		}
+		if ( preg_match( '/^#([0-9A-Fa-f]{6})$/', $raw ) ) {
+			return strtoupper( $raw );
+		}
+		return null;
+	}
+
+	/**
+	 * SQL fragment for service colour (empty when column missing).
+	 *
+	 * @return string
+	 */
+	private function service_color_select_sql() {
+		static $fragment = null;
+		if ( null !== $fragment ) {
+			return $fragment;
+		}
+		global $wpdb;
+		$table = $wpdb->prefix . 'bookly_services';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$col_rows = $wpdb->get_results( "SHOW COLUMNS FROM {$table}", ARRAY_A );
+		$has      = false;
+		if ( is_array( $col_rows ) ) {
+			foreach ( $col_rows as $col ) {
+				if ( isset( $col['Field'] ) && 'color' === $col['Field'] ) {
+					$has = true;
+					break;
+				}
+			}
+		}
+		$fragment = $has ? 's.color AS service_color' : 'NULL AS service_color';
+		return $fragment;
 	}
 
 	/**

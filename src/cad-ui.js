@@ -233,6 +233,11 @@
           }
         }
         CAD.State.set('appointments', payload.appointments ?? []);
+        if (payload.staffSchedules && typeof payload.staffSchedules === 'object') {
+          CAD.State.set('staffSchedules', payload.staffSchedules);
+        } else {
+          CAD.State.set('staffSchedules', {});
+        }
         if (payload.staffPipeline) {
           this._lastStaffPipeline = payload.staffPipeline;
         }

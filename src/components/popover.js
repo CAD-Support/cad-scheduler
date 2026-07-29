@@ -28,21 +28,6 @@
     return 'studio';
   }
 
-  function booklyEditUrl(appointment) {
-    const base = String(
-      CAD.Config.get('booklyEditUrl') || '/wp-admin/admin.php?page=bookly-calendar'
-    );
-    try {
-      const url = new URL(base, window.location.origin);
-      if (appointment?.id != null) {
-        url.searchParams.set('appointment_id', String(appointment.id));
-      }
-      return url.toString();
-    } catch (e) {
-      return base;
-    }
-  }
-
   function appendFooterSection(footer, title, icon, fill) {
     const section = el('section', 'cad-popover__section cad-popover__section--footer');
     const heading = el(
@@ -189,23 +174,23 @@
         });
       }
 
-      appendFooterSection(this.footer, 'Actions', '⚡', (body) => {
+      appendFooterSection(this.footer, 'Actions', null, (body) => {
         const actions = el('div', 'cad-popover__actions');
-        const edit = el('a', 'cad-popover__action cad-popover__action--edit', '✏ Edit');
-        edit.href = booklyEditUrl(appointment);
-        edit.target = '_blank';
-        edit.rel = 'noopener noreferrer';
-        actions.appendChild(edit);
-
-        const del = el('button', 'cad-popover__action cad-popover__action--delete', '🗑 Delete');
-        del.type = 'button';
-        del.title = 'Open in Bookly to delete';
-        del.addEventListener('click', () => {
-          window.open(booklyEditUrl(appointment), '_blank', 'noopener,noreferrer');
-        });
-        actions.appendChild(del);
+        if (CAD.ReservationManager?.open) {
+          const edit = el(
+            'button',
+            'cad-popover__btn cad-popover__btn--primary',
+            'Edit Reservation'
+          );
+          edit.type = 'button';
+          edit.addEventListener('click', () => {
+            this.close();
+            CAD.ReservationManager.open(appointment);
+          });
+          actions.appendChild(edit);
+        }
         body.appendChild(actions);
-        return true;
+        return actions.childNodes.length > 0;
       });
     },
 

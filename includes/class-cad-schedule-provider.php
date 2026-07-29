@@ -35,12 +35,38 @@ class CAD_Schedule_Provider {
 	}
 
 	/**
-	 * Bookly services for native create/edit (id + duration).
-	 *
-	 * @return array<int, array{id: string, name: string, durationMinutes: int}>
+	 * @return array<int, array{id: string, name: string, durationMinutes: int, color?: string|null}>
 	 */
 	public function get_services() {
 		return $this->repository->get_services();
+	}
+
+	/**
+	 * Open intervals per staff for a date (Bookly weekly schedule − breaks).
+	 *
+	 * @param string $date Y-m-d.
+	 * @return array<string, array<int, array{start: string, end: string}>>
+	 */
+	public function get_staff_schedules( $date ) {
+		$tables    = $this->get_tables();
+		$staff_ids = array();
+		if ( is_array( $tables ) ) {
+			foreach ( $tables as $t ) {
+				$id = (string) ( $t['id'] ?? '' );
+				if ( '' !== $id ) {
+					$staff_ids[] = $id;
+				}
+			}
+		}
+		$schedules = $this->repository->get_staff_schedules_for_date( $date, $staff_ids );
+		/**
+		 * Filter per-staff open intervals for the schedule grid overlay.
+		 *
+		 * @param array  $schedules Map of staff id → open {start,end} intervals.
+		 * @param string $date      Y-m-d.
+		 */
+		$filtered = apply_filters( 'cad_scheduler_staff_schedules', $schedules, $date );
+		return is_array( $filtered ) ? $filtered : $schedules;
 	}
 
 	/**
@@ -446,9 +472,10 @@ class CAD_Schedule_Provider {
 		$appointments = apply_filters( 'cad_scheduler_appointments', $appointments, $date );
 
 		$payload = array(
-			'date'         => $date,
-			'appointments' => is_array( $appointments ) ? $appointments : array(),
-			'tables'       => $this->get_tables(),
+			'date'           => $date,
+			'appointments'   => is_array( $appointments ) ? $appointments : array(),
+			'tables'         => $this->get_tables(),
+			'staffSchedules' => $this->get_staff_schedules( $date ),
 		);
 
 		if ( function_exists( 'cad_scheduler_diagnostics_enabled' ) && cad_scheduler_diagnostics_enabled() ) {
@@ -1296,6 +1323,81 @@ class CAD_Schedule_Provider {
 				'success'  => true,
 				'notified' => $notify,
 			),
+		);
+	}
+
+	/**
+	 * Delete an appointment via Bookly's entity delete path (no CAD redirect to Bookly UI).
+	 *
+	 * @param string|int $appointment_id
+	 * @return array{ok: bool, code?: string, message?: string}
+	 */
+	public function delete_reservation( $appointment_id ) {
+		$appointment_id = (int) $appointment_id;
+		if ( $appointment_id <= 0 ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_appointment',
+				'message' => 'Invalid appointment.',
+			);
+		}
+
+		if ( ! class_exists( '\Bookly\Lib\Entities\Appointment', false ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'bookly_unavailable',
+				'message' => 'Bookly is not available.',
+			);
+		}
+
+		$appointment = new \Bookly\Lib\Entities\Appointment();
+		if ( ! $appointment->load( $appointment_id ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'not_found',
+				'message' => 'Reservation not found.',
+			);
+		}
+
+		/**
+		 * Fires before CAD deletes a Bookly appointment.
+		 *
+		 * @param int                              $appointment_id
+		 * @param \Bookly\Lib\Entities\Appointment $appointment
+		 */
+		do_action( 'cad_scheduler_before_delete_reservation', $appointment_id, $appointment );
+
+		try {
+			// Prefer Bookly entity delete so CA rows / calendar sync hooks run.
+			$appointment->delete();
+		} catch ( Exception $e ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'delete_failed',
+				'message' => $e->getMessage() ? $e->getMessage() : 'Could not delete reservation.',
+			);
+		}
+
+		// Confirm removal.
+		$check = new \Bookly\Lib\Entities\Appointment();
+		if ( $check->load( $appointment_id ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'delete_failed',
+				'message' => 'Could not delete reservation.',
+			);
+		}
+
+		/**
+		 * Fires after CAD successfully deletes a Bookly appointment.
+		 *
+		 * @param int $appointment_id
+		 */
+		do_action( 'cad_scheduler_after_delete_reservation', $appointment_id );
+
+		return array(
+			'ok'      => true,
+			'message' => 'Reservation deleted.',
 		);
 	}
 

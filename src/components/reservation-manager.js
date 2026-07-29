@@ -308,6 +308,14 @@
         field('Email', emailInput)
       );
 
+      const customerMissing = el(
+        'p',
+        'cad-rm__customer-missing',
+        'Customer information not available.'
+      );
+      customerMissing.hidden = true;
+      customer.body.appendChild(customerMissing);
+
       const customerNotesInput = el('textarea', 'cad-rm__textarea');
       customerNotesInput.name = 'customer_notes';
       customerNotesInput.rows = 2;
@@ -331,12 +339,19 @@
       );
 
       const footer = el('div', 'cad-rm__footer');
+      const deleteBtn = el(
+        'button',
+        'cad-rm__btn cad-rm__btn--danger',
+        'Delete Reservation'
+      );
+      deleteBtn.type = 'button';
+      deleteBtn.addEventListener('click', () => this.requestDelete());
       const cancel = el('button', 'cad-rm__btn cad-rm__btn--ghost', 'Cancel');
       cancel.type = 'button';
       cancel.addEventListener('click', () => this.close());
       const save = el('button', 'cad-rm__btn cad-rm__btn--primary', 'Save Reservation');
       save.type = 'submit';
-      footer.append(cancel, save);
+      footer.append(deleteBtn, cancel, save);
 
       form.append(scroll, footer);
       panel.append(chrome, form);
@@ -348,6 +363,8 @@
       this._summary = summary;
       this._error = error;
       this._saveBtn = save;
+      this._deleteBtn = deleteBtn;
+      this._customerMissing = customerMissing;
       this._serviceSelect = serviceSelect;
       this._tableSelect = tableSelect;
       this._dateInput = dateInput;
@@ -432,6 +449,7 @@
       this.detailFields = [];
       this._busy = false;
       if (this._saveBtn) this._saveBtn.disabled = false;
+      if (this._deleteBtn) this._deleteBtn.disabled = false;
       return this;
     },
 
@@ -576,6 +594,7 @@
       );
       this.form.elements.phone.value = String(appointment.phone || '');
       this.form.elements.email.value = String(appointment.email || '');
+      this.applyCustomerPlaceholders();
       this.form.elements.customer_notes.value = String(
         appointment.customerNotes || ''
       );
@@ -677,6 +696,70 @@
       return out;
     },
 
+    applyCustomerPlaceholders() {
+      const first = String(this.form.elements.customer_first.value || '').trim();
+      const last = String(this.form.elements.customer_last.value || '').trim();
+      const phone = String(this.form.elements.phone.value || '').trim();
+      const email = String(this.form.elements.email.value || '').trim();
+      const missing = !first && !last && !phone && !email;
+      const placeholder = missing ? '—' : '';
+      ['customer_first', 'customer_last', 'phone', 'email'].forEach((name) => {
+        const input = this.form.elements[name];
+        if (input) input.placeholder = placeholder;
+      });
+      if (this._customerMissing) {
+        this._customerMissing.hidden = !missing;
+      }
+    },
+
+    async requestDelete() {
+      if (this._busy || !this.appointmentId) return;
+      const ok =
+        typeof CAD.confirm === 'function'
+          ? await CAD.confirm({
+              title: 'Delete reservation',
+              message: 'Delete this reservation?',
+              confirmLabel: 'Delete',
+              cancelLabel: 'Cancel',
+              danger: true,
+            })
+          : false;
+      if (!ok) return;
+
+      this._busy = true;
+      this.clearError();
+      if (this._saveBtn) this._saveBtn.disabled = true;
+      if (this._deleteBtn) this._deleteBtn.disabled = true;
+
+      try {
+        const result = await CAD.API.deleteReservation(this.appointmentId);
+        if (result?.success === false) {
+          throw Object.assign(new Error(result.data?.message || 'Could not delete.'), {
+            payload: result.data,
+          });
+        }
+
+        const list = Array.isArray(CAD.State.get('appointments'))
+          ? CAD.State.get('appointments').slice()
+          : [];
+        CAD.State.set(
+          'appointments',
+          list.filter((a) => String(a.id) !== String(this.appointmentId))
+        );
+        reRenderCalendar();
+        CAD.notify?.show('Reservation deleted.', 'success');
+        this.close();
+      } catch (err) {
+        const message =
+          err?.payload?.message || err?.message || 'Could not delete reservation.';
+        this.showError(String(message));
+        CAD.notify?.show(String(message), 'error');
+        if (this._saveBtn) this._saveBtn.disabled = false;
+        if (this._deleteBtn) this._deleteBtn.disabled = false;
+        this._busy = false;
+      }
+    },
+
     async submit() {
       if (this._busy || !this.appointmentId) return;
 
@@ -704,6 +787,19 @@
       if (this._saveBtn) this._saveBtn.disabled = true;
 
       try {
+        if (CAD.schedule?.confirmIfOutside) {
+          const ok = await CAD.schedule.confirmIfOutside(
+            this._tableSelect.value,
+            start,
+            end
+          );
+          if (!ok) {
+            if (this._saveBtn) this._saveBtn.disabled = false;
+            this._busy = false;
+            return;
+          }
+        }
+
         const result = await CAD.API.saveReservation({
           appointmentId: this.appointmentId,
           staffId: this._tableSelect.value,

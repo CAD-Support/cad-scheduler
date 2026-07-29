@@ -398,6 +398,15 @@
       if (this._saveBtn) this._saveBtn.disabled = true;
 
       try {
+        if (CAD.schedule?.confirmIfOutside) {
+          const ok = await CAD.schedule.confirmIfOutside(ctx.tableId, start, end);
+          if (!ok) {
+            if (this._saveBtn) this._saveBtn.disabled = false;
+            this._busy = false;
+            return;
+          }
+        }
+
         const result = await CAD.API.createAppointment({
           staffId: ctx.tableId,
           start,

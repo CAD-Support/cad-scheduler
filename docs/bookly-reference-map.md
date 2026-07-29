@@ -908,6 +908,8 @@ These are defined in CAD Scheduler, not Bookly:
 | `wp_ajax_cad_create_appointment` | `snippets/10A-ajax-bridge.php` | Quick Add create via Bookly `Utils\Appointment::save` (Sprint 3.1) |
 | `wp_ajax_cad_get_reservation` | `snippets/10A-ajax-bridge.php` | Reservation Manager load (Sprint 3.2) |
 | `wp_ajax_cad_save_reservation` | `snippets/10A-ajax-bridge.php` | Reservation Manager save via Bookly (Sprint 3.2) |
+| `wp_ajax_cad_delete_reservation` | `snippets/10A-ajax-bridge.php` | Reservation Manager delete via Bookly `Entities\Appointment::delete` (Sprint 3.2.5) |
+| `cad_scheduler_staff_schedules` | `includes/class-cad-schedule-provider.php` | Filter per-staff open intervals for schedule overlay (Sprint 3.2.5) |
 | `cad_scheduler_reschedule_notify` | `includes/class-cad-schedule-provider.php` | Whether drag/reschedule sends Bookly notifications (default `true`) |
 | `cad_scheduler_quick_add_service_id` | `includes/class-cad-schedule-provider.php` | Default Bookly service id for Quick Add (native id required; no custom service) |
 | `cad_scheduler_native_service_id` | `includes/class-cad-schedule-provider.php` | Resolve/require native Bookly service id (Sprint 3.2.1) |

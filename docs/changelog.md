@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.2.5] — 2026-07-29
+
+### Added
+
+- **Sprint 3.2.5 Scheduler Workflow** — staff schedule overlay + outside-hours Continue/Cancel warning; Reservation Manager delete via Bookly; Bookly `service.color` on cards (type palette fallback)
+- Schedule payload `staffSchedules`; `cad_delete_reservation`; shared confirm dialog
+
+### Changed
+
+- Stronger hour lines and table column separators
+- Popover restyled to match Reservation Manager; Bookly Edit/Delete redirects removed
+- Empty customer fields show `—` placeholders + “Customer information not available.”
+
+### Notes
+
+- Show All Tables: no visibility-rule change; investigate live with staff pipeline diagnostics if Party Space / Outside Studio are missing
+- Outside-schedule is visual guidance only — never blocks Bookly save
+- Pin `CAD_SCHEDULER_VERSION` to **3.2.5** after the tag is on jsDelivr; redeploy snippets **10–12** and **20**
+- See [sprint-3.2.5-scheduler-workflow.md](sprint-3.2.5-scheduler-workflow.md)
+
 ## [3.2.4] — 2026-07-29
 
 ### Changed

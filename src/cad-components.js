@@ -14,6 +14,38 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
+  /**
+   * @param {unknown} color
+   * @returns {string|null} #RRGGBB or null
+   */
+  function normalizeBooklyColor(color) {
+    if (color == null || color === '') return null;
+    let raw = String(color).trim();
+    if (!raw) return null;
+    if (raw[0] !== '#') raw = `#${raw}`;
+    const short = raw.match(/^#([0-9A-Fa-f]{3})$/);
+    if (short) {
+      const h = short[1];
+      return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`.toUpperCase();
+    }
+    if (/^#[0-9A-Fa-f]{6}$/.test(raw)) return raw.toUpperCase();
+    return null;
+  }
+
+  /**
+   * Light wash derived from Bookly accent (keeps card readable).
+   * @param {string} hex #RRGGBB
+   * @returns {string}
+   */
+  function washFromHex(hex) {
+    const m = hex.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})$/);
+    if (!m) return '#e8e8e8';
+    const r = Math.round(parseInt(m[1], 16) * 0.22 + 255 * 0.78);
+    const g = Math.round(parseInt(m[2], 16) * 0.22 + 255 * 0.78);
+    const b = Math.round(parseInt(m[3], 16) * 0.22 + 255 * 0.78);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
   CAD.components = {
     /**
      * Appointment card shell. Layout supplies pixel height; card content
@@ -52,6 +84,13 @@
       btn.dataset.density = density;
       btn.style.top = layout.top;
       btn.style.height = layout.height;
+
+      const booklyColor = normalizeBooklyColor(appointment.color);
+      if (booklyColor) {
+        btn.style.setProperty('--cad-type-accent', booklyColor);
+        btn.style.setProperty('--cad-type-wash', washFromHex(booklyColor));
+        btn.dataset.booklyColor = booklyColor;
+      }
 
       const childName =
         typeClass === 'birthday' &&

@@ -173,6 +173,7 @@ class CAD_Bookly_Mapper {
 			'email'          => $email,
 			'service'        => $service,
 			'serviceId'      => $service_id,
+			'color'          => $this->normalize_hex_color( $row['service_color'] ?? ( $row['color'] ?? null ) ),
 			'status'         => (string) ( $row['appointment_status'] ?? '' ),
 			'painters'       => $painters,
 			'notes'          => (string) ( $row['internal_note'] ?? '' ),
@@ -501,6 +502,33 @@ class CAD_Bookly_Mapper {
 			return trim( (string) $value );
 		}
 		return '';
+	}
+
+	/**
+	 * Normalize Bookly service colour to #RRGGBB or null.
+	 *
+	 * @param mixed $color
+	 * @return string|null
+	 */
+	private function normalize_hex_color( $color ) {
+		if ( null === $color || false === $color || '' === $color ) {
+			return null;
+		}
+		$raw = trim( (string) $color );
+		if ( '' === $raw ) {
+			return null;
+		}
+		if ( '#' !== $raw[0] ) {
+			$raw = '#' . $raw;
+		}
+		if ( preg_match( '/^#([0-9A-Fa-f]{3})$/', $raw, $m ) ) {
+			$h = $m[1];
+			return strtoupper( '#' . $h[0] . $h[0] . $h[1] . $h[1] . $h[2] . $h[2] );
+		}
+		if ( preg_match( '/^#([0-9A-Fa-f]{6})$/', $raw ) ) {
+			return strtoupper( $raw );
+		}
+		return null;
 	}
 
 	/**

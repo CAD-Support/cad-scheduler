@@ -318,6 +318,14 @@
       session.durationMs
     );
 
+    if (CAD.schedule?.confirmIfOutside) {
+      const ok = await CAD.schedule.confirmIfOutside(tableId, startIso, endIso);
+      if (!ok) {
+        reRender();
+        return;
+      }
+    }
+
     updateStateAppointment(session.appointmentId, {
       tableId,
       start: startIso,

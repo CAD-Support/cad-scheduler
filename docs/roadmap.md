@@ -25,10 +25,11 @@
 - [x] Reservation Manager UX polish — **Sprint 3.2.2** (complete **3.2.2**)
 - [x] Reservation Manager layout polish — **Sprint 3.2.3** (complete **3.2.3**)
 - [x] Reservation Manager UI refinement — **Sprint 3.2.4** (complete **3.2.4**)
+- [x] Scheduler workflow improvements — **Sprint 3.2.5** (complete **3.2.5**; Live QA before tag)
 
 ## Sprint 3.0 — Studio Operations
 
-Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md) · [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md) · [sprint-3.2-reservation-manager.md](sprint-3.2-reservation-manager.md) · [sprint-3.2.1-native-bookly-compatibility.md](sprint-3.2.1-native-bookly-compatibility.md) · [sprint-3.2.2-reservation-manager-ux.md](sprint-3.2.2-reservation-manager-ux.md) · [sprint-3.2.3-reservation-manager-layout.md](sprint-3.2.3-reservation-manager-layout.md) · [sprint-3.2.4-reservation-manager-ui.md](sprint-3.2.4-reservation-manager-ui.md).
+Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md) · [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md) · [sprint-3.2-reservation-manager.md](sprint-3.2-reservation-manager.md) · [sprint-3.2.1-native-bookly-compatibility.md](sprint-3.2.1-native-bookly-compatibility.md) · [sprint-3.2.2-reservation-manager-ux.md](sprint-3.2.2-reservation-manager-ux.md) · [sprint-3.2.3-reservation-manager-layout.md](sprint-3.2.3-reservation-manager-layout.md) · [sprint-3.2.4-reservation-manager-ui.md](sprint-3.2.4-reservation-manager-ui.md) · [sprint-3.2.5-scheduler-workflow.md](sprint-3.2.5-scheduler-workflow.md).
 
 ### Phase 1 — Critical
 
@@ -41,6 +42,7 @@ Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](spri
 | **P2d** | Reservation Manager UX polish | — | **Complete (3.2.2)** |
 | **P2e** | Reservation Manager layout polish | — | **Complete (3.2.3)** |
 | **P2f** | Reservation Manager UI refinement | — | **Complete (3.2.4)** |
+| **P2g** | Scheduler workflow improvements | — | **Complete (3.2.5)** |
 
 ### Phase 2 — After Phase 1
 
@@ -51,7 +53,7 @@ Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](spri
 | **P5** | Live refresh (preserve scroll / date / filters) | [#6](https://github.com/CAD-Support/cad-scheduler/issues/6) | Planned |
 | **P6** | Lightspeed customer lookup on create | [#5](https://github.com/CAD-Support/cad-scheduler/issues/5) | Planned |
 
-**Phase 1 + Reservation Manager complete.** Next: Phase 2 (P3 → P6).
+**Phase 1 + Reservation Manager + workflow polish complete.** Next: Phase 2 (P3 → P6).
 
 ## Phase 3 — Studio Features (later)
 
