@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.7.6] — 2026-07-29
+
+### Added
+
+- **Debug-only** PHP save-path logs (`[CAD PHP STEP 0]`–`[CAD PHP STEP 5]`): raw `$_POST['start']`, sanitized, normalized, pre-`Bookly::save`, entity after save, DB `start_date` — **no behavior changes**
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **2.7.6**
+- Redeploy Code Snippets **12** (Provider) and **20** (AJAX Bridge); check `wp-content/debug.log` (or host PHP error log)
+- Prior TEMP logs that printed the *old* entity start before save were misleading and are replaced
+
 ## [2.7.5] — 2026-07-29
 
 ### Added

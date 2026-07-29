@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 // already available on jsDelivr. Do not increment before the release
 // has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '2.7.5' );
+	define( 'CAD_SCHEDULER_VERSION', '2.7.6' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -843,11 +843,22 @@ function cad_ajax_update_appointment() {
 		wp_send_json_error( array( 'message' => 'CAD modules not loaded.', 'code' => 'modules' ), 500 );
 	}
 
+	// TEMP DEBUG 2.7.6 — raw POST before sanitize (logging only).
+	$raw_post_start = array_key_exists( 'start', $_POST ) ? wp_unslash( $_POST['start'] ) : null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		'[CAD PHP STEP 0] raw $_POST[start]=' . ( null === $raw_post_start ? '(missing)' : wp_json_encode( $raw_post_start ) )
+	);
+
 	$appointment_id = sanitize_text_field( wp_unslash( $_POST['appointment_id'] ?? '' ) );
 	$staff_id       = sanitize_text_field( wp_unslash( $_POST['staff_id'] ?? $_POST['table_id'] ?? '' ) );
 	$start_date     = sanitize_text_field( wp_unslash( $_POST['start'] ?? $_POST['start_date'] ?? '' ) );
 	$end_raw        = sanitize_text_field( wp_unslash( $_POST['end'] ?? $_POST['end_date'] ?? '' ) );
 	$end_date       = '' !== $end_raw ? $end_raw : null;
+
+	// TEMP DEBUG 2.7.6 — sanitized value passed into Provider.
+	error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		'[CAD PHP STEP 1] sanitized start to provider=' . $start_date
+	);
 
 	if ( '' === $appointment_id || '' === $staff_id || '' === $start_date ) {
 		wp_send_json_error(

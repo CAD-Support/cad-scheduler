@@ -464,8 +464,12 @@ class CAD_Schedule_Provider {
 			);
 		}
 
-		// TEMP DEBUG — remove after live Bookly save-path QA.
-		error_log( '[CAD] Received start: ' . $start_date ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		// TEMP DEBUG 2.7.6 — normalize only (no behavior change).
+		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			'[CAD PHP STEP 2] after normalize start_mysql=' . $start_mysql
+			. ' input_start=' . $start_date
+			. ' wp_timezone=' . wp_timezone_string()
+		);
 
 		$entity_class = '\Bookly\Lib\Entities\Appointment';
 		$utils_class  = '\Bookly\Lib\Utils\Appointment';
@@ -483,13 +487,6 @@ class CAD_Schedule_Provider {
 				'message' => 'Missing Bookly class: ' . $utils_class,
 			);
 		}
-
-		// TEMP DEBUG — remove after live Bookly save-path QA.
-		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			'[CAD update_appointment] Bookly classes loaded: '
-			. $entity_class . ', '
-			. $utils_class
-		);
 
 		$appointment = new \Bookly\Lib\Entities\Appointment();
 		if ( ! $appointment->load( $appointment_id ) ) {
@@ -554,9 +551,6 @@ class CAD_Schedule_Provider {
 		$service_id = $service_id ? (int) $service_id : null;
 		$location_id = $appointment->getLocationId() ? (int) $appointment->getLocationId() : 0;
 
-		// TEMP DEBUG — remove after live Bookly save-path QA.
-		error_log( '[CAD] Before checkTime start: ' . $appointment->getStartDate() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-
 		$check = \Bookly\Lib\Utils\Appointment::checkTime(
 			$appointment_id,
 			$start_mysql,
@@ -595,8 +589,15 @@ class CAD_Schedule_Provider {
 		$custom_name  = $appointment->getCustomServiceName();
 		$custom_price = $appointment->getCustomServicePrice();
 		// Save without Bookly's deferred notification queue UI; send directly below when $notify.
-		// TEMP DEBUG — remove after live Bookly save-path QA.
-		error_log( '[CAD] Before save start: ' . $appointment->getStartDate() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
+		// TEMP DEBUG 2.7.6 — value passed into Bookly save (not the old entity start).
+		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			'[CAD PHP STEP 3] immediately before Bookly::save'
+			. ' start_mysql=' . $start_mysql
+			. ' end_mysql=' . $end_mysql
+			. ' staff_id=' . $staff_id
+			. ' entity_old_start=' . $appointment->getStartDate()
+		);
 
 		$bookly = \Bookly\Lib\Utils\Appointment::save(
 			$appointment_id,
@@ -617,10 +618,26 @@ class CAD_Schedule_Provider {
 			'backend'
 		);
 
-		// TEMP DEBUG — remove after live Bookly save-path QA.
-		$appointment->load( $appointment_id );
-		error_log( '[CAD] After save start: ' . $appointment->getStartDate() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		// TEMP DEBUG 2.7.6 — entity after Bookly save assigns/persists start.
+		$entity_after = new \Bookly\Lib\Entities\Appointment();
+		$entity_after_loaded = $entity_after->load( $appointment_id );
+		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			'[CAD PHP STEP 4] entity getStartDate after Bookly::save='
+			. ( $entity_after_loaded ? (string) $entity_after->getStartDate() : '(load failed)' )
+			. ' bookly_success=' . ( ! empty( $bookly['success'] ) ? '1' : '0' )
+		);
 
+		// TEMP DEBUG 2.7.6 — raw DB column after save (source of truth).
+		global $wpdb;
+		$db_start = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				"SELECT start_date FROM {$wpdb->prefix}bookly_appointments WHERE id = %d",
+				$appointment_id
+			)
+		);
+		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			'[CAD PHP STEP 5] DB start_date after save=' . ( null === $db_start ? '(null)' : (string) $db_start )
+		);
 		if ( empty( $bookly['success'] ) ) {
 			$errors  = isset( $bookly['errors'] ) && is_array( $bookly['errors'] ) ? $bookly['errors'] : array();
 			$message = 'Could not save appointment.';
