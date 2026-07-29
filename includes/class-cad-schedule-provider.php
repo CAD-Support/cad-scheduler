@@ -35,6 +35,59 @@ class CAD_Schedule_Provider {
 	}
 
 	/**
+	 * Bookly services for native create/edit (id + duration).
+	 *
+	 * @return array<int, array{id: string, name: string, durationMinutes: int}>
+	 */
+	public function get_services() {
+		return $this->repository->get_services();
+	}
+
+	/**
+	 * Resolve a required Bookly service id (never a custom service).
+	 *
+	 * @param int|string|null $service_id
+	 * @param array           $args Context for filters.
+	 * @return int|null
+	 */
+	private function resolve_native_service_id( $service_id, array $args = array() ) {
+		$id = (int) $service_id;
+		if ( $id <= 0 ) {
+			$id = (int) apply_filters( 'cad_scheduler_quick_add_service_id', 0, $args );
+		}
+		$id = (int) apply_filters( 'cad_scheduler_native_service_id', $id, $args );
+		return $id > 0 ? $id : null;
+	}
+
+	/**
+	 * Bookly service duration in minutes (fallback 90).
+	 *
+	 * @param int $service_id
+	 * @return int
+	 */
+	private function service_duration_minutes( $service_id ) {
+		$service_id = (int) $service_id;
+		foreach ( $this->get_services() as $service ) {
+			if ( (string) ( $service['id'] ?? '' ) === (string) $service_id ) {
+				$mins = (int) ( $service['durationMinutes'] ?? 0 );
+				return $mins >= 15 ? $mins : 90;
+			}
+		}
+
+		if ( class_exists( '\Bookly\Lib\Entities\Service' ) ) {
+			$entity = new \Bookly\Lib\Entities\Service();
+			if ( $entity->load( $service_id ) && method_exists( $entity, 'getDuration' ) ) {
+				$sec = (int) $entity->getDuration();
+				if ( $sec > 0 ) {
+					return (int) max( 15, round( $sec / 60 ) );
+				}
+			}
+		}
+
+		return 90;
+	}
+
+	/**
 	 * Trace staff → tables with a plain-text summary that names the failing layer.
 	 *
 	 * @return array<string, mixed>
@@ -694,41 +747,6 @@ class CAD_Schedule_Provider {
 			);
 		}
 
-		$end_raw = isset( $args['end'] ) ? (string) $args['end'] : '';
-		if ( '' !== $end_raw ) {
-			$end_mysql = $this->normalize_bookly_datetime( $end_raw );
-			if ( ! $end_mysql ) {
-				return array(
-					'ok'      => false,
-					'code'    => 'invalid_end',
-					'message' => 'Invalid end time.',
-				);
-			}
-		} else {
-			$duration = (int) ( $args['duration_minutes'] ?? 90 );
-			if ( $duration < 15 ) {
-				$duration = 15;
-			}
-			try {
-				$start_dt  = new DateTimeImmutable( $start_mysql, wp_timezone() );
-				$end_mysql = $start_dt->modify( '+' . $duration . ' minutes' )->format( 'Y-m-d H:i:s' );
-			} catch ( Exception $e ) {
-				return array(
-					'ok'      => false,
-					'code'    => 'invalid_start',
-					'message' => 'Invalid start time.',
-				);
-			}
-		}
-
-		if ( strtotime( $end_mysql ) <= strtotime( $start_mysql ) ) {
-			return array(
-				'ok'      => false,
-				'code'    => 'invalid_interval',
-				'message' => 'End time must be after start time.',
-			);
-		}
-
 		$entity_class   = '\Bookly\Lib\Entities\Appointment';
 		$utils_class    = '\Bookly\Lib\Utils\Appointment';
 		$customer_class = '\Bookly\Lib\Entities\Customer';
@@ -755,17 +773,49 @@ class CAD_Schedule_Provider {
 			);
 		}
 
-		$service_id = isset( $args['service_id'] ) ? (int) $args['service_id'] : 0;
-		$service_id = (int) apply_filters( 'cad_scheduler_quick_add_service_id', $service_id, $args );
-		$service_id = $service_id > 0 ? $service_id : null;
+		// Native Bookly only — never create a "Custom" service.
+		$service_id = $this->resolve_native_service_id( $args['service_id'] ?? 0, $args );
+		if ( ! $service_id ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_service',
+				'message' => 'A Bookly service is required. Set cad_scheduler_quick_add_service_id or choose a service.',
+			);
+		}
 
-		$custom_name = (string) apply_filters(
-			'cad_scheduler_quick_add_custom_service_name',
-			'Studio Reservation',
-			$args
-		);
-		if ( null !== $service_id ) {
-			$custom_name = null;
+		$end_raw = isset( $args['end'] ) ? (string) $args['end'] : '';
+		if ( '' !== $end_raw ) {
+			$end_mysql = $this->normalize_bookly_datetime( $end_raw );
+			if ( ! $end_mysql ) {
+				return array(
+					'ok'      => false,
+					'code'    => 'invalid_end',
+					'message' => 'Invalid end time.',
+				);
+			}
+		} else {
+			$duration = isset( $args['duration_minutes'] ) ? (int) $args['duration_minutes'] : 0;
+			if ( $duration < 15 ) {
+				$duration = $this->service_duration_minutes( $service_id );
+			}
+			try {
+				$start_dt  = new DateTimeImmutable( $start_mysql, wp_timezone() );
+				$end_mysql = $start_dt->modify( '+' . $duration . ' minutes' )->format( 'Y-m-d H:i:s' );
+			} catch ( Exception $e ) {
+				return array(
+					'ok'      => false,
+					'code'    => 'invalid_start',
+					'message' => 'Invalid start time.',
+				);
+			}
+		}
+
+		if ( strtotime( $end_mysql ) <= strtotime( $start_mysql ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_interval',
+				'message' => 'End time must be after start time.',
+			);
 		}
 
 		$status = (string) apply_filters( 'cad_scheduler_quick_add_status', 'approved', $args );
@@ -797,7 +847,7 @@ class CAD_Schedule_Provider {
 			$start_mysql,
 			$end_mysql,
 			$staff_id,
-			$service_id ? $service_id : 0,
+			$service_id,
 			$location_id,
 			$customers
 		);
@@ -813,11 +863,12 @@ class CAD_Schedule_Provider {
 
 		$notify = (bool) apply_filters( 'cad_scheduler_quick_add_notify', true, $args );
 
+		// Pass empty custom service name/price so Bookly stores the real service_id.
 		$bookly = \Bookly\Lib\Utils\Appointment::save(
 			0,
 			$staff_id,
 			$service_id,
-			null === $custom_name ? null : $custom_name,
+			null,
 			'',
 			$location_id,
 			0,
@@ -1134,15 +1185,21 @@ class CAD_Schedule_Provider {
 		);
 
 		$service_id = $appointment->getServiceId();
-		$service_id = $service_id ? (int) $service_id : null;
+		$service_id = $service_id ? (int) $service_id : 0;
 		if ( isset( $payload['service_id'] ) && '' !== (string) $payload['service_id'] ) {
 			$service_id = (int) $payload['service_id'];
-			$service_id = $service_id > 0 ? $service_id : null;
 		}
-		$location_id  = $appointment->getLocationId() ? (int) $appointment->getLocationId() : 0;
-		$custom_name  = $appointment->getCustomServiceName();
-		$custom_price = $appointment->getCustomServicePrice();
-		$internal     = array_key_exists( 'notes', $payload )
+		$service_id = $this->resolve_native_service_id( $service_id, $payload );
+		if ( ! $service_id ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_service',
+				'message' => 'A Bookly service is required. Custom services are not supported.',
+			);
+		}
+
+		$location_id = $appointment->getLocationId() ? (int) $appointment->getLocationId() : 0;
+		$internal    = array_key_exists( 'notes', $payload )
 			? (string) $payload['notes']
 			: (string) $appointment->getInternalNote();
 
@@ -1151,7 +1208,7 @@ class CAD_Schedule_Provider {
 			$start_mysql,
 			$end_mysql,
 			$staff_id,
-			$service_id ? $service_id : 0,
+			$service_id,
 			$location_id,
 			$customers
 		);
@@ -1172,12 +1229,13 @@ class CAD_Schedule_Provider {
 			$payload
 		);
 
+		// Always persist the real Bookly service id — clear any prior custom service name/price.
 		$bookly = \Bookly\Lib\Utils\Appointment::save(
 			$appointment_id,
 			$staff_id,
-			null === $service_id ? null : $service_id,
-			$custom_name,
-			null === $custom_price || '' === $custom_price ? '' : $custom_price,
+			$service_id,
+			null,
+			'',
 			$location_id,
 			0,
 			$start_mysql,

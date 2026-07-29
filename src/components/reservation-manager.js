@@ -85,6 +85,16 @@
     return Array.isArray(tables) ? tables : [];
   }
 
+  function servicesList() {
+    const list = CAD.Config.get('services');
+    return Array.isArray(list) ? list : [];
+  }
+
+  function serviceById(id) {
+    const sid = String(id || '');
+    return servicesList().find((s) => String(s.id) === sid) || null;
+  }
+
   function patchStateAppointment(updated) {
     if (!updated?.id) return;
     const list = Array.isArray(CAD.State.get('appointments'))
@@ -148,9 +158,9 @@
       this._detailsBody = details.body;
       this._statusBody = statusSec.body;
 
-      const serviceInput = el('input', 'cad-rm__input');
-      serviceInput.name = 'service';
-      serviceInput.readOnly = true;
+      const serviceSelect = el('select', 'cad-rm__input');
+      serviceSelect.name = 'service_id';
+      serviceSelect.required = true;
 
       const tableSelect = el('select', 'cad-rm__input');
       tableSelect.name = 'staff_id';
@@ -181,7 +191,7 @@
       paintersInput.min = '1';
 
       reservation.body.append(
-        field('Service', serviceInput),
+        field('Service', serviceSelect),
         field('Table', tableSelect),
         field('Date', dateInput),
         field('Start time', startInput),
@@ -243,7 +253,7 @@
       this.form = form;
       this._error = error;
       this._saveBtn = save;
-      this._serviceInput = serviceInput;
+      this._serviceSelect = serviceSelect;
       this._tableSelect = tableSelect;
       this._dateInput = dateInput;
       this._startInput = startInput;
@@ -270,11 +280,19 @@
         }
         this._syncing = false;
       };
+      const syncFromService = () => {
+        const svc = serviceById(serviceSelect.value);
+        const mins = Number(svc?.durationMinutes);
+        if (!Number.isFinite(mins) || mins < 15) return;
+        durationInput.value = String(mins);
+        syncFromDuration();
+      };
 
       dateInput.addEventListener('change', syncFromStartEnd);
       startInput.addEventListener('change', syncFromStartEnd);
       endInput.addEventListener('change', syncFromStartEnd);
       durationInput.addEventListener('change', syncFromDuration);
+      serviceSelect.addEventListener('change', syncFromService);
 
       if (!this._bound) {
         document.addEventListener('keydown', (event) => {
@@ -355,7 +373,21 @@
       });
       this._tableSelect.value = String(appointment.tableId || '');
 
-      this._serviceInput.value = String(appointment.service || '');
+      const services = servicesList();
+      this._serviceSelect.replaceChildren();
+      services.forEach((svc) => {
+        const opt = el('option', null, svc.name || `Service ${svc.id}`);
+        opt.value = String(svc.id);
+        this._serviceSelect.appendChild(opt);
+      });
+      const currentServiceId = String(appointment.serviceId || '');
+      if (currentServiceId && !serviceById(currentServiceId)) {
+        const opt = el('option', null, appointment.service || `Service ${currentServiceId}`);
+        opt.value = currentServiceId;
+        this._serviceSelect.appendChild(opt);
+      }
+      this._serviceSelect.value = currentServiceId || (services[0] ? String(services[0].id) : '');
+
       this._dateInput.value = dateInputValue(appointment.start);
       this._startInput.value = timeInputValue(appointment.start);
       this._endInput.value = timeInputValue(appointment.end);
@@ -461,6 +493,13 @@
         return;
       }
 
+      const serviceId = Number(this._serviceSelect.value) || 0;
+      if (serviceId <= 0) {
+        this.showError('Select a Bookly service.');
+        this._serviceSelect.focus();
+        return;
+      }
+
       this._busy = true;
       this.clearError();
       if (this._saveBtn) this._saveBtn.disabled = true;
@@ -469,6 +508,7 @@
         const result = await CAD.API.saveReservation({
           appointmentId: this.appointmentId,
           staffId: this._tableSelect.value,
+          serviceId,
           start,
           end,
           customerFirst: this.form.elements.customer_first.value.trim(),

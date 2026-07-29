@@ -21,10 +21,11 @@
 - [x] Conflict detection across tables — **Sprint 3.0 Phase 1 / P1** (via Bookly `checkTime`)
 - [x] Quick Add appointment — **Sprint 3.1** (complete **3.1.0**)
 - [x] Reservation Manager (edit existing) — **Sprint 3.2** (complete **3.2.0**)
+- [x] Native Bookly service compatibility — **Sprint 3.2.1** (complete **3.2.1**)
 
 ## Sprint 3.0 — Studio Operations
 
-Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md) · [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md) · [sprint-3.2-reservation-manager.md](sprint-3.2-reservation-manager.md).
+Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md) · [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md) · [sprint-3.2-reservation-manager.md](sprint-3.2-reservation-manager.md) · [sprint-3.2.1-native-bookly-compatibility.md](sprint-3.2.1-native-bookly-compatibility.md).
 
 ### Phase 1 — Critical
 
@@ -33,6 +34,7 @@ Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](spri
 | **P1** | Drag & drop reschedule + Bookly save + conflicts | [#3](https://github.com/CAD-Support/cad-scheduler/issues/3) | **Complete (2.7.8)** |
 | **P2** | Quick Add from empty slot (Bookly create) | [#4](https://github.com/CAD-Support/cad-scheduler/issues/4) | **Complete (3.1.0)** |
 | **P2b** | Reservation Manager (edit) | — | **Complete (3.2.0)** |
+| **P2c** | Native Bookly compatibility (real service id) | — | **Complete (3.2.1)** |
 
 ### Phase 2 — After Phase 1
 

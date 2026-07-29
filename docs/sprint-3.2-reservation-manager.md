@@ -1,6 +1,6 @@
 # Sprint 3.2 — Reservation Manager
 
-**Status:** Shipped in **3.2.0**
+**Status:** Shipped in **3.2.0** (native service select in **3.2.1**)
 
 **Goal:** Replace Bookly’s edit dialogs for day-to-day reservation management inside CAD Scheduler.
 
@@ -14,13 +14,15 @@
 
 ## Layout
 
-1. **Reservation** — service (read-only), table, date, start, end, duration (synced), painters  
+1. **Reservation** — Bookly service (selectable), table, date, start, end, duration (synced), painters  
 2. **Customer** — first / last / phone / email (existing Bookly customer; no duplicates)  
 3. **Reservation Details** — dynamic fields from Bookly Custom Fields (service-scoped)  
 4. **Studio Notes** — internal notes  
 5. **Status** — existing StatusPanel  
 
-Duration updates when start/end change; changing duration updates end.
+Duration updates when start/end change; changing duration updates end. Changing service syncs duration from Bookly (3.2.1).
+
+Native Bookly service id is required on save — see [sprint-3.2.1-native-bookly-compatibility.md](sprint-3.2.1-native-bookly-compatibility.md).
 
 ## Architecture
 
@@ -69,5 +71,5 @@ Customer search, Lightspeed, resize, delete, payments — hooks/UI reserved for 
 ## Deploy
 
 1. Redeploy snippets **10** (Repository), **11** (Mapper), **12** (Provider), **20** (Bridge)  
-2. Pin `CAD_SCHEDULER_VERSION` to **3.2.0**  
+2. Pin `CAD_SCHEDULER_VERSION` to the current release (see changelog)  
 3. Hard-refresh

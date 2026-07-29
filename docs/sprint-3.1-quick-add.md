@@ -12,8 +12,8 @@ As a studio employee, I want to click an empty time slot so I can quickly create
 
 1. Click empty lane → slot highlight + modal
 2. Summary shows **table**, **weekday**, **start time**
-3. Form: customer name (required), phone, email, painters, duration (default 90m), notes
-4. Save → create/find Bookly customer → `Utils\Appointment::checkTime` + `::save` → refresh grid + toast
+3. Form: **service** (required Bookly service), customer name (required), phone, email, painters, duration (defaults from service), notes
+4. Save → create/find Bookly customer → `Utils\Appointment::checkTime` + `::save` with real `service_id` → refresh grid + toast
 5. Cancel closes with no changes
 
 ## Surfaces
@@ -30,14 +30,15 @@ As a studio employee, I want to click an empty time slot so I can quickly create
 
 | Filter / config | Default | Purpose |
 |-----------------|---------|---------|
-| `cad_scheduler_quick_add_service_id` / `cadConfig.quickAddServiceId` | `0` | Bookly service id (0 = custom “Studio Reservation”) |
-| `cad_scheduler_quick_add_custom_service_name` | `Studio Reservation` | Used when service id is unset |
-| `cad_scheduler_quick_add_default_duration` | `90` | Minutes |
+| `cadConfig.services` / `cad_scheduler_services` | Bookly list | Services for the dropdown |
+| `cad_scheduler_quick_add_service_id` / `cadConfig.quickAddServiceId` | `0` | Default pre-selected Bookly service id |
+| `cad_scheduler_native_service_id` | — | Resolve/require native service id |
+| `cad_scheduler_quick_add_default_duration` | `90` | Fallback minutes if service duration unknown |
 | `cad_scheduler_quick_add_status` | `approved` | CA status slug |
 | `cad_scheduler_quick_add_notify` | `true` | Bookly notifications after create |
 | `cad_scheduler_create_appointment_capability` | `edit_posts` | AJAX capability |
 
-Prefer setting a real Bookly **Studio Reservation** service id in production so reports and capacity rules match admin bookings.
+A real Bookly service is **required**. Custom service names are not created (see [sprint-3.2.1-native-bookly-compatibility.md](sprint-3.2.1-native-bookly-compatibility.md)).
 
 ## Out of scope (later)
 
@@ -46,5 +47,5 @@ Customer search, Lightspeed lookup, edit/delete, drag-resize, payments, status c
 ## Deploy
 
 1. Redeploy snippets **12** (Provider) and **20** (AJAX Bridge)
-2. Pin `CAD_SCHEDULER_VERSION` to **3.1.0**
+2. Pin `CAD_SCHEDULER_VERSION` to the current release (see changelog)
 3. Hard-refresh the scheduler page

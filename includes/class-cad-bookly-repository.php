@@ -390,6 +390,59 @@ class CAD_Bookly_Repository {
 	}
 
 	/**
+	 * Active Bookly services for Quick Add / Reservation Manager.
+	 *
+	 * @return array<int, array{id: string, name: string, durationMinutes: int}>
+	 */
+	public function get_services() {
+		global $wpdb;
+
+		if ( ! self::is_available() ) {
+			return array();
+		}
+
+		$table = $wpdb->prefix . 'bookly_services';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( ! $exists ) {
+			return array();
+		}
+
+		$sql = "SELECT id, title, duration, position
+			FROM {$table}
+			WHERE (visibility IS NULL OR visibility = '' OR visibility IN ('public','private','group','group_booking'))
+			ORDER BY position ASC, title ASC";
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results( $sql, ARRAY_A );
+		if ( ! is_array( $rows ) ) {
+			return array();
+		}
+
+		$out = array();
+		foreach ( $rows as $row ) {
+			$id = (string) ( $row['id'] ?? '' );
+			if ( '' === $id ) {
+				continue;
+			}
+			$duration_sec = (int) ( $row['duration'] ?? 0 );
+			$out[]        = array(
+				'id'              => $id,
+				'name'            => (string) ( $row['title'] ?? ( 'Service ' . $id ) ),
+				'durationMinutes' => $duration_sec > 0 ? (int) max( 15, round( $duration_sec / 60 ) ) : 90,
+			);
+		}
+
+		/**
+		 * Filter Bookly services exposed to CAD UI.
+		 *
+		 * @param array $out
+		 */
+		$filtered = apply_filters( 'cad_scheduler_services', $out );
+		return is_array( $filtered ) ? array_values( $filtered ) : $out;
+	}
+
+	/**
 	 * Update Bookly custom status on all customer-appointment rows for an appointment.
 	 *
 	 * @param string $appointment_id Bookly appointment id.

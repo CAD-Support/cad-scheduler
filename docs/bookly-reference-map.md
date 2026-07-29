@@ -909,7 +909,9 @@ These are defined in CAD Scheduler, not Bookly:
 | `wp_ajax_cad_get_reservation` | `snippets/10A-ajax-bridge.php` | Reservation Manager load (Sprint 3.2) |
 | `wp_ajax_cad_save_reservation` | `snippets/10A-ajax-bridge.php` | Reservation Manager save via Bookly (Sprint 3.2) |
 | `cad_scheduler_reschedule_notify` | `includes/class-cad-schedule-provider.php` | Whether drag/reschedule sends Bookly notifications (default `true`) |
-| `cad_scheduler_quick_add_service_id` | `includes/class-cad-schedule-provider.php` | Bookly service id for Quick Add (0 = custom name) |
+| `cad_scheduler_quick_add_service_id` | `includes/class-cad-schedule-provider.php` | Default Bookly service id for Quick Add (native id required; no custom service) |
+| `cad_scheduler_native_service_id` | `includes/class-cad-schedule-provider.php` | Resolve/require native Bookly service id (Sprint 3.2.1) |
+| `cad_scheduler_services` | `includes/class-cad-bookly-repository.php` | Filter Bookly services exposed to CAD UI |
 | `cad_scheduler_quick_add_notify` | `includes/class-cad-schedule-provider.php` | Whether Quick Add sends Bookly notifications (default `true`) |
 | `cad_scheduler_reservation_detail_fields` | `includes/class-cad-bookly-mapper.php` | Filter dynamic Reservation Manager fields |
 

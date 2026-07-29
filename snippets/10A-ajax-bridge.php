@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 // already available on jsDelivr. Do not increment before the release
 // has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '3.2.0' );
+	define( 'CAD_SCHEDULER_VERSION', '3.2.1' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -238,6 +238,7 @@ function cad_enqueue_assets() {
 			'hourHeight'     => 64,
 			'quickAddDurationMinutes' => (int) apply_filters( 'cad_scheduler_quick_add_default_duration', 90 ),
 			'quickAddServiceId' => (int) apply_filters( 'cad_scheduler_quick_add_service_id', 0 ),
+			'services'       => $provider->get_services(),
 			'booklyEditUrl'  => apply_filters(
 				'cad_scheduler_bookly_edit_url',
 				admin_url( 'admin.php?page=bookly-calendar' )
@@ -862,7 +863,8 @@ function cad_ajax_create_appointment() {
 	$phone         = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
 	$email         = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 	$painters      = absint( $_POST['painters'] ?? $_POST['number_of_persons'] ?? 1 );
-	$duration      = absint( $_POST['duration_minutes'] ?? $_POST['duration'] ?? 90 );
+	$has_duration  = isset( $_POST['duration_minutes'] ) || isset( $_POST['duration'] );
+	$duration      = absint( $_POST['duration_minutes'] ?? $_POST['duration'] ?? 0 );
 	$notes         = sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) );
 	$service_id    = absint( $_POST['service_id'] ?? 0 );
 
@@ -876,21 +878,23 @@ function cad_ajax_create_appointment() {
 		);
 	}
 
-	$result = $provider->create_appointment(
-		array(
-			'staff_id'          => $staff_id,
-			'start'             => $start_date,
-			'end'               => '' !== $end_raw ? $end_raw : null,
-			'duration_minutes'  => $duration > 0 ? $duration : 90,
-			'customer_name'     => $customer_name,
-			'phone'             => $phone,
-			'email'             => $email,
-			'painters'          => $painters > 0 ? $painters : 1,
-			'notes'             => $notes,
-			'service_id'        => $service_id > 0 ? $service_id : null,
-			'internal_note'     => $notes,
-		)
+	$create_args = array(
+		'staff_id'      => $staff_id,
+		'start'         => $start_date,
+		'end'           => '' !== $end_raw ? $end_raw : null,
+		'customer_name' => $customer_name,
+		'phone'         => $phone,
+		'email'         => $email,
+		'painters'      => $painters > 0 ? $painters : 1,
+		'notes'         => $notes,
+		'service_id'    => $service_id > 0 ? $service_id : null,
+		'internal_note' => $notes,
 	);
+	if ( $has_duration && $duration >= 15 ) {
+		$create_args['duration_minutes'] = $duration;
+	}
+
+	$result = $provider->create_appointment( $create_args );
 
 	if ( empty( $result['ok'] ) ) {
 		$code   = isset( $result['code'] ) ? (string) $result['code'] : 'save_failed';

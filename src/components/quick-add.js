@@ -24,6 +24,30 @@
     return wrap;
   }
 
+  function servicesList() {
+    const list = CAD.Config.get('services');
+    return Array.isArray(list) ? list : [];
+  }
+
+  function serviceById(id) {
+    const sid = String(id || '');
+    return servicesList().find((s) => String(s.id) === sid) || null;
+  }
+
+  function defaultServiceId() {
+    const configured = Number(CAD.Config.get('quickAddServiceId')) || 0;
+    if (configured > 0 && serviceById(configured)) return String(configured);
+    const first = servicesList()[0];
+    return first?.id != null ? String(first.id) : '';
+  }
+
+  function durationForService(serviceId) {
+    const svc = serviceById(serviceId);
+    const mins = Number(svc?.durationMinutes);
+    if (Number.isFinite(mins) && mins >= 15) return mins;
+    return defaultDuration();
+  }
+
   function formatWeekday(isoDate) {
     const d = new Date(`${isoDate}T12:00:00`);
     if (Number.isNaN(d.getTime())) return isoDate;
@@ -153,6 +177,10 @@
       paintersInput.max = '50';
       paintersInput.value = '1';
 
+      const serviceSelect = el('select', 'cad-quick-add__input');
+      serviceSelect.name = 'service_id';
+      serviceSelect.required = true;
+
       const durationInput = el('input', 'cad-quick-add__input');
       durationInput.type = 'number';
       durationInput.name = 'duration_minutes';
@@ -176,6 +204,7 @@
       actions.append(cancel, save);
 
       form.append(
+        field('Service', serviceSelect),
         field('Customer name', nameInput),
         field('Phone', phoneInput),
         field('Email', emailInput),
@@ -197,6 +226,16 @@
       this._error = error;
       this._saveBtn = save;
       this._nameInput = nameInput;
+      this._serviceSelect = serviceSelect;
+      this._durationInput = durationInput;
+
+      serviceSelect.addEventListener('change', () => {
+        durationInput.value = String(durationForService(serviceSelect.value));
+        if (this.context) this.showHighlight(this.context);
+      });
+      durationInput.addEventListener('change', () => {
+        if (this.context) this.showHighlight(this.context);
+      });
 
       if (!this._bound) {
         document.addEventListener('keydown', (event) => {
@@ -232,8 +271,10 @@
       this.context = ctx;
       this.clearError();
       this.form.reset();
+      this.populateServices();
       this.form.elements.painters.value = '1';
-      this.form.elements.duration_minutes.value = String(defaultDuration());
+      const serviceId = this._serviceSelect?.value || defaultServiceId();
+      this.form.elements.duration_minutes.value = String(durationForService(serviceId));
 
       this._summary.replaceChildren(
         el('div', 'cad-quick-add__summary-line', tableName(ctx.tableId)),
@@ -246,6 +287,28 @@
       document.body.classList.add('cad-quick-add-open');
       queueMicrotask(() => this._nameInput?.focus());
       return this;
+    },
+
+    populateServices() {
+      const select = this._serviceSelect;
+      if (!select) return;
+      const services = servicesList();
+      select.replaceChildren();
+      if (!services.length) {
+        const opt = el('option', null, 'No Bookly services found');
+        opt.value = '';
+        opt.disabled = true;
+        select.appendChild(opt);
+        select.value = '';
+        return;
+      }
+      services.forEach((svc) => {
+        const opt = el('option', null, svc.name || `Service ${svc.id}`);
+        opt.value = String(svc.id);
+        select.appendChild(opt);
+      });
+      const preferred = defaultServiceId();
+      select.value = preferred || String(services[0].id);
     },
 
     close() {
@@ -281,7 +344,10 @@
       const metrics = CAD.calendar?.gridMetrics?.();
       if (!metrics) return;
 
-      const duration = defaultDuration();
+      const duration = Math.max(
+        15,
+        Number(this._durationInput?.value) || durationForService(this._serviceSelect?.value)
+      );
       const relStart = Math.max(0, ctx.startMinutes - metrics.startMin);
       const relEnd = Math.min(metrics.rangeMin, ctx.startMinutes + duration - metrics.startMin);
       const heightMin = Math.max(metrics.slotMinutes, relEnd - relStart);
@@ -311,9 +377,16 @@
         return;
       }
 
+      const serviceId = Number(fd.get('service_id')) || 0;
+      if (serviceId <= 0) {
+        this.showError('Select a Bookly service.');
+        this._serviceSelect?.focus();
+        return;
+      }
+
       const durationMinutes = Math.max(
         15,
-        Number(fd.get('duration_minutes')) || defaultDuration()
+        Number(fd.get('duration_minutes')) || durationForService(serviceId)
       );
       const painters = Math.max(1, Number(fd.get('painters')) || 1);
       const start = toMysqlLocal(ctx.date, ctx.startMinutes);
@@ -325,7 +398,6 @@
       if (this._saveBtn) this._saveBtn.disabled = true;
 
       try {
-        const serviceId = Number(CAD.Config.get('quickAddServiceId')) || 0;
         const result = await CAD.API.createAppointment({
           staffId: ctx.tableId,
           start,
@@ -336,7 +408,7 @@
           email: String(fd.get('email') || '').trim(),
           painters,
           notes: String(fd.get('notes') || '').trim(),
-          serviceId: serviceId > 0 ? serviceId : undefined,
+          serviceId,
         });
 
         if (result?.success === false) {

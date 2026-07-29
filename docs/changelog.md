@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.2.1] — 2026-07-29
+
+### Changed
+
+- **Sprint 3.2.1 Native Bookly Compatibility** — create/save always use a real Bookly `service_id` (no Custom / “Studio Reservation” custom-service path)
+- Quick Add and Reservation Manager: Bookly **Service** dropdown; duration defaults from the selected service
+- `cadConfig.services` from repository; clears custom service name/price on Reservation Manager save
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **3.2.1**; redeploy snippets **10**, **12**, and **20**
+- See [sprint-3.2.1-native-bookly-compatibility.md](sprint-3.2.1-native-bookly-compatibility.md)
+
 ## [3.2.0] — 2026-07-29
 
 ### Added
