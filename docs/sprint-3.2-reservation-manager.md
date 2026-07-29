@@ -1,6 +1,6 @@
 # Sprint 3.2 — Reservation Manager
 
-**Status:** Shipped in **3.2.0** (native **3.2.1**; UX **3.2.2**; layout **3.2.3**)
+**Status:** Shipped in **3.2.0** (native **3.2.1**; UX **3.2.2**; layout **3.2.3**; UI **3.2.4**)
 
 **Goal:** Replace Bookly’s edit dialogs for day-to-day reservation management inside CAD Scheduler.
 
@@ -12,17 +12,17 @@
 | Click empty slot | **Quick Add** (3.1) unchanged |
 | Save | Bookly `checkTime` + `save`; update customer in place; patch State; re-render; toast |
 
-## Layout (3.2.3)
+## Layout (3.2.4)
 
-1. **Summary strip** — prominent context line  
-2. **Reservation** — Service/Table; Date; **Start/End**; **Duration / Painters**  
+1. **Sticky chrome** — title + summary card (service • table • date • time • painters)  
+2. **Reservation** — Service/Table; Date; Start/End; **Painters / Duration**  
 3. **Customer** — first / last / phone / email  
-4. **Reservation Details** — dynamic Bookly custom fields  
-5. **Reservation Notes** + **Studio Notes**  
+4. **Reservation Details** — dynamic Bookly custom fields (textareas full width)  
+5. **Notes** — Reservation Notes · Studio Notes side-by-side  
 6. **Status** — compact chips  
 7. **Sticky footer** — Cancel / Save Reservation  
 
-See [sprint-3.2.3-reservation-manager-layout.md](sprint-3.2.3-reservation-manager-layout.md).
+See [sprint-3.2.4-reservation-manager-ui.md](sprint-3.2.4-reservation-manager-ui.md).
 
 ## Architecture
 

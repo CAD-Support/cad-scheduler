@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.2.4] — 2026-07-29
+
+### Changed
+
+- **Sprint 3.2.4 Reservation Manager UI** — denser two-column grids; Painters beside Duration; notes side-by-side; sticky chrome (title + summary card) and footer
+- Stronger summary card; equal control heights; ~20–25% less vertical whitespace
+
+### Notes
+
+- Presentation only (DOM + `.cad-rm*` CSS); save logic unchanged
+- Pin `CAD_SCHEDULER_VERSION` to **3.2.4**
+- See [sprint-3.2.4-reservation-manager-ui.md](sprint-3.2.4-reservation-manager-ui.md)
+
 ## [3.2.3] — 2026-07-29
 
 ### Changed

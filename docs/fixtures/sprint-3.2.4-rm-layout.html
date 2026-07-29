@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sprint 3.2.4 — Reservation Manager visual QA</title>
+  <link rel="stylesheet" href="../../assets/css/cad-scheduler.css" />
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #cfc6bf;
+      font-family: system-ui, sans-serif;
+    }
+    .cad-scheduler { /* provide CSS vars used by .cad-rm */ }
+  </style>
+</head>
+<body class="cad-scheduler cad-rm-open">
+  <div class="cad-rm" role="dialog" aria-modal="true" aria-label="Reservation manager">
+    <div class="cad-rm__backdrop"></div>
+    <div class="cad-rm__panel">
+      <div class="cad-rm__chrome">
+        <div class="cad-rm__header">
+          <h2 class="cad-rm__title">Reservation Manager</h2>
+          <button type="button" class="cad-rm__close" aria-label="Close">×</button>
+        </div>
+        <div class="cad-rm__summary" aria-live="polite">
+          <span class="cad-rm__summary-part">Studio Reservation</span>
+          <span class="cad-rm__summary-sep">•</span>
+          <span class="cad-rm__summary-part">Table 2</span>
+          <span class="cad-rm__summary-sep">•</span>
+          <span class="cad-rm__summary-part">Monday, August 3</span>
+          <span class="cad-rm__summary-sep">•</span>
+          <span class="cad-rm__summary-part">9:15–10:45</span>
+          <span class="cad-rm__summary-sep">•</span>
+          <span class="cad-rm__summary-part">🎨 3 Painters</span>
+        </div>
+      </div>
+      <form class="cad-rm__form" onsubmit="return false;">
+        <div class="cad-rm__scroll">
+          <section class="cad-rm__section cad-rm__section--reservation">
+            <h3 class="cad-rm__section-title">Reservation</h3>
+            <div class="cad-rm__section-body">
+              <label class="cad-rm__field"><span class="cad-rm__label">Service</span>
+                <select class="cad-rm__input"><option>Studio Reservation</option></select></label>
+              <label class="cad-rm__field"><span class="cad-rm__label">Table</span>
+                <select class="cad-rm__input"><option>Table 2</option></select></label>
+              <label class="cad-rm__field cad-rm__field--span"><span class="cad-rm__label">Date</span>
+                <input class="cad-rm__input" type="date" value="2026-08-03" /></label>
+              <label class="cad-rm__field"><span class="cad-rm__label">Start Time</span>
+                <select class="cad-rm__input"><option>9:15 AM</option></select></label>
+              <label class="cad-rm__field"><span class="cad-rm__label">End Time</span>
+                <select class="cad-rm__input"><option>10:45 AM</option></select></label>
+              <label class="cad-rm__field"><span class="cad-rm__label">🎨 # of Painters</span>
+                <select class="cad-rm__input"><option>3</option></select></label>
+              <label class="cad-rm__field"><span class="cad-rm__label">Duration</span>
+                <div class="cad-rm__duration">90 minutes</div></label>
+            </div>
+          </section>
+
+          <section class="cad-rm__section cad-rm__section--customer">
+            <h3 class="cad-rm__section-title">Customer</h3>
+            <div class="cad-rm__section-body">
+              <label class="cad-rm__field"><span class="cad-rm__label">First Name</span>
+                <input class="cad-rm__input" value="Jamie" /></label>
+              <label class="cad-rm__field"><span class="cad-rm__label">Last Name</span>
+                <input class="cad-rm__input" value="Nguyen" /></label>
+              <label class="cad-rm__field"><span class="cad-rm__label">Phone</span>
+                <input class="cad-rm__input" value="(479) 555-0142" /></label>
+              <label class="cad-rm__field"><span class="cad-rm__label">Email</span>
+                <input class="cad-rm__input" value="jamie@example.com" /></label>
+            </div>
+          </section>
+
+          <section class="cad-rm__section cad-rm__section--details">
+            <h3 class="cad-rm__section-title">Reservation Details</h3>
+            <div class="cad-rm__section-body">
+              <label class="cad-rm__field"><span class="cad-rm__label">Special Occasion</span>
+                <input class="cad-rm__input" value="Birthday" /></label>
+              <label class="cad-rm__field"><span class="cad-rm__label">Guest Count</span>
+                <input class="cad-rm__input" type="number" value="6" /></label>
+              <label class="cad-rm__field cad-rm__field--span"><span class="cad-rm__label">Appointment Notes (custom)</span>
+                <textarea class="cad-rm__textarea" rows="3">Please set up near the window.</textarea></label>
+            </div>
+          </section>
+
+          <div class="cad-rm__notes-row">
+            <section class="cad-rm__section cad-rm__section--res-notes">
+              <h3 class="cad-rm__section-title">Reservation Notes</h3>
+              <div class="cad-rm__section-body">
+                <textarea class="cad-rm__textarea" name="customer_notes">Customer prefers aisle seating.</textarea>
+              </div>
+            </section>
+            <section class="cad-rm__section cad-rm__section--notes">
+              <h3 class="cad-rm__section-title">Studio Notes</h3>
+              <div class="cad-rm__section-body">
+                <textarea class="cad-rm__textarea" name="notes">Prep glaze set B.</textarea>
+              </div>
+            </section>
+          </div>
+
+          <section class="cad-rm__section cad-rm__section--status">
+            <h3 class="cad-rm__section-title">Status</h3>
+            <div class="cad-rm__section-body">
+              <div class="cad-status-chips" role="group" aria-label="Appointment status">
+                <button type="button" class="cad-status-chips__btn cad-status-chips__btn--active">Approved</button>
+                <button type="button" class="cad-status-chips__btn">Deposit Paid</button>
+                <button type="button" class="cad-status-chips__btn">Arrived</button>
+                <button type="button" class="cad-status-chips__btn">Paid</button>
+                <button type="button" class="cad-status-chips__btn">No Show</button>
+              </div>
+            </div>
+          </section>
+
+          <p class="cad-rm__error" hidden>Error placeholder</p>
+          <!-- Extra content to force scroll for sticky chrome/footer QA -->
+          <section class="cad-rm__section">
+            <h3 class="cad-rm__section-title">Scroll filler</h3>
+            <div class="cad-rm__section-body">
+              <p class="cad-rm__empty">Scroll this panel to confirm chrome + footer stay put.</p>
+              <p class="cad-rm__empty">Line 2</p>
+              <p class="cad-rm__empty">Line 3</p>
+              <p class="cad-rm__empty">Line 4</p>
+              <p class="cad-rm__empty">Line 5</p>
+              <p class="cad-rm__empty">Line 6</p>
+              <p class="cad-rm__empty">Line 7</p>
+              <p class="cad-rm__empty">Line 8</p>
+            </div>
+          </section>
+        </div>
+        <div class="cad-rm__footer">
+          <button type="button" class="cad-rm__btn cad-rm__btn--ghost">Cancel</button>
+          <button type="submit" class="cad-rm__btn cad-rm__btn--primary">Save Reservation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

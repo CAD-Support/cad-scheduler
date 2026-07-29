@@ -1,5 +1,5 @@
 /**
- * Reservation Manager — Sprint 3.2 / 3.2.3 UX.
+ * Reservation Manager — Sprint 3.2 / 3.2.4 UX.
  * Primary view/edit UI for existing reservations (Bookly save path).
  * Service-specific fields come from the API detailFields list (not hard-coded).
  * @module components/reservation-manager
@@ -221,6 +221,8 @@
 
       const panel = el('div', 'cad-rm__panel');
 
+      const chrome = el('div', 'cad-rm__chrome');
+
       const header = el('div', 'cad-rm__header');
       const title = el('h2', 'cad-rm__title', 'Reservation Manager');
       const closeBtn = el('button', 'cad-rm__close', '×');
@@ -231,6 +233,7 @@
 
       const summary = el('div', 'cad-rm__summary');
       summary.setAttribute('aria-live', 'polite');
+      chrome.append(header, summary);
 
       const form = el('form', 'cad-rm__form');
       form.addEventListener('submit', (event) => {
@@ -246,6 +249,8 @@
       const resNotes = section('Reservation Notes', 'cad-rm__section--res-notes');
       const studioNotes = section('Studio Notes', 'cad-rm__section--notes');
       const statusSec = section('Status', 'cad-rm__section--status');
+      const notesRow = el('div', 'cad-rm__notes-row');
+      notesRow.append(resNotes.sec, studioNotes.sec);
 
       this._detailsBody = details.body;
       this._statusBody = statusSec.body;
@@ -279,8 +284,8 @@
         field('Date', dateInput, 'cad-rm__field--span'),
         field('Start Time', startSelect),
         field('End Time', endSelect),
-        field('Duration', durationDisplay),
-        field('🎨 # of Painters', paintersSelect)
+        field('🎨 # of Painters', paintersSelect),
+        field('Duration', durationDisplay)
       );
 
       const firstInput = el('input', 'cad-rm__input');
@@ -320,8 +325,7 @@
         reservation.sec,
         customer.sec,
         details.sec,
-        resNotes.sec,
-        studioNotes.sec,
+        notesRow,
         statusSec.sec,
         error
       );
@@ -335,7 +339,7 @@
       footer.append(cancel, save);
 
       form.append(scroll, footer);
-      panel.append(header, summary, form);
+      panel.append(chrome, form);
       root.append(backdrop, panel);
       document.body.appendChild(root);
 
@@ -609,7 +613,8 @@
           return;
         }
         let input;
-        if (type === 'textarea') {
+        const isTextarea = type === 'textarea';
+        if (isTextarea) {
           input = el('textarea', 'cad-rm__textarea');
           input.rows = 3;
         } else {
@@ -621,7 +626,13 @@
         input.dataset.fieldId = String(def.id);
         input.value = def.value != null ? String(def.value) : '';
         if (def.required) input.required = true;
-        this._detailsBody.append(field(String(def.label || def.id), input));
+        this._detailsBody.append(
+          field(
+            String(def.label || def.id),
+            input,
+            isTextarea ? 'cad-rm__field--span' : ''
+          )
+        );
       });
     },
 
