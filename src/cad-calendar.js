@@ -241,6 +241,42 @@
   }
 
   /**
+   * TEMP 2.7.7 — compare API start string vs Date fields vs grid position.
+   * @param {Record<string, *>} appointment
+   * @param {Date} start
+   * @param {Date} end
+   * @param {ReturnType<typeof gridMetrics>} metrics
+   * @param {{ top: string, height: string }} layout
+   */
+  function logRenderConversion(appointment, start, end, metrics, layout) {
+    const localMin = toMinutes(start);
+    const utcMin = start.getUTCHours() * 60 + start.getUTCMinutes();
+    // eslint-disable-next-line no-console
+    console.log('[CAD RENDER date]', {
+      id: appointment.id,
+      rawStart: appointment.start,
+      rawEnd: appointment.end,
+      parsedLocal: start.toString(),
+      toISOString: start.toISOString(),
+      toUTCString: start.toUTCString(),
+      getHours: start.getHours(),
+      getMinutes: start.getMinutes(),
+      getUTCHours: start.getUTCHours(),
+      getUTCMinutes: start.getUTCMinutes(),
+      getTimezoneOffset: start.getTimezoneOffset(),
+      hasZ: /Z$/i.test(String(appointment.start || '')),
+      hasOffset: /[+-]\d{2}:\d{2}$/.test(String(appointment.start || '')),
+      toMinutesLocal: localMin,
+      toMinutesUTC: utcMin,
+      metricsStartMin: metrics.startMin,
+      relStartMin: Math.max(0, localMin - metrics.startMin),
+      top: layout.top,
+      height: layout.height,
+      hourShiftVsUTC: localMin - utcMin,
+    });
+  }
+
+  /**
    * @param {HTMLElement} container
    * @param {ReturnType<typeof gridMetrics>} metrics
    * @param {number} tableCount
@@ -380,6 +416,7 @@
     appointments
       .filter((appointment) => String(appointment.tableId) === String(table.id))
       .forEach((appointment) => {
+        // Conversion under investigation (2.7.7): ATOM from PHP iso() → Date → getHours().
         const start = new Date(appointment.start);
         const end = new Date(appointment.end);
 
@@ -387,8 +424,11 @@
           return;
         }
 
+        const layout = layoutBlock(start, end, metrics);
+        logRenderConversion(appointment, start, end, metrics, layout);
+
         blocks.appendChild(
-          CAD.components.appointmentBlock(appointment, layoutBlock(start, end, metrics))
+          CAD.components.appointmentBlock(appointment, layout)
         );
       });
 

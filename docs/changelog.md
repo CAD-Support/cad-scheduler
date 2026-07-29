@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.7.7] — 2026-07-29
+
+### Added
+
+- **Debug-only** render-path instrumentation: `[CAD RENDER raw|iso|json]` (PHP) and `[CAD RENDER api|date]` (JS) — **no behavior changes**
+- Traces Bookly `start_date` → mapper `DateTimeInterface::ATOM` → `new Date` → `getHours()` / grid `top`
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **2.7.7**; redeploy snippets **11** (Mapper), **12** (Provider), **20** (Bridge)
+- Suspect: `CAD_Bookly_Mapper::iso()` attaches `wp_timezone()` offset; browser `getHours()` can shift by 1h if WP TZ ≠ browser TZ
+
 ## [2.7.6] — 2026-07-29
 
 ### Added

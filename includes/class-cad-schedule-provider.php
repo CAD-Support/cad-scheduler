@@ -380,9 +380,18 @@ class CAD_Schedule_Provider {
 	}
 
 	public function get_schedule( $date ) {
-		$appointments = $this->mapper->map_appointments(
-			$this->repository->get_appointments_for_date( $date )
-		);
+		$raw_rows = $this->repository->get_appointments_for_date( $date );
+
+		// TEMP DEBUG 2.7.7 — raw DB start_date before mapper.
+		foreach ( $raw_rows as $row ) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				'[CAD RENDER raw] id=' . (string) ( $row['id'] ?? '' )
+				. ' start_date=' . (string) ( $row['start_date'] ?? '' )
+				. ' end_date=' . (string) ( $row['end_date'] ?? '' )
+			);
+		}
+
+		$appointments = $this->mapper->map_appointments( $raw_rows );
 
 		/**
 		 * Filter the full normalized appointments list for a date.
@@ -392,9 +401,29 @@ class CAD_Schedule_Provider {
 		 */
 		$appointments = apply_filters( 'cad_scheduler_appointments', $appointments, $date );
 
+		if ( ! is_array( $appointments ) ) {
+			$appointments = array();
+		}
+
+		// TEMP DEBUG 2.7.7 — JSON start values returned to the browser.
+		$starts = array();
+		foreach ( $appointments as $appt ) {
+			if ( ! is_array( $appt ) ) {
+				continue;
+			}
+			$starts[] = array(
+				'id'    => (string) ( $appt['id'] ?? '' ),
+				'start' => (string) ( $appt['start'] ?? '' ),
+				'end'   => (string) ( $appt['end'] ?? '' ),
+			);
+		}
+		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			'[CAD RENDER json] date=' . $date . ' appointments=' . wp_json_encode( $starts )
+		);
+
 		$payload = array(
 			'date'         => $date,
-			'appointments' => is_array( $appointments ) ? $appointments : array(),
+			'appointments' => $appointments,
 			'tables'       => $this->get_tables(),
 		);
 

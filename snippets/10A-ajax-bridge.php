@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 // already available on jsDelivr. Do not increment before the release
 // has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '2.7.6' );
+	define( 'CAD_SCHEDULER_VERSION', '2.7.7' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -423,18 +423,47 @@ function cad_scheduler_tables_sync_inline_js() {
         .filter(function (a) { return String(a.tableId) === String(table.id); })
         .forEach(function (appointment) {
           if (!CAD.components || typeof CAD.components.appointmentBlock !== 'function' || !metrics) return;
+          // Conversion under investigation (2.7.7): ATOM from PHP iso() → Date → getHours().
           var start = new Date(appointment.start);
           var end = new Date(appointment.end);
           if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
           var toMin = function (d) { return d.getHours() * 60 + d.getMinutes(); };
-          var relStart = Math.max(0, toMin(start) - metrics.startMin);
+          var localMin = toMin(start);
+          var utcMin = start.getUTCHours() * 60 + start.getUTCMinutes();
+          var relStart = Math.max(0, localMin - metrics.startMin);
           var relEnd = Math.min(metrics.rangeMin, toMin(end) - metrics.startMin);
           var duration = Math.max(relEnd - relStart, metrics.slotMinutes / 2);
           var pxPerMinute = metrics.gridHeight / metrics.rangeMin;
-          blocks.appendChild(CAD.components.appointmentBlock(appointment, {
+          var layout = {
             top: (relStart * pxPerMinute) + 'px',
             height: Math.max(duration * pxPerMinute, metrics.slotHeight * 0.85) + 'px',
-          }));
+          };
+          try {
+            console.log('[CAD RENDER date]', {
+              id: appointment.id,
+              rawStart: appointment.start,
+              rawEnd: appointment.end,
+              parsedLocal: start.toString(),
+              toISOString: start.toISOString(),
+              toUTCString: start.toUTCString(),
+              getHours: start.getHours(),
+              getMinutes: start.getMinutes(),
+              getUTCHours: start.getUTCHours(),
+              getUTCMinutes: start.getUTCMinutes(),
+              getTimezoneOffset: start.getTimezoneOffset(),
+              hasZ: /Z$/i.test(String(appointment.start || '')),
+              hasOffset: /[+-]\d{2}:\d{2}$/.test(String(appointment.start || '')),
+              toMinutesLocal: localMin,
+              toMinutesUTC: utcMin,
+              metricsStartMin: metrics.startMin,
+              relStartMin: relStart,
+              top: layout.top,
+              height: layout.height,
+              hourShiftVsUTC: localMin - utcMin,
+              via: 'forceRebuildFromState polyfill'
+            });
+          } catch (eRender) {}
+          blocks.appendChild(CAD.components.appointmentBlock(appointment, layout));
         });
       lane.appendChild(lines);
       lane.appendChild(blocks);
@@ -543,6 +572,15 @@ function cad_scheduler_tables_sync_inline_js() {
           var payload = (result && result.data) || {};
           applyScheduleTables(payload);
           CAD.State.set('appointments', payload.appointments || []);
+          try {
+            var list = Array.isArray(payload.appointments) ? payload.appointments : [];
+            console.log(
+              '[CAD RENDER api]',
+              list.map(function (a) {
+                return { id: a && a.id, start: a && a.start, end: a && a.end };
+              })
+            );
+          } catch (eApi) {}
           if (payload.staffPipeline) ui._lastStaffPipeline = payload.staffPipeline;
           return ui;
         })

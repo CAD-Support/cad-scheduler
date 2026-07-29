@@ -301,7 +301,16 @@ class CAD_Bookly_Mapper {
 			return null;
 		}
 		try {
-			return ( new DateTimeImmutable( $value, wp_timezone() ) )->format( DateTimeInterface::ATOM );
+			$dt  = new DateTimeImmutable( $value, wp_timezone() );
+			$out = $dt->format( DateTimeInterface::ATOM );
+			// TEMP DEBUG 2.7.7 — render-path: MySQL wall clock → ATOM with WP offset.
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				'[CAD RENDER iso] raw_start_date=' . $value
+				. ' wp_timezone=' . wp_timezone_string()
+				. ' atom=' . $out
+				. ' offset=' . $dt->format( 'P' )
+			);
+			return $out;
 		} catch ( Exception $e ) {
 			return null;
 		}
