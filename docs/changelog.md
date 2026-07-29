@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.1.0] — 2026-07-29
+
+### Added
+
+- **Sprint 3.1 Quick Add Reservation** — click an empty slot to create a Bookly reservation (customer + appointment) without leaving the scheduler
+- `CAD.QuickAdd` modal, `CAD.API.createAppointment`, `wp_ajax_cad_create_appointment`, `CAD_Schedule_Provider::create_appointment`
+- Slot highlight + pre-filled table / day / time summary
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **3.1.0**; redeploy snippets **12** and **20**
+- Optional: set `cad_scheduler_quick_add_service_id` to your Studio Reservation Bookly service id
+- See [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md)
+
 ## Sprint 3.0 — Drag & Drop Complete (2.7.0–2.7.8)
 
 **Status:** P1 Drag & Drop is production-ready as of **2.7.8**.

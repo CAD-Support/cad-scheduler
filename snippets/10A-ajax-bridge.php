@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 // already available on jsDelivr. Do not increment before the release
 // has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '2.7.8' );
+	define( 'CAD_SCHEDULER_VERSION', '3.1.0' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -218,7 +218,8 @@ function cad_enqueue_assets() {
 	wp_enqueue_script( 'cad-calendar', $src . 'cad-calendar.js', array( 'cad-core', 'cad-components' ), $ver, true );
 	wp_enqueue_script( 'cad-notify', $src . 'cad-notify.js', array( 'cad-core' ), $ver, true );
 	wp_enqueue_script( 'cad-dnd', $src . 'cad-dnd.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-notify' ), $ver, true );
-	wp_enqueue_script( 'cad-ui', $src . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-popover', 'cad-staff-pipeline-report', 'cad-dnd', 'cad-notify' ), $ver, true );
+	wp_enqueue_script( 'cad-quick-add', $src . 'components/quick-add.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-notify' ), $ver, true );
+	wp_enqueue_script( 'cad-ui', $src . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-popover', 'cad-staff-pipeline-report', 'cad-dnd', 'cad-notify', 'cad-quick-add' ), $ver, true );
 	wp_enqueue_script( 'cad-navigation', $src . 'cad-navigation.js', array( 'cad-core', 'cad-ui' ), $ver, true );
 
 	wp_localize_script(
@@ -234,6 +235,8 @@ function cad_enqueue_assets() {
 			'openHours'      => cad_scheduler_open_hours(),
 			'slotMinutes'    => 15,
 			'hourHeight'     => 64,
+			'quickAddDurationMinutes' => (int) apply_filters( 'cad_scheduler_quick_add_default_duration', 90 ),
+			'quickAddServiceId' => (int) apply_filters( 'cad_scheduler_quick_add_service_id', 0 ),
 			'booklyEditUrl'  => apply_filters(
 				'cad_scheduler_bookly_edit_url',
 				admin_url( 'admin.php?page=bookly-calendar' )
@@ -252,7 +255,7 @@ function cad_enqueue_assets() {
 
 	wp_add_inline_script(
 		'cad-navigation',
-		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui||!CAD.Navigation)return;CAD.init(window.cadConfig||{});var m=document.getElementById('cad-scheduler');if(!m)return;CAD.ui.mount('#cad-scheduler');if(m.querySelector('.cad-scheduler__diagnostics'))return;CAD.Navigation.init();CAD.Popover&&CAD.Popover.init();CAD.ui.load(CAD.Config.get('today'));});})();"
+		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui||!CAD.Navigation)return;CAD.init(window.cadConfig||{});var m=document.getElementById('cad-scheduler');if(!m)return;CAD.ui.mount('#cad-scheduler');if(m.querySelector('.cad-scheduler__diagnostics'))return;CAD.Navigation.init();CAD.Popover&&CAD.Popover.init();CAD.QuickAdd&&CAD.QuickAdd.init();CAD.ui.load(CAD.Config.get('today'));});})();"
 	);
 
 	if ( cad_scheduler_diagnostics_enabled() ) {
@@ -451,6 +454,7 @@ function cad_scheduler_tables_sync_inline_js() {
 
     if (CAD.editor && typeof CAD.editor.bind === 'function') CAD.editor.bind(container);
     if (CAD.DnD && typeof CAD.DnD.bind === 'function') CAD.DnD.bind(container);
+    if (CAD.QuickAdd && typeof CAD.QuickAdd.bind === 'function') CAD.QuickAdd.bind(container);
   }
 
   /** TEMPORARY: replace CDN calendar.render until version bump. */
@@ -832,3 +836,70 @@ function cad_ajax_update_appointment() {
 	wp_send_json_success( $result );
 }
 add_action( 'wp_ajax_cad_update_appointment', 'cad_ajax_update_appointment' );
+
+function cad_ajax_create_appointment() {
+	check_ajax_referer( 'cad_scheduler', 'nonce' );
+
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'message' => 'Authentication required.', 'code' => 'auth' ), 403 );
+	}
+
+	$capability = apply_filters( 'cad_scheduler_create_appointment_capability', 'edit_posts' );
+	if ( ! current_user_can( $capability ) ) {
+		wp_send_json_error( array( 'message' => 'Insufficient permissions.', 'code' => 'capability' ), 403 );
+	}
+
+	$provider = cad_schedule_provider();
+	if ( ! $provider ) {
+		wp_send_json_error( array( 'message' => 'CAD modules not loaded.', 'code' => 'modules' ), 500 );
+	}
+
+	$staff_id      = sanitize_text_field( wp_unslash( $_POST['staff_id'] ?? $_POST['table_id'] ?? '' ) );
+	$start_date    = sanitize_text_field( wp_unslash( $_POST['start'] ?? $_POST['start_date'] ?? '' ) );
+	$end_raw       = sanitize_text_field( wp_unslash( $_POST['end'] ?? $_POST['end_date'] ?? '' ) );
+	$customer_name = sanitize_text_field( wp_unslash( $_POST['customer_name'] ?? $_POST['customer'] ?? '' ) );
+	$phone         = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
+	$email         = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
+	$painters      = absint( $_POST['painters'] ?? $_POST['number_of_persons'] ?? 1 );
+	$duration      = absint( $_POST['duration_minutes'] ?? $_POST['duration'] ?? 90 );
+	$notes         = sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) );
+	$service_id    = absint( $_POST['service_id'] ?? 0 );
+
+	if ( '' === $staff_id || '' === $start_date || '' === $customer_name ) {
+		wp_send_json_error(
+			array(
+				'message' => 'staff_id (or table_id), start, and customer_name are required.',
+				'code'    => 'invalid_params',
+			),
+			400
+		);
+	}
+
+	$result = $provider->create_appointment(
+		array(
+			'staff_id'          => $staff_id,
+			'start'             => $start_date,
+			'end'               => '' !== $end_raw ? $end_raw : null,
+			'duration_minutes'  => $duration > 0 ? $duration : 90,
+			'customer_name'     => $customer_name,
+			'phone'             => $phone,
+			'email'             => $email,
+			'painters'          => $painters > 0 ? $painters : 1,
+			'notes'             => $notes,
+			'service_id'        => $service_id > 0 ? $service_id : null,
+			'internal_note'     => $notes,
+		)
+	);
+
+	if ( empty( $result['ok'] ) ) {
+		$code   = isset( $result['code'] ) ? (string) $result['code'] : 'save_failed';
+		$status = ( 'conflict' === $code ) ? 409 : 400;
+		if ( in_array( $code, array( 'bookly_unavailable', 'save_failed', 'customer_failed' ), true ) ) {
+			$status = 500;
+		}
+		wp_send_json_error( $result, $status );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_cad_create_appointment', 'cad_ajax_create_appointment' );

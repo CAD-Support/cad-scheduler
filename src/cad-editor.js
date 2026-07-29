@@ -45,11 +45,14 @@
         const block = event.target.closest('.cad-appointment');
         if (block?.dataset.id) {
           event.preventDefault();
+          CAD.QuickAdd?.close?.();
           this.select(block.dataset.id);
           return;
         }
-        if (event.target.closest('.cad-matrix__lane, .cad-matrix__scroll')) {
+        // Empty lane clicks are handled by CAD.QuickAdd (stopPropagation).
+        if (event.target.closest('.cad-matrix__scroll') && !event.target.closest('.cad-matrix__lane')) {
           this.clear();
+          CAD.QuickAdd?.close?.();
         }
       });
     },

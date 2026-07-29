@@ -642,10 +642,326 @@ class CAD_Schedule_Provider {
 			'appointment' => $mapped,
 			'conflicts'   => is_array( $check ) ? $check : array(),
 			'bookly'      => array(
-				'success' => true,
+				'success'  => true,
 				'notified' => $notify,
 			),
 		);
+	}
+
+	/**
+	 * Create a Bookly appointment (Quick Add) via checkTime + save.
+	 *
+	 * @param array $args {
+	 *   @type int|string $staff_id
+	 *   @type string     $start
+	 *   @type string     $end Optional.
+	 *   @type int        $duration_minutes Default 90.
+	 *   @type string     $customer_name
+	 *   @type string     $phone
+	 *   @type string     $email
+	 *   @type int        $painters
+	 *   @type string     $notes
+	 *   @type int        $service_id Optional Bookly service id.
+	 *   @type string     $internal_note
+	 * }
+	 * @return array
+	 */
+	public function create_appointment( array $args ) {
+		$staff_id = (int) ( $args['staff_id'] ?? 0 );
+		if ( $staff_id <= 0 ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_staff',
+				'message' => 'Invalid table / staff.',
+			);
+		}
+
+		$customer_name = trim( (string) ( $args['customer_name'] ?? '' ) );
+		if ( '' === $customer_name ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_customer',
+				'message' => 'Customer name is required.',
+			);
+		}
+
+		$start_mysql = $this->normalize_bookly_datetime( (string) ( $args['start'] ?? '' ) );
+		if ( ! $start_mysql ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_start',
+				'message' => 'Invalid start time.',
+			);
+		}
+
+		$end_raw = isset( $args['end'] ) ? (string) $args['end'] : '';
+		if ( '' !== $end_raw ) {
+			$end_mysql = $this->normalize_bookly_datetime( $end_raw );
+			if ( ! $end_mysql ) {
+				return array(
+					'ok'      => false,
+					'code'    => 'invalid_end',
+					'message' => 'Invalid end time.',
+				);
+			}
+		} else {
+			$duration = (int) ( $args['duration_minutes'] ?? 90 );
+			if ( $duration < 15 ) {
+				$duration = 15;
+			}
+			try {
+				$start_dt  = new DateTimeImmutable( $start_mysql, wp_timezone() );
+				$end_mysql = $start_dt->modify( '+' . $duration . ' minutes' )->format( 'Y-m-d H:i:s' );
+			} catch ( Exception $e ) {
+				return array(
+					'ok'      => false,
+					'code'    => 'invalid_start',
+					'message' => 'Invalid start time.',
+				);
+			}
+		}
+
+		if ( strtotime( $end_mysql ) <= strtotime( $start_mysql ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_interval',
+				'message' => 'End time must be after start time.',
+			);
+		}
+
+		$entity_class   = '\Bookly\Lib\Entities\Appointment';
+		$utils_class    = '\Bookly\Lib\Utils\Appointment';
+		$customer_class = '\Bookly\Lib\Entities\Customer';
+		if ( ! class_exists( $entity_class ) || ! class_exists( $utils_class ) || ! class_exists( $customer_class ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'bookly_unavailable',
+				'message' => 'Bookly appointment APIs are not available.',
+			);
+		}
+
+		$phone    = trim( (string) ( $args['phone'] ?? '' ) );
+		$email    = trim( (string) ( $args['email'] ?? '' ) );
+		$painters = max( 1, (int) ( $args['painters'] ?? 1 ) );
+		$notes    = (string) ( $args['notes'] ?? '' );
+		$internal = (string) ( $args['internal_note'] ?? $notes );
+
+		$customer_id = $this->ensure_bookly_customer( $customer_name, $phone, $email );
+		if ( $customer_id <= 0 ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'customer_failed',
+				'message' => 'Could not create Bookly customer.',
+			);
+		}
+
+		$service_id = isset( $args['service_id'] ) ? (int) $args['service_id'] : 0;
+		$service_id = (int) apply_filters( 'cad_scheduler_quick_add_service_id', $service_id, $args );
+		$service_id = $service_id > 0 ? $service_id : null;
+
+		$custom_name = (string) apply_filters(
+			'cad_scheduler_quick_add_custom_service_name',
+			'Studio Reservation',
+			$args
+		);
+		if ( null !== $service_id ) {
+			$custom_name = null;
+		}
+
+		$status = (string) apply_filters( 'cad_scheduler_quick_add_status', 'approved', $args );
+		if ( '' === $status ) {
+			$status = 'approved';
+		}
+
+		$customers = array(
+			array(
+				'id'                => $customer_id,
+				'ca_id'             => '',
+				'custom_fields'     => array(),
+				'extras'            => array(),
+				'number_of_persons' => $painters,
+				'notes'             => $notes,
+				'status'            => $status,
+				'payment_id'        => null,
+				'payment_action'    => '',
+				'payment_for'       => 'current',
+				'series_id'         => null,
+				'timezone'          => null,
+				'created_from'      => 'backend',
+			),
+		);
+
+		$location_id = 0;
+		$check       = \Bookly\Lib\Utils\Appointment::checkTime(
+			0,
+			$start_mysql,
+			$end_mysql,
+			$staff_id,
+			$service_id ? $service_id : 0,
+			$location_id,
+			$customers
+		);
+
+		if ( ! empty( $check['date_interval_not_available'] ) ) {
+			return array(
+				'ok'        => false,
+				'code'      => 'conflict',
+				'message'   => 'That time conflicts with another appointment on this table.',
+				'conflicts' => is_array( $check ) ? $check : array(),
+			);
+		}
+
+		$notify = (bool) apply_filters( 'cad_scheduler_quick_add_notify', true, $args );
+
+		$bookly = \Bookly\Lib\Utils\Appointment::save(
+			0,
+			$staff_id,
+			$service_id,
+			null === $custom_name ? null : $custom_name,
+			'',
+			$location_id,
+			0,
+			$start_mysql,
+			$end_mysql,
+			array( 'enabled' => false ),
+			array(),
+			'current',
+			$customers,
+			0,
+			$internal,
+			'backend'
+		);
+
+		if ( empty( $bookly['success'] ) ) {
+			$errors  = isset( $bookly['errors'] ) && is_array( $bookly['errors'] ) ? $bookly['errors'] : array();
+			$message = 'Could not create appointment.';
+			if ( ! empty( $errors['time_interval'] ) && is_string( $errors['time_interval'] ) ) {
+				$message = $errors['time_interval'];
+			} elseif ( ! empty( $errors['db'] ) && is_string( $errors['db'] ) ) {
+				$message = $errors['db'];
+			} elseif ( ! empty( $errors['overflow_capacity'] ) ) {
+				$message = 'Not enough capacity for this table/service.';
+			}
+
+			return array(
+				'ok'      => false,
+				'code'    => 'save_failed',
+				'message' => $message,
+				'errors'  => $errors,
+				'bookly'  => $bookly,
+			);
+		}
+
+		$new_id = 0;
+		if ( ! empty( $bookly['appointment_id'] ) ) {
+			$new_id = (int) $bookly['appointment_id'];
+		} elseif ( ! empty( $bookly['id'] ) ) {
+			$new_id = (int) $bookly['id'];
+		}
+
+		if ( $new_id <= 0 ) {
+			global $wpdb;
+			$new_id = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$wpdb->prepare(
+					"SELECT id FROM {$wpdb->prefix}bookly_appointments WHERE staff_id = %d AND start_date = %s ORDER BY id DESC LIMIT 1",
+					$staff_id,
+					$start_mysql
+				)
+			);
+		}
+
+		if ( $new_id > 0
+			&& $notify
+			&& class_exists( '\Bookly\Lib\Notifications\Booking\Sender', false )
+			&& method_exists( '\Bookly\Lib\Notifications\Booking\Sender', 'sendForCA' )
+		) {
+			$saved = new \Bookly\Lib\Entities\Appointment();
+			if ( $saved->load( $new_id ) ) {
+				foreach ( $saved->getCustomerAppointments( true ) as $ca ) {
+					\Bookly\Lib\Notifications\Booking\Sender::sendForCA( $ca, $saved, array(), true );
+				}
+			}
+		}
+
+		$row    = $new_id > 0 ? $this->repository->get_appointment_by_id( $new_id ) : null;
+		$mapped = $row ? $this->mapper->map_appointment( $row ) : null;
+
+		return array(
+			'ok'          => true,
+			'appointment' => $mapped,
+			'conflicts'   => is_array( $check ) ? $check : array(),
+			'bookly'      => array(
+				'success'        => true,
+				'notified'       => $notify,
+				'appointment_id' => $new_id,
+			),
+		);
+	}
+
+	/**
+	 * Find or create a Bookly customer by phone/email/name.
+	 *
+	 * @param string $full_name
+	 * @param string $phone
+	 * @param string $email
+	 * @return int
+	 */
+	private function ensure_bookly_customer( $full_name, $phone = '', $email = '' ) {
+		$customer_class = '\Bookly\Lib\Entities\Customer';
+		if ( ! class_exists( $customer_class ) ) {
+			return 0;
+		}
+
+		$existing_id = 0;
+		if ( '' !== $phone || '' !== $email ) {
+			global $wpdb;
+			$table = $wpdb->prefix . 'bookly_customers';
+			if ( '' !== $phone ) {
+				$existing_id = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$wpdb->prepare( "SELECT id FROM {$table} WHERE phone = %s ORDER BY id DESC LIMIT 1", $phone )
+				);
+			}
+			if ( $existing_id <= 0 && '' !== $email ) {
+				$existing_id = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$wpdb->prepare( "SELECT id FROM {$table} WHERE email = %s ORDER BY id DESC LIMIT 1", $email )
+				);
+			}
+		}
+
+		if ( $existing_id > 0 ) {
+			$customer = new \Bookly\Lib\Entities\Customer();
+			if ( $customer->load( $existing_id ) ) {
+				return $existing_id;
+			}
+		}
+
+		$parts      = preg_split( '/\s+/', trim( $full_name ), 2 );
+		$first_name = is_array( $parts ) && isset( $parts[0] ) ? $parts[0] : $full_name;
+		$last_name  = is_array( $parts ) && isset( $parts[1] ) ? $parts[1] : '';
+
+		$customer = new \Bookly\Lib\Entities\Customer();
+		if ( method_exists( $customer, 'setFullName' ) ) {
+			$customer->setFullName( $full_name );
+		}
+		if ( method_exists( $customer, 'setFirstName' ) ) {
+			$customer->setFirstName( $first_name );
+		}
+		if ( method_exists( $customer, 'setLastName' ) ) {
+			$customer->setLastName( $last_name );
+		}
+		if ( method_exists( $customer, 'setPhone' ) ) {
+			$customer->setPhone( $phone );
+		}
+		if ( method_exists( $customer, 'setEmail' ) ) {
+			$customer->setEmail( $email );
+		}
+
+		$saved = $customer->save();
+		if ( false === $saved ) {
+			return 0;
+		}
+
+		return (int) $customer->getId();
 	}
 
 	/**

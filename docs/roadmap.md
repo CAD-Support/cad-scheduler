@@ -19,11 +19,11 @@
 - [ ] Inline appointment editor (partially superseded by Sprint 3 Quick Add / popover status)
 - [x] Drag-and-drop rescheduling — **Sprint 3.0 Phase 1 / P1** (complete **2.7.8**)
 - [x] Conflict detection across tables — **Sprint 3.0 Phase 1 / P1** (via Bookly `checkTime`)
-- [ ] Quick Add appointment — **Sprint 3.0 Phase 1 / P2**
+- [x] Quick Add appointment — **Sprint 3.1** (complete **3.1.0**)
 
 ## Sprint 3.0 — Studio Operations
 
-Daily-ops scheduler before handoff: view, create, move, edit, update without the native Bookly calendar. Planning doc: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md).
+Daily-ops scheduler before handoff: view, create, move, edit, update without the native Bookly calendar. Planning doc: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md). Quick Add: [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md).
 
 ### Phase 1 — Critical (ship first; production-ready gate)
 
@@ -32,7 +32,7 @@ P1/P2 **must** use Bookly save/create flows (notifications, validation, integrat
 | Priority | Item | Issue | Status |
 |----------|------|-------|--------|
 | **P1** | Drag & drop reschedule + Bookly save + conflicts | [#3](https://github.com/CAD-Support/cad-scheduler/issues/3) | **Complete (2.7.8)** |
-| **P2** | Quick Add from empty slot (Bookly create) | [#4](https://github.com/CAD-Support/cad-scheduler/issues/4) | Planned |
+| **P2** | Quick Add from empty slot (Bookly create) | [#4](https://github.com/CAD-Support/cad-scheduler/issues/4) | **Complete (3.1.0)** |
 
 ### Phase 2 — After Phase 1 is production-ready
 
@@ -43,7 +43,7 @@ P1/P2 **must** use Bookly save/create flows (notifications, validation, integrat
 | **P5** | Live refresh (preserve scroll / date / filters) | [#6](https://github.com/CAD-Support/cad-scheduler/issues/6) | Planned |
 | **P6** | Lightspeed customer lookup on create | [#5](https://github.com/CAD-Support/cad-scheduler/issues/5) | Planned |
 
-**P1 complete in 2.7.8.** Next: **P2 Quick Add**.
+**Phase 1 complete (P1 + P2).** Next: Phase 2 (P3 → P6).
 
 ## Phase 3 — Studio Features (later)
 

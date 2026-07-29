@@ -1,8 +1,12 @@
 # Sprint 3.0 — Studio Operations (Planning)
 
-**Status:** Phase 1 **P1 Drag & Drop complete** (shipped **2.7.0**–**2.7.8**). **P2 Quick Add** not started.
+**Status:** Phase 1 **complete** — P1 Drag & Drop (**2.7.8**) + P2 Quick Add (**3.1.0**). Phase 2 (Undo / Filters / Live Refresh / Lightspeed) not started.
 
 **Goal:** Deliver a scheduler studios can use for **daily operations** before project handoff — view, create, move, edit, and update appointments **without opening the native Bookly calendar**.
+
+## P2 complete — Quick Add (3.1.0)
+
+See [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md).
 
 ## P1 complete — Drag & Drop (2.7.8)
 

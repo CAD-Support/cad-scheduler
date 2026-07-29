@@ -905,7 +905,10 @@ These are defined in CAD Scheduler, not Bookly:
 | `cad_scheduler_diagnostics_enabled` | `snippets/10A-ajax-bridge.php` | Show diagnostic panel when install is healthy |
 | `cad_scheduler_validation_mode_enabled` | `snippets/10A-ajax-bridge.php` | Show appointment ID overlay on blocks (default `false`); see [Sprint 1.7](sprint-1.7-live-validation.md) |
 | `wp_ajax_cad_update_appointment` | `snippets/10A-ajax-bridge.php` | Reschedule via Bookly `Utils\Appointment::save` (Sprint 3 P1) |
+| `wp_ajax_cad_create_appointment` | `snippets/10A-ajax-bridge.php` | Quick Add create via Bookly `Utils\Appointment::save` (Sprint 3.1) |
 | `cad_scheduler_reschedule_notify` | `includes/class-cad-schedule-provider.php` | Whether drag/reschedule sends Bookly notifications (default `true`) |
+| `cad_scheduler_quick_add_service_id` | `includes/class-cad-schedule-provider.php` | Bookly service id for Quick Add (0 = custom name) |
+| `cad_scheduler_quick_add_notify` | `includes/class-cad-schedule-provider.php` | Whether Quick Add sends Bookly notifications (default `true`) |
 
 ---
 

@@ -448,6 +448,7 @@
       container.appendChild(scroll);
       CAD.editor?.bind(container);
       CAD.DnD?.bind(container);
+      CAD.QuickAdd?.bind(container);
     },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

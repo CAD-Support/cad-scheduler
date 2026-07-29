@@ -16,7 +16,7 @@
   };
   let state = {};
 
-  CAD.VERSION = Object.freeze({ major: 2, minor: 7, patch: 8, build: '2026.07.29' });
+  CAD.VERSION = Object.freeze({ major: 3, minor: 1, patch: 0, build: '2026.07.29' });
 
   CAD.Config = Object.freeze({
     get(key) { return config[key]; },

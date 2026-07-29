@@ -98,6 +98,41 @@
     },
 
     /**
+     * Create a reservation via Bookly save path (Quick Add).
+     * @param {{
+     *   staffId: string|number,
+     *   start: string,
+     *   end?: string,
+     *   durationMinutes?: number,
+     *   customerName: string,
+     *   phone?: string,
+     *   email?: string,
+     *   painters?: number,
+     *   notes?: string,
+     *   serviceId?: string|number,
+     * }} params
+     */
+    createAppointment(params) {
+      const data = {
+        staff_id: params.staffId,
+        start: params.start,
+        customer_name: params.customerName,
+        phone: params.phone || '',
+        email: params.email || '',
+        painters: params.painters != null ? params.painters : 1,
+        duration_minutes: params.durationMinutes != null ? params.durationMinutes : 90,
+        notes: params.notes || '',
+      };
+      if (params.end) {
+        data.end = params.end;
+      }
+      if (params.serviceId) {
+        data.service_id = params.serviceId;
+      }
+      return api.request('cad_create_appointment', data);
+    },
+
+    /**
      * Pipeline dump with plain-text summary.
      * Prints the report (including UI column count when the grid is present).
      */
