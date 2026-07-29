@@ -34,7 +34,9 @@
   }
 
   function formatTime(iso) {
-    const d = new Date(iso);
+    const d = CAD.utils?.parseBooklyLocal
+      ? CAD.utils.parseBooklyLocal(iso)
+      : new Date(NaN);
     return Number.isNaN(d.getTime())
       ? String(iso || '')
       : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });

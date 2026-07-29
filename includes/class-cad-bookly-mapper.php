@@ -68,9 +68,9 @@ class CAD_Bookly_Mapper {
 		if ( ! $end ) {
 			$duration = (int) ( $row['service_duration'] ?? 0 );
 			try {
-				$dt  = new DateTimeImmutable( $start );
+				$dt  = new DateTimeImmutable( $start, wp_timezone() );
 				$end = $duration > 0
-					? $dt->add( new DateInterval( 'PT' . $duration . 'S' ) )->format( DateTimeInterface::ATOM )
+					? $dt->add( new DateInterval( 'PT' . $duration . 'S' ) )->format( 'Y-m-d H:i:s' )
 					: $start;
 			} catch ( Exception $e ) {
 				$end = $start;
@@ -296,21 +296,26 @@ class CAD_Bookly_Mapper {
 		return '';
 	}
 
+	/**
+	 * Bookly stores studio wall-clock datetimes (not absolute UTC instants).
+	 * Emit `Y-m-d H:i:s` with no timezone offset so the browser cannot re-zone them.
+	 *
+	 * @param string $value MySQL datetime or similar.
+	 * @return string|null
+	 */
 	private function iso( $value ) {
 		if ( ! is_string( $value ) || '' === trim( $value ) ) {
 			return null;
 		}
+
+		$value = trim( $value );
+		// Prefer digit extraction so offsets / "Z" / "T" never reach the client.
+		if ( preg_match( '/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(:\d{2})?/', $value, $m ) ) {
+			return $m[1] . ' ' . $m[2] . ( ! empty( $m[3] ) ? $m[3] : ':00' );
+		}
+
 		try {
-			$dt  = new DateTimeImmutable( $value, wp_timezone() );
-			$out = $dt->format( DateTimeInterface::ATOM );
-			// TEMP DEBUG 2.7.7 — render-path: MySQL wall clock → ATOM with WP offset.
-			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				'[CAD RENDER iso] raw_start_date=' . $value
-				. ' wp_timezone=' . wp_timezone_string()
-				. ' atom=' . $out
-				. ' offset=' . $dt->format( 'P' )
-			);
-			return $out;
+			return ( new DateTimeImmutable( $value, wp_timezone() ) )->format( 'Y-m-d H:i:s' );
 		} catch ( Exception $e ) {
 			return null;
 		}

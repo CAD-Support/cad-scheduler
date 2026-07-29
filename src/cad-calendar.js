@@ -45,6 +45,16 @@
   }
 
   /**
+   * @param {unknown} value Bookly wall-clock `Y-m-d H:i:s`
+   * @returns {Date}
+   */
+  function parseAppointmentTime(value) {
+    return CAD.utils?.parseBooklyLocal
+      ? CAD.utils.parseBooklyLocal(value)
+      : new Date(NaN);
+  }
+
+  /**
    * @param {number} minutes
    * @returns {string}
    */
@@ -103,8 +113,8 @@
     let latest = null;
 
     appointments.forEach((appointment) => {
-      const start = new Date(appointment.start);
-      const end = new Date(appointment.end);
+      const start = parseAppointmentTime(appointment.start);
+      const end = parseAppointmentTime(appointment.end);
       if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
         return;
       }
@@ -241,42 +251,6 @@
   }
 
   /**
-   * TEMP 2.7.7 — compare API start string vs Date fields vs grid position.
-   * @param {Record<string, *>} appointment
-   * @param {Date} start
-   * @param {Date} end
-   * @param {ReturnType<typeof gridMetrics>} metrics
-   * @param {{ top: string, height: string }} layout
-   */
-  function logRenderConversion(appointment, start, end, metrics, layout) {
-    const localMin = toMinutes(start);
-    const utcMin = start.getUTCHours() * 60 + start.getUTCMinutes();
-    // eslint-disable-next-line no-console
-    console.log('[CAD RENDER date]', {
-      id: appointment.id,
-      rawStart: appointment.start,
-      rawEnd: appointment.end,
-      parsedLocal: start.toString(),
-      toISOString: start.toISOString(),
-      toUTCString: start.toUTCString(),
-      getHours: start.getHours(),
-      getMinutes: start.getMinutes(),
-      getUTCHours: start.getUTCHours(),
-      getUTCMinutes: start.getUTCMinutes(),
-      getTimezoneOffset: start.getTimezoneOffset(),
-      hasZ: /Z$/i.test(String(appointment.start || '')),
-      hasOffset: /[+-]\d{2}:\d{2}$/.test(String(appointment.start || '')),
-      toMinutesLocal: localMin,
-      toMinutesUTC: utcMin,
-      metricsStartMin: metrics.startMin,
-      relStartMin: Math.max(0, localMin - metrics.startMin),
-      top: layout.top,
-      height: layout.height,
-      hourShiftVsUTC: localMin - utcMin,
-    });
-  }
-
-  /**
    * @param {HTMLElement} container
    * @param {ReturnType<typeof gridMetrics>} metrics
    * @param {number} tableCount
@@ -303,33 +277,6 @@
       `var(--cad-time-width) repeat(${n}, minmax(var(--cad-col-min), 1fr))`;
     el.style.minWidth =
       `max(100%, calc(var(--cad-time-width) + (${n} * var(--cad-col-min))))`;
-  }
-
-  /**
-   * TEMP DEBUG Sprint 2.5.1 — remove after live column-count verified
-   * @param {HTMLElement} head
-   * @param {HTMLElement} body
-   * @param {number} tableCount
-   * @param {Array<{ id: string, name: string }>} tables
-   */
-  function debugColumnCounts(head, body, tableCount, tables) {
-    const headerCount = head.querySelectorAll('.cad-matrix__table-label').length;
-    const bodyColumnCount = body.querySelectorAll(':scope > .cad-matrix__lane').length;
-    console.log(
-      'Rendering columns:',
-      tables.map((t) => t && t.name)
-    );
-    console.log('Header DOM nodes:', headerCount);
-    console.log('Body column DOM nodes:', bodyColumnCount);
-    console.log('TEMP DEBUG --cad-table-count:', String(tableCount));
-    try {
-      console.log(
-        'TEMP DEBUG gridTemplateColumns:',
-        getComputedStyle(head).gridTemplateColumns
-      );
-    } catch (e) {
-      /* ignore */
-    }
   }
 
   /**
@@ -416,19 +363,15 @@
     appointments
       .filter((appointment) => String(appointment.tableId) === String(table.id))
       .forEach((appointment) => {
-        // Conversion under investigation (2.7.7): ATOM from PHP iso() → Date → getHours().
-        const start = new Date(appointment.start);
-        const end = new Date(appointment.end);
+        const start = parseAppointmentTime(appointment.start);
+        const end = parseAppointmentTime(appointment.end);
 
         if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
           return;
         }
 
-        const layout = layoutBlock(start, end, metrics);
-        logRenderConversion(appointment, start, end, metrics, layout);
-
         blocks.appendChild(
-          CAD.components.appointmentBlock(appointment, layout)
+          CAD.components.appointmentBlock(appointment, layoutBlock(start, end, metrics))
         );
       });
 
@@ -503,49 +446,8 @@
 
       scroll.append(head, body);
       container.appendChild(scroll);
-      // TEMP DEBUG Sprint 2.5.1 — remove after live column-count verified
-      debugColumnCounts(head, body, tables.length, tables);
       CAD.editor?.bind(container);
       CAD.DnD?.bind(container);
-
-      // TEMP DEBUG 2.7.4 — first painted time label vs metrics/CSS day start.
-      try {
-        const cssDayStartMinRaw = getComputedStyle(container)
-          .getPropertyValue('--cad-day-start-min')
-          .trim();
-        const cssDayStartMin =
-          cssDayStartMinRaw === '' ? null : parseInt(cssDayStartMinRaw, 10);
-
-        const timeSlots = container.querySelectorAll('.cad-matrix__time-slot');
-        let firstHourLabel = null;
-        for (let i = 0; i < timeSlots.length; i += 1) {
-          const text = (timeSlots[i].textContent || '').trim();
-          if (text) {
-            firstHourLabel = text;
-            break;
-          }
-        }
-        const firstMatrixSlot = timeSlots[0]
-          ? String(timeSlots[0].textContent || '')
-          : null;
-        const dndWouldUse =
-          cssDayStartMin != null && !Number.isNaN(cssDayStartMin)
-            ? cssDayStartMin
-            : 8 * 60;
-
-        // eslint-disable-next-line no-console
-        console.log('[CAD first-minute alignment]', {
-          firstMatrixSlot,
-          firstHourLabel,
-          metricsStartMin: metrics.startMin,
-          metricsDayStart: metrics.dayStart,
-          cssDayStartMin,
-          dndWouldUse,
-          cssMatchesMetrics: cssDayStartMin === metrics.startMin,
-        });
-      } catch (_e) {
-        /* ignore */
-      }
     },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

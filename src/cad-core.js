@@ -16,7 +16,7 @@
   };
   let state = {};
 
-  CAD.VERSION = Object.freeze({ major: 2, minor: 6, patch: 0, build: '2026.07.27' });
+  CAD.VERSION = Object.freeze({ major: 2, minor: 7, patch: 8, build: '2026.07.29' });
 
   CAD.Config = Object.freeze({
     get(key) { return config[key]; },
@@ -44,6 +44,30 @@
    * Display-only helpers. Never mutate Bookly / API payloads.
    */
   CAD.utils = Object.freeze({
+    /**
+     * Parse a Bookly/MySQL wall-clock datetime as a local Date (no TZ conversion).
+     * Accepts `Y-m-d H:i:s` or `Y-m-dTH:i:s` (offset / Z are ignored if present).
+     * @param {unknown} sql
+     * @returns {Date}
+     */
+    parseBooklyLocal(sql) {
+      const normalized = String(sql ?? '')
+        .trim()
+        .replace('T', ' ')
+        .replace(/([Zz]|[+-]\d{2}:?\d{2})$/, '')
+        .trim();
+      const [date, time = '00:00:00'] = normalized.split(/\s+/);
+      if (!date || !time) {
+        return new Date(NaN);
+      }
+      const [y, m, d] = date.split('-').map(Number);
+      const [h, min, s] = time.split(':').map(Number);
+      if (![y, m, d, h, min].every((n) => Number.isFinite(n))) {
+        return new Date(NaN);
+      }
+      return new Date(y, m - 1, d, h, min, Number.isFinite(s) ? s : 0);
+    },
+
     /**
      * Format a phone for UI display (North American when recognizable).
      * @param {unknown} phone

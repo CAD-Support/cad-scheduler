@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.7.8] — 2026-07-29
+
+### Fixed
+
+- **Timezone rendering** — Bookly datetimes are treated as studio wall-clock times (`Y-m-d H:i:s`), not ATOM-with-offset instants. Browser TZ no longer shifts appointments (e.g. 11:00 stored → 11:00 rendered).
+
+### Changed
+
+- Mapper emits MySQL wall-clock strings (no timezone offset)
+- Frontend parses via `CAD.utils.parseBooklyLocal` (`new Date(y, m-1, d, h, min, s)`)
+- DnD optimistic State stores wall-clock strings (not `toISOString()`)
+- Removed temporary render/DnD/PHP debug instrumentation from 2.7.4–2.7.7
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **2.7.8**
+- Redeploy Code Snippets **11** (Mapper), **12** (Provider), **20** (AJAX Bridge)
+
 ## [2.7.7] — 2026-07-29
 
 ### Added

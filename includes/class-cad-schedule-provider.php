@@ -380,18 +380,9 @@ class CAD_Schedule_Provider {
 	}
 
 	public function get_schedule( $date ) {
-		$raw_rows = $this->repository->get_appointments_for_date( $date );
-
-		// TEMP DEBUG 2.7.7 — raw DB start_date before mapper.
-		foreach ( $raw_rows as $row ) {
-			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				'[CAD RENDER raw] id=' . (string) ( $row['id'] ?? '' )
-				. ' start_date=' . (string) ( $row['start_date'] ?? '' )
-				. ' end_date=' . (string) ( $row['end_date'] ?? '' )
-			);
-		}
-
-		$appointments = $this->mapper->map_appointments( $raw_rows );
+		$appointments = $this->mapper->map_appointments(
+			$this->repository->get_appointments_for_date( $date )
+		);
 
 		/**
 		 * Filter the full normalized appointments list for a date.
@@ -401,29 +392,9 @@ class CAD_Schedule_Provider {
 		 */
 		$appointments = apply_filters( 'cad_scheduler_appointments', $appointments, $date );
 
-		if ( ! is_array( $appointments ) ) {
-			$appointments = array();
-		}
-
-		// TEMP DEBUG 2.7.7 — JSON start values returned to the browser.
-		$starts = array();
-		foreach ( $appointments as $appt ) {
-			if ( ! is_array( $appt ) ) {
-				continue;
-			}
-			$starts[] = array(
-				'id'    => (string) ( $appt['id'] ?? '' ),
-				'start' => (string) ( $appt['start'] ?? '' ),
-				'end'   => (string) ( $appt['end'] ?? '' ),
-			);
-		}
-		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			'[CAD RENDER json] date=' . $date . ' appointments=' . wp_json_encode( $starts )
-		);
-
 		$payload = array(
 			'date'         => $date,
-			'appointments' => $appointments,
+			'appointments' => is_array( $appointments ) ? $appointments : array(),
 			'tables'       => $this->get_tables(),
 		);
 
@@ -492,13 +463,6 @@ class CAD_Schedule_Provider {
 				'message' => 'Invalid start time.',
 			);
 		}
-
-		// TEMP DEBUG 2.7.6 — normalize only (no behavior change).
-		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			'[CAD PHP STEP 2] after normalize start_mysql=' . $start_mysql
-			. ' input_start=' . $start_date
-			. ' wp_timezone=' . wp_timezone_string()
-		);
 
 		$entity_class = '\Bookly\Lib\Entities\Appointment';
 		$utils_class  = '\Bookly\Lib\Utils\Appointment';
@@ -619,15 +583,6 @@ class CAD_Schedule_Provider {
 		$custom_price = $appointment->getCustomServicePrice();
 		// Save without Bookly's deferred notification queue UI; send directly below when $notify.
 
-		// TEMP DEBUG 2.7.6 — value passed into Bookly save (not the old entity start).
-		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			'[CAD PHP STEP 3] immediately before Bookly::save'
-			. ' start_mysql=' . $start_mysql
-			. ' end_mysql=' . $end_mysql
-			. ' staff_id=' . $staff_id
-			. ' entity_old_start=' . $appointment->getStartDate()
-		);
-
 		$bookly = \Bookly\Lib\Utils\Appointment::save(
 			$appointment_id,
 			$staff_id,
@@ -647,26 +602,6 @@ class CAD_Schedule_Provider {
 			'backend'
 		);
 
-		// TEMP DEBUG 2.7.6 — entity after Bookly save assigns/persists start.
-		$entity_after = new \Bookly\Lib\Entities\Appointment();
-		$entity_after_loaded = $entity_after->load( $appointment_id );
-		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			'[CAD PHP STEP 4] entity getStartDate after Bookly::save='
-			. ( $entity_after_loaded ? (string) $entity_after->getStartDate() : '(load failed)' )
-			. ' bookly_success=' . ( ! empty( $bookly['success'] ) ? '1' : '0' )
-		);
-
-		// TEMP DEBUG 2.7.6 — raw DB column after save (source of truth).
-		global $wpdb;
-		$db_start = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$wpdb->prepare(
-				"SELECT start_date FROM {$wpdb->prefix}bookly_appointments WHERE id = %d",
-				$appointment_id
-			)
-		);
-		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			'[CAD PHP STEP 5] DB start_date after save=' . ( null === $db_start ? '(null)' : (string) $db_start )
-		);
 		if ( empty( $bookly['success'] ) ) {
 			$errors  = isset( $bookly['errors'] ) && is_array( $bookly['errors'] ) ? $bookly['errors'] : array();
 			$message = 'Could not save appointment.';

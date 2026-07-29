@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 // already available on jsDelivr. Do not increment before the release
 // has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '2.7.7' );
+	define( 'CAD_SCHEDULER_VERSION', '2.7.8' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -272,9 +272,6 @@ function cad_enqueue_assets() {
  * After tagging a release that includes those src/ fixes and bumping
  * CAD_SCHEDULER_VERSION, remove this function and its wp_add_inline_script call.
  *
- * TEMP DEBUG Sprint 2.5.1 console logs are duplicated here to match src — remove
- * from both after live column-count is verified.
- *
  * @return string
  */
 function cad_scheduler_tables_sync_inline_js() {
@@ -423,47 +420,22 @@ function cad_scheduler_tables_sync_inline_js() {
         .filter(function (a) { return String(a.tableId) === String(table.id); })
         .forEach(function (appointment) {
           if (!CAD.components || typeof CAD.components.appointmentBlock !== 'function' || !metrics) return;
-          // Conversion under investigation (2.7.7): ATOM from PHP iso() → Date → getHours().
-          var start = new Date(appointment.start);
-          var end = new Date(appointment.end);
+          var parseLocal = CAD.utils && typeof CAD.utils.parseBooklyLocal === 'function'
+            ? CAD.utils.parseBooklyLocal
+            : null;
+          if (!parseLocal) return;
+          var start = parseLocal(appointment.start);
+          var end = parseLocal(appointment.end);
           if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
           var toMin = function (d) { return d.getHours() * 60 + d.getMinutes(); };
-          var localMin = toMin(start);
-          var utcMin = start.getUTCHours() * 60 + start.getUTCMinutes();
-          var relStart = Math.max(0, localMin - metrics.startMin);
+          var relStart = Math.max(0, toMin(start) - metrics.startMin);
           var relEnd = Math.min(metrics.rangeMin, toMin(end) - metrics.startMin);
           var duration = Math.max(relEnd - relStart, metrics.slotMinutes / 2);
           var pxPerMinute = metrics.gridHeight / metrics.rangeMin;
-          var layout = {
+          blocks.appendChild(CAD.components.appointmentBlock(appointment, {
             top: (relStart * pxPerMinute) + 'px',
             height: Math.max(duration * pxPerMinute, metrics.slotHeight * 0.85) + 'px',
-          };
-          try {
-            console.log('[CAD RENDER date]', {
-              id: appointment.id,
-              rawStart: appointment.start,
-              rawEnd: appointment.end,
-              parsedLocal: start.toString(),
-              toISOString: start.toISOString(),
-              toUTCString: start.toUTCString(),
-              getHours: start.getHours(),
-              getMinutes: start.getMinutes(),
-              getUTCHours: start.getUTCHours(),
-              getUTCMinutes: start.getUTCMinutes(),
-              getTimezoneOffset: start.getTimezoneOffset(),
-              hasZ: /Z$/i.test(String(appointment.start || '')),
-              hasOffset: /[+-]\d{2}:\d{2}$/.test(String(appointment.start || '')),
-              toMinutesLocal: localMin,
-              toMinutesUTC: utcMin,
-              metricsStartMin: metrics.startMin,
-              relStartMin: relStart,
-              top: layout.top,
-              height: layout.height,
-              hourShiftVsUTC: localMin - utcMin,
-              via: 'forceRebuildFromState polyfill'
-            });
-          } catch (eRender) {}
-          blocks.appendChild(CAD.components.appointmentBlock(appointment, layout));
+          }));
         });
       lane.appendChild(lines);
       lane.appendChild(blocks);
@@ -477,49 +449,8 @@ function cad_scheduler_tables_sync_inline_js() {
     scroll.appendChild(body);
     container.appendChild(scroll);
 
-    // TEMP DEBUG Sprint 2.5.1 — remove after live column-count verified
-    // (after attach so getComputedStyle reflects live layout)
-    var headerCount = head.querySelectorAll('.cad-matrix__table-label').length;
-    var bodyColumnCount = body.querySelectorAll('.cad-matrix__lane').length;
-    try {
-      console.log(
-        'Rendering columns:',
-        tables.map(function (t) { return t && t.name; })
-      );
-      console.log('Header DOM nodes:', headerCount);
-      console.log('Body column DOM nodes:', bodyColumnCount);
-      console.log('TEMP DEBUG --cad-table-count:', tableCountStr);
-      console.log(
-        'TEMP DEBUG gridTemplateColumns:',
-        window.getComputedStyle(head).gridTemplateColumns
-      );
-    } catch (e) {}
-
     if (CAD.editor && typeof CAD.editor.bind === 'function') CAD.editor.bind(container);
     if (CAD.DnD && typeof CAD.DnD.bind === 'function') CAD.DnD.bind(container);
-
-    // TEMP DEBUG 2.7.4 — first-minute alignment.
-    try {
-      var cssDayStartMinRaw = window.getComputedStyle(container).getPropertyValue('--cad-day-start-min').trim();
-      var cssDayStartMin = cssDayStartMinRaw === '' ? null : parseInt(cssDayStartMinRaw, 10);
-      var timeSlots = container.querySelectorAll('.cad-matrix__time-slot');
-      var firstMatrixSlot = timeSlots[0] ? String(timeSlots[0].textContent || '') : null;
-      var firstHourLabel = null;
-      for (var si = 0; si < timeSlots.length; si += 1) {
-        var st = (timeSlots[si].textContent || '').trim();
-        if (st) { firstHourLabel = st; break; }
-      }
-      var dndWouldUse = cssDayStartMin !== null && !isNaN(cssDayStartMin) ? cssDayStartMin : 8 * 60;
-      console.log('[CAD first-minute alignment]', {
-        firstMatrixSlot: firstMatrixSlot,
-        firstHourLabel: firstHourLabel,
-        metricsStartMin: metrics ? metrics.startMin : null,
-        metricsDayStart: metrics ? metrics.dayStart : null,
-        cssDayStartMin: cssDayStartMin,
-        dndWouldUse: dndWouldUse,
-        cssMatchesMetrics: metrics ? cssDayStartMin === metrics.startMin : false
-      });
-    } catch (e2) {}
   }
 
   /** TEMPORARY: replace CDN calendar.render until version bump. */
@@ -572,15 +503,6 @@ function cad_scheduler_tables_sync_inline_js() {
           var payload = (result && result.data) || {};
           applyScheduleTables(payload);
           CAD.State.set('appointments', payload.appointments || []);
-          try {
-            var list = Array.isArray(payload.appointments) ? payload.appointments : [];
-            console.log(
-              '[CAD RENDER api]',
-              list.map(function (a) {
-                return { id: a && a.id, start: a && a.start, end: a && a.end };
-              })
-            );
-          } catch (eApi) {}
           if (payload.staffPipeline) ui._lastStaffPipeline = payload.staffPipeline;
           return ui;
         })
@@ -881,22 +803,11 @@ function cad_ajax_update_appointment() {
 		wp_send_json_error( array( 'message' => 'CAD modules not loaded.', 'code' => 'modules' ), 500 );
 	}
 
-	// TEMP DEBUG 2.7.6 — raw POST before sanitize (logging only).
-	$raw_post_start = array_key_exists( 'start', $_POST ) ? wp_unslash( $_POST['start'] ) : null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		'[CAD PHP STEP 0] raw $_POST[start]=' . ( null === $raw_post_start ? '(missing)' : wp_json_encode( $raw_post_start ) )
-	);
-
 	$appointment_id = sanitize_text_field( wp_unslash( $_POST['appointment_id'] ?? '' ) );
 	$staff_id       = sanitize_text_field( wp_unslash( $_POST['staff_id'] ?? $_POST['table_id'] ?? '' ) );
 	$start_date     = sanitize_text_field( wp_unslash( $_POST['start'] ?? $_POST['start_date'] ?? '' ) );
 	$end_raw        = sanitize_text_field( wp_unslash( $_POST['end'] ?? $_POST['end_date'] ?? '' ) );
 	$end_date       = '' !== $end_raw ? $end_raw : null;
-
-	// TEMP DEBUG 2.7.6 — sanitized value passed into Provider.
-	error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		'[CAD PHP STEP 1] sanitized start to provider=' . $start_date
-	);
 
 	if ( '' === $appointment_id || '' === $staff_id || '' === $start_date ) {
 		wp_send_json_error(

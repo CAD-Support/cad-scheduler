@@ -233,21 +233,6 @@
           }
         }
         CAD.State.set('appointments', payload.appointments ?? []);
-        // TEMP DEBUG 2.7.7 — JSON starts as received by the browser.
-        try {
-          const list = Array.isArray(payload.appointments) ? payload.appointments : [];
-          // eslint-disable-next-line no-console
-          console.log(
-            '[CAD RENDER api]',
-            list.map((a) => ({
-              id: a?.id,
-              start: a?.start,
-              end: a?.end,
-            }))
-          );
-        } catch (_e) {
-          /* ignore */
-        }
         if (payload.staffPipeline) {
           this._lastStaffPipeline = payload.staffPipeline;
         }

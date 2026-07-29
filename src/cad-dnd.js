@@ -82,12 +82,19 @@
    * @param {string} isoDate
    * @param {number} minutesFromMidnight
    * @param {number} durationMs
+   * @returns {{ startIso: string, endIso: string }} wall-clock `Y-m-d H:i:s` (no UTC)
    */
   function toIsoRange(isoDate, minutesFromMidnight, durationMs) {
+    const startMysql = toMysqlLocal(isoDate, minutesFromMidnight);
     const start = dropDateFromMinutes(isoDate, minutesFromMidnight);
     const end = new Date(start.getTime() + durationMs);
-    // Optimistic State only — AJAX must NOT use toISOString() (UTC).
-    return { startIso: start.toISOString(), endIso: end.toISOString() };
+    return { startIso: startMysql, endIso: formatBooklyDate(end) };
+  }
+
+  function parseAppointmentTime(value) {
+    return CAD.utils?.parseBooklyLocal
+      ? CAD.utils.parseBooklyLocal(value)
+      : new Date(NaN);
   }
 
   function updateStateAppointment(id, patch) {
@@ -121,7 +128,6 @@
    * @param {number} clientY pointer clientY
    * @param {HTMLElement} matrix
    * @param {number} grabOffsetY distance from card top to pointer at grab
-   * @param {string} [rowInputSource] TEMP 2.7.5 — when set, log [ROW INPUT] before rowIndex
    * @returns {{
    *   mouseY: number,
    *   topEdgeY: number,
@@ -132,22 +138,14 @@
    *   snappedMinutes: number
    * }}
    */
-  function resolveDropSnap(lane, clientY, matrix, grabOffsetY, rowInputSource) {
+  function resolveDropSnap(lane, clientY, matrix, grabOffsetY) {
     // mouseY is Y within .cad-matrix__blocks (viewport clientY − blocksRect.top).
-    // Not relative to .cad-matrix or .cad-matrix__scroll; scroll is baked into rect.top.
     const blocks = lane.querySelector('.cad-matrix__blocks') || lane;
     const rect = blocks.getBoundingClientRect();
     const mouseY = clientY - rect.top;
     const offset = Number(grabOffsetY) || 0;
     const topEdgeY = mouseY - offset;
     const slotPx = slotHeightPx(matrix);
-    if (rowInputSource) {
-      // eslint-disable-next-line no-console
-      console.log('[ROW INPUT]', {
-        yUsedForRowCalculation: topEdgeY,
-        source: rowInputSource,
-      });
-    }
     const rowIndex = Math.max(0, Math.round(topEdgeY / slotPx));
     const dayStart = dayStartMin(matrix);
     const snappedMinutes = dayStart + rowIndex * SLOT_MINUTES;
@@ -188,8 +186,8 @@
     const appt = findAppointment(appointmentId);
     if (!appt) return;
 
-    const start = new Date(appt.start);
-    const end = new Date(appt.end);
+    const start = parseAppointmentTime(appt.start);
+    const end = parseAppointmentTime(appt.end);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
 
     const lane = el.closest('.cad-matrix__lane');
@@ -285,83 +283,15 @@
     }
 
     // Prefer last preview snap (matches ghost). Recompute from TOP edge if needed.
-    // 2.7.5: always compute livePointerSnap for debug compare; selection unchanged.
     const lane = laneFromPoint(event.clientX, event.clientY) || session.originLane;
-    const usedLastSnap = Boolean(session.lastSnap);
-    const lastSnap = session.lastSnap;
-    if (usedLastSnap && lastSnap) {
-      // lastSnap.rowIndex was computed earlier; log the Y that produced it.
-      // eslint-disable-next-line no-console
-      console.log('[ROW INPUT]', {
-        yUsedForRowCalculation: lastSnap.topEdgeY,
-        source: 'lastSnap',
-      });
-    }
-    const livePointerSnap = resolveDropSnap(
-      lane,
-      event.clientY,
-      matrix,
-      session.grabOffsetY,
-      usedLastSnap ? undefined : 'livePointer'
-    );
-    const finalSnapUsed = lastSnap || livePointerSnap;
-    const snap = finalSnapUsed;
+    const snap =
+      session.lastSnap ||
+      resolveDropSnap(lane, event.clientY, matrix, session.grabOffsetY);
     const tableId = String(
       (session.ghost && session.ghost.dataset.tableId) ||
         lane.dataset.tableId ||
         session.originTableId
     );
-
-    // Geometry for debug only (does not affect snap / payload).
-    const blocksEl = lane.querySelector('.cad-matrix__blocks') || lane;
-    const scrollEl = matrix.querySelector('.cad-matrix__scroll');
-    const headEl = matrix.querySelector('.cad-matrix__head');
-    const blocksRectFull = blocksEl.getBoundingClientRect();
-    const matrixRectFull = matrix.getBoundingClientRect();
-    const scrollRectFull = scrollEl ? scrollEl.getBoundingClientRect() : null;
-    const matrixTop = blocksRectFull.top;
-    const matrixScrollTop = scrollEl ? scrollEl.scrollTop : 0;
-    const headerHeight = headEl ? headEl.getBoundingClientRect().height : 0;
-    const liveMouseYFromBlocks = event.clientY - blocksRectFull.top;
-    const liveMouseYFromScroll =
-      scrollEl && scrollRectFull
-        ? event.clientY - scrollRectFull.top + scrollEl.scrollTop
-        : null;
-    const liveMouseYFromMatrix = event.clientY - matrixRectFull.top;
-
-    // eslint-disable-next-line no-console
-    console.log('[LAST SNAP]', {
-      usedLastSnap,
-      lastSnap,
-      livePointerSnap,
-      liveMouseYFromBlocks,
-      liveMouseYFromScroll,
-      finalSnapUsed,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[RECTS]', {
-      blocksRect: {
-        top: blocksRectFull.top,
-        left: blocksRectFull.left,
-        height: blocksRectFull.height,
-        width: blocksRectFull.width,
-      },
-      scrollRect: scrollRectFull
-        ? {
-            top: scrollRectFull.top,
-            left: scrollRectFull.left,
-            height: scrollRectFull.height,
-            width: scrollRectFull.width,
-          }
-        : null,
-      matrixRect: {
-        top: matrixRectFull.top,
-        left: matrixRectFull.left,
-        height: matrixRectFull.height,
-        width: matrixRectFull.width,
-      },
-      scrollTop: scrollEl ? scrollEl.scrollTop : null,
-    });
 
     endSessionVisual(session);
 
@@ -374,131 +304,13 @@
       return;
     }
 
-    // --- 2.7.5 TEMP DEBUG: instrumentation only — values unchanged from 2.7.3 ---
-    const pointerY = event.clientY;
-    const mouseY = snap.mouseY;
-    const topEdgeY = snap.topEdgeY;
-    const grabOffsetY = snap.grabOffsetY;
-    const rowIndex = snap.rowIndex;
-    const slotMinutes = SLOT_MINUTES;
-    const slotPx = snap.slotPx;
-    const dayStartMin = snap.dayStartMin;
-    const snappedMinutes = snap.snappedMinutes;
-    const finalMinutes = snappedMinutes;
-    const cssDayStartMinRaw = getComputedStyle(matrix)
-      .getPropertyValue('--cad-day-start-min')
-      .trim();
-    const cssDayStartMin =
-      cssDayStartMinRaw === '' ? null : parseInt(cssDayStartMinRaw, 10);
-    const expected = rowIndex * slotMinutes + dayStartMin;
+    const finalMinutes = snap.snappedMinutes;
     const startMysql = toMysqlLocal(selectedDate, finalMinutes);
     const ajaxPayload = {
       appointmentId: session.appointmentId,
       staffId: tableId,
       start: startMysql,
     };
-
-    const blocksRect = blocksRectFull;
-    const matrixRect = matrixRectFull;
-    const scrollRect = scrollRectFull;
-
-    // eslint-disable-next-line no-console
-    console.log('[COORDS]', {
-      clientY: event.clientY,
-      pageY: event.pageY,
-      screenY: event.screenY,
-      matrixRect: {
-        top: matrixRect.top,
-        left: matrixRect.left,
-        height: matrixRect.height,
-        width: matrixRect.width,
-      },
-      scrollTop: matrix.scrollTop,
-      windowScrollY: window.scrollY,
-      computedMouseY: mouseY,
-      mouseYOrigin: '.cad-matrix__blocks',
-      blocksRect: {
-        top: blocksRect.top,
-        left: blocksRect.left,
-        height: blocksRect.height,
-        width: blocksRect.width,
-      },
-      scrollElScrollTop: scrollEl ? scrollEl.scrollTop : null,
-      scrollElRect: scrollRect
-        ? {
-            top: scrollRect.top,
-            left: scrollRect.left,
-            height: scrollRect.height,
-            width: scrollRect.width,
-          }
-        : null,
-      liveMouseYFromBlocks,
-      liveMouseYFromScroll,
-      liveMouseYFromMatrix,
-      usedLastSnap,
-      snapMouseYVsLiveBlocks: mouseY - liveMouseYFromBlocks,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[STEP 0]', {
-      usedLastSnap,
-      pointerY,
-      mouseY,
-      topEdgeY,
-      grabOffsetY,
-      cssDayStartMin,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[STEP 1]', {
-      pointerY,
-      mouseY,
-      topEdgeY,
-      grabOffsetY,
-      slotPx,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[STEP 2]', {
-      rowIndex,
-      slotMinutes,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[STEP 3]', {
-      dayStartMin,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[STEP 4]', {
-      snappedMinutes,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[STEP 5]', {
-      finalMinutes,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[STEP 6]', {
-      startMysql,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[STEP 6b]', {
-      expected,
-      snappedMinutes,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[STEP 7]', {
-      ajaxPayload,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[STEP 8]', {
-      timezoneOffset: new Date().getTimezoneOffset(),
-    });
-    // eslint-disable-next-line no-console
-    console.log('[CAD row origin]', {
-      matrixTop,
-      matrixScrollTop,
-      headerHeight,
-      pointerY,
-      calculatedY: topEdgeY,
-      rowIndex,
-    });
-    // --- end 2.7.5 TEMP DEBUG ---
 
     const { startIso, endIso } = toIsoRange(
       selectedDate,
