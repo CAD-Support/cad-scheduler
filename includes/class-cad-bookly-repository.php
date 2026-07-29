@@ -313,10 +313,17 @@ class CAD_Bookly_Repository {
 		$sql = "SELECT
 				a.id, a.staff_id, a.service_id, a.start_date,
 				DATE_ADD(a.end_date, INTERVAL COALESCE(a.extras_duration, 0) SECOND) AS end_date,
+				a.end_date AS end_date_raw,
 				a.internal_note,
+				ca.id AS ca_id,
 				ca.status AS appointment_status,
 				ca.number_of_persons,
+				ca.notes AS customer_notes,
 				{$custom_fields_sql} AS custom_fields_json,
+				c.id AS customer_id,
+				c.first_name AS customer_first_name,
+				c.last_name AS customer_last_name,
+				c.email AS customer_email,
 				COALESCE(NULLIF(c.full_name, ''), TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, '')))) AS customer_name,
 				c.phone AS customer_phone,
 				s.title AS service_title, s.duration AS service_duration
@@ -332,6 +339,54 @@ class CAD_Bookly_Repository {
 		$row = $wpdb->get_row( $wpdb->prepare( $sql, $appointment_id ), ARRAY_A );
 
 		return is_array( $row ) ? $row : null;
+	}
+
+	/**
+	 * Bookly Custom Fields definitions from the add-on option.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function get_custom_field_definitions() {
+		$raw = get_option( 'bookly_custom_fields_data', array() );
+		if ( is_string( $raw ) ) {
+			$decoded = json_decode( $raw, true );
+			$raw     = ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) ? $decoded : array();
+		}
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+
+		$out = array();
+		foreach ( $raw as $key => $field ) {
+			if ( ! is_array( $field ) ) {
+				continue;
+			}
+			$id = isset( $field['id'] ) ? (string) $field['id'] : (string) $key;
+			if ( '' === $id || ! is_numeric( $id ) ) {
+				continue;
+			}
+			$services = array();
+			if ( isset( $field['services'] ) && is_array( $field['services'] ) ) {
+				foreach ( $field['services'] as $sid ) {
+					$services[] = (string) $sid;
+				}
+			}
+			$out[] = array(
+				'id'       => $id,
+				'label'    => (string) ( $field['label'] ?? $field['name'] ?? ( 'Field ' . $id ) ),
+				'type'     => (string) ( $field['type'] ?? 'text' ),
+				'services' => $services,
+				'required' => ! empty( $field['required'] ),
+			);
+		}
+
+		/**
+		 * Filter Bookly custom-field definitions used by Reservation Manager.
+		 *
+		 * @param array $out
+		 */
+		$filtered = apply_filters( 'cad_scheduler_custom_field_definitions', $out );
+		return is_array( $filtered ) ? $filtered : $out;
 	}
 
 	/**

@@ -20,21 +20,21 @@
 - [x] Drag-and-drop rescheduling — **Sprint 3.0 Phase 1 / P1** (complete **2.7.8**)
 - [x] Conflict detection across tables — **Sprint 3.0 Phase 1 / P1** (via Bookly `checkTime`)
 - [x] Quick Add appointment — **Sprint 3.1** (complete **3.1.0**)
+- [x] Reservation Manager (edit existing) — **Sprint 3.2** (complete **3.2.0**)
 
 ## Sprint 3.0 — Studio Operations
 
-Daily-ops scheduler before handoff: view, create, move, edit, update without the native Bookly calendar. Planning doc: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md). Quick Add: [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md).
+Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md) · [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md) · [sprint-3.2-reservation-manager.md](sprint-3.2-reservation-manager.md).
 
-### Phase 1 — Critical (ship first; production-ready gate)
-
-P1/P2 **must** use Bookly save/create flows (notifications, validation, integrations).
+### Phase 1 — Critical
 
 | Priority | Item | Issue | Status |
 |----------|------|-------|--------|
 | **P1** | Drag & drop reschedule + Bookly save + conflicts | [#3](https://github.com/CAD-Support/cad-scheduler/issues/3) | **Complete (2.7.8)** |
 | **P2** | Quick Add from empty slot (Bookly create) | [#4](https://github.com/CAD-Support/cad-scheduler/issues/4) | **Complete (3.1.0)** |
+| **P2b** | Reservation Manager (edit) | — | **Complete (3.2.0)** |
 
-### Phase 2 — After Phase 1 is production-ready
+### Phase 2 — After Phase 1
 
 | Priority | Item | Issue | Status |
 |----------|------|-------|--------|
@@ -43,7 +43,7 @@ P1/P2 **must** use Bookly save/create flows (notifications, validation, integrat
 | **P5** | Live refresh (preserve scroll / date / filters) | [#6](https://github.com/CAD-Support/cad-scheduler/issues/6) | Planned |
 | **P6** | Lightspeed customer lookup on create | [#5](https://github.com/CAD-Support/cad-scheduler/issues/5) | Planned |
 
-**Phase 1 complete (P1 + P2).** Next: Phase 2 (P3 → P6).
+**Phase 1 + Reservation Manager complete.** Next: Phase 2 (P3 → P6).
 
 ## Phase 3 — Studio Features (later)
 

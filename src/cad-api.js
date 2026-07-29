@@ -133,6 +133,39 @@
     },
 
     /**
+     * Load Reservation Manager payload (appointment + dynamic detail fields).
+     * @param {string|number} appointmentId
+     */
+    getReservation(appointmentId) {
+      return api.request('cad_get_reservation', { appointment_id: appointmentId });
+    },
+
+    /**
+     * Save Reservation Manager edits via Bookly.
+     * @param {Record<string, *>} params
+     */
+    saveReservation(params) {
+      const data = {
+        appointment_id: params.appointmentId,
+        staff_id: params.staffId,
+        start: params.start,
+        end: params.end,
+        customer_first: params.customerFirst || '',
+        customer_last: params.customerLast || '',
+        phone: params.phone || '',
+        email: params.email || '',
+        painters: params.painters != null ? params.painters : 1,
+        notes: params.notes || '',
+        customer_notes: params.customerNotes || '',
+        detail_fields: JSON.stringify(params.detailFields || {}),
+      };
+      if (params.serviceId) {
+        data.service_id = params.serviceId;
+      }
+      return api.request('cad_save_reservation', data);
+    },
+
+    /**
      * Pipeline dump with plain-text summary.
      * Prints the report (including UI column count when the grid is present).
      */

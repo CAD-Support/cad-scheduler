@@ -24,6 +24,10 @@
       });
 
       const appointment = findAppointment(id);
+      if (appointment && CAD.ReservationManager) {
+        CAD.ReservationManager.open(appointment);
+        return;
+      }
       if (appointment && CAD.Popover) {
         (CAD.Popover.render || CAD.Popover.open).call(CAD.Popover, appointment);
       }
@@ -34,6 +38,7 @@
       this.container?.querySelectorAll('.cad-appointment--selected').forEach((el) => {
         el.classList.remove('cad-appointment--selected');
       });
+      CAD.ReservationManager?.close?.();
       CAD.Popover?.close?.();
     },
 

@@ -84,6 +84,8 @@ class CAD_Bookly_Mapper {
 
 		$phone_raw = trim( (string) ( $row['customer_phone'] ?? '' ) );
 		$phone     = '' === $phone_raw ? null : $phone_raw;
+		$email_raw = trim( (string) ( $row['customer_email'] ?? '' ) );
+		$email     = '' === $email_raw ? null : $email_raw;
 		$service   = (string) ( $row['service_title'] ?? '' );
 		$service_id = isset( $row['service_id'] ) && '' !== (string) $row['service_id']
 			? (string) $row['service_id']
@@ -95,24 +97,39 @@ class CAD_Bookly_Mapper {
 		$birthday     = $this->map_birthday_fields( $field_values );
 		$type         = $this->resolve_type( $service, $service_id, $birthday, $row );
 
-		// Contract: core keys always present; nests are type-exclusive; no Bookly field IDs.
+		$first = trim( (string) ( $row['customer_first_name'] ?? '' ) );
+		$last  = trim( (string) ( $row['customer_last_name'] ?? '' ) );
+		if ( '' === $first && '' === $last ) {
+			$parts = preg_split( '/\s+/', trim( (string) ( $row['customer_name'] ?? '' ) ), 2 );
+			$first = is_array( $parts ) && isset( $parts[0] ) ? $parts[0] : '';
+			$last  = is_array( $parts ) && isset( $parts[1] ) ? $parts[1] : '';
+		}
+
+		// Contract: core keys always present; nests are type-exclusive; no Bookly field IDs on list payload.
 		// Public API — prefer additive changes; do not rename/remove keys lightly.
 		$appointment = array(
-			'id'        => $id,
-			'tableId'   => $table_id,
-			'type'      => $type,
-			'start'     => $start,
-			'end'       => $end,
-			'customer'  => (string) ( $row['customer_name'] ?? '' ),
-			'phone'     => $phone,
-			'service'   => $service,
-			'serviceId' => $service_id,
-			'status'    => (string) ( $row['appointment_status'] ?? '' ),
-			'painters'  => $painters,
-			'notes'     => (string) ( $row['internal_note'] ?? '' ),
-			'birthday'  => ( 'birthday' === $type ) ? $birthday : null,
-			'studio'    => ( 'studio' === $type ) ? new stdClass() : null,
-			'event'     => ( 'event' === $type ) ? new stdClass() : null,
+			'id'             => $id,
+			'tableId'        => $table_id,
+			'type'           => $type,
+			'start'          => $start,
+			'end'            => $end,
+			'customer'       => (string) ( $row['customer_name'] ?? '' ),
+			'customerId'     => isset( $row['customer_id'] ) && '' !== (string) $row['customer_id']
+				? (string) $row['customer_id']
+				: null,
+			'customerFirst'  => $first,
+			'customerLast'   => $last,
+			'phone'          => $phone,
+			'email'          => $email,
+			'service'        => $service,
+			'serviceId'      => $service_id,
+			'status'         => (string) ( $row['appointment_status'] ?? '' ),
+			'painters'       => $painters,
+			'notes'          => (string) ( $row['internal_note'] ?? '' ),
+			'customerNotes'  => (string) ( $row['customer_notes'] ?? '' ),
+			'birthday'       => ( 'birthday' === $type ) ? $birthday : null,
+			'studio'         => ( 'studio' === $type ) ? new stdClass() : null,
+			'event'          => ( 'event' === $type ) ? new stdClass() : null,
 		);
 
 		/**
@@ -125,6 +142,135 @@ class CAD_Bookly_Mapper {
 	}
 
 	/**
+	 * Dynamic Reservation Details fields for an appointment row (service-aware).
+	 *
+	 * Labels/types come from Bookly Custom Fields definitions when available.
+	 * The Reservation Manager renders this list — it should not hard-code service types.
+	 *
+	 * @param array $row Raw appointment row (from get_appointment_by_id).
+	 * @param array $definitions Optional preloaded field definitions.
+	 * @return array<int, array{id: string, label: string, type: string, value: string, required: bool}>
+	 */
+	public function map_detail_fields( array $row, array $definitions = array() ) {
+		$values = $this->decode_custom_fields(
+			$row['custom_fields_json'] ?? ( $row['custom_fields'] ?? ( $row['json_data'] ?? '' ) )
+		);
+		$service_id = isset( $row['service_id'] ) ? (string) $row['service_id'] : '';
+
+		if ( empty( $definitions ) ) {
+			$definitions = $this->fallback_detail_definitions( $row, $values );
+		}
+
+		$fields = array();
+		foreach ( $definitions as $def ) {
+			if ( ! is_array( $def ) ) {
+				continue;
+			}
+			$fid = (string) ( $def['id'] ?? '' );
+			if ( '' === $fid ) {
+				continue;
+			}
+			$services = isset( $def['services'] ) && is_array( $def['services'] ) ? $def['services'] : array();
+			// Empty services list = available for all services.
+			if ( ! empty( $services ) && '' !== $service_id && ! in_array( $service_id, $services, true ) ) {
+				continue;
+			}
+			$fields[] = array(
+				'id'       => $fid,
+				'label'    => (string) ( $def['label'] ?? ( 'Field ' . $fid ) ),
+				'type'     => $this->normalize_field_input_type( (string) ( $def['type'] ?? 'text' ) ),
+				'value'    => isset( $values[ $fid ] ) ? (string) $values[ $fid ] : '',
+				'required' => ! empty( $def['required'] ),
+			);
+		}
+
+		/**
+		 * Filter detail fields for Reservation Manager.
+		 * Add/remove fields per site without changing the UI.
+		 *
+		 * @param array $fields
+		 * @param array $row
+		 * @param array $values Decoded id=>value map.
+		 */
+		$filtered = apply_filters( 'cad_scheduler_reservation_detail_fields', $fields, $row, $values );
+		return is_array( $filtered ) ? array_values( $filtered ) : $fields;
+	}
+
+	/**
+	 * When Bookly custom-field definitions are unavailable, build a label list
+	 * from the semantic ID map (still not hard-coded in the JS manager).
+	 *
+	 * @param array $row
+	 * @param array $values
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function fallback_detail_definitions( array $row, array $values ) {
+		$map   = $this->custom_field_map();
+		$defs  = array();
+		$labels = array(
+			'childName'         => 'Child Name',
+			'age'               => 'Age',
+			'package'           => 'Birthday Package',
+			'guests'            => 'Guests',
+			'nonPainters'       => 'Non-Painters',
+			'specialOccasion'   => 'Special Occasion',
+			'appointmentNotes'  => 'Appointment Notes',
+		);
+
+		foreach ( $map as $group => $fields ) {
+			if ( ! is_array( $fields ) ) {
+				continue;
+			}
+			foreach ( $fields as $key => $fid ) {
+				if ( null === $fid || '' === $fid || ! $fid ) {
+					continue;
+				}
+				$defs[] = array(
+					'id'       => (string) $fid,
+					'label'    => $labels[ $key ] ?? ucwords( preg_replace( '/([A-Z])/', ' $1', (string) $key ) ),
+					'type'     => 'text',
+					'services' => array(),
+					'required' => false,
+					'group'    => (string) $group,
+				);
+			}
+		}
+
+		/**
+		 * Fallback detail field definitions when Bookly option is empty.
+		 *
+		 * @param array $defs
+		 * @param array $row
+		 * @param array $values
+		 */
+		$filtered = apply_filters( 'cad_scheduler_reservation_detail_field_fallback', $defs, $row, $values );
+		return is_array( $filtered ) ? $filtered : $defs;
+	}
+
+	/**
+	 * @param string $type Bookly custom field type.
+	 * @return string text|textarea|number|email|tel|select
+	 */
+	private function normalize_field_input_type( $type ) {
+		$type = strtolower( trim( $type ) );
+		$map  = array(
+			'text'         => 'text',
+			'textarea'     => 'textarea',
+			'text-content' => 'textarea',
+			'number'       => 'number',
+			'numeric'      => 'number',
+			'email'        => 'email',
+			'tel'          => 'tel',
+			'phone'        => 'tel',
+			'select'       => 'text',
+			'checkboxes'   => 'text',
+			'radio'        => 'text',
+			'radiobuttons' => 'text',
+		);
+		return isset( $map[ $type ] ) ? $map[ $type ] : 'text';
+	}
+
+	/**
 	 * Bookly custom-field ID registry (PHP only).
 	 *
 	 * @return array<string, array<string, int|string>>
@@ -132,9 +278,15 @@ class CAD_Bookly_Mapper {
 	public function custom_field_map() {
 		$defaults = array(
 			'birthday' => array(
-				'childName' => 79073,
-				'age'       => 84803,
-				'package'   => 76858,
+				'childName'   => 79073,
+				'age'         => 84803,
+				'package'     => 76858,
+				'guests'      => 0,
+				'nonPainters' => 0,
+			),
+			'studio'   => array(
+				'specialOccasion'  => 0,
+				'appointmentNotes' => 0,
 			),
 		);
 

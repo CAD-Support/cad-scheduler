@@ -965,6 +965,322 @@ class CAD_Schedule_Provider {
 	}
 
 	/**
+	 * Load a reservation for the Reservation Manager (appointment + dynamic detail fields).
+	 *
+	 * @param int|string $appointment_id
+	 * @return array{ok: bool, code?: string, message?: string, appointment?: array, detailFields?: array}
+	 */
+	public function get_reservation( $appointment_id ) {
+		$appointment_id = (int) $appointment_id;
+		if ( $appointment_id <= 0 ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_appointment',
+				'message' => 'Invalid appointment.',
+			);
+		}
+
+		$row = $this->repository->get_appointment_by_id( $appointment_id );
+		if ( ! $row ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'not_found',
+				'message' => 'Appointment not found.',
+			);
+		}
+
+		$mapped = $this->mapper->map_appointment( $row );
+		if ( ! $mapped ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'map_failed',
+				'message' => 'Could not map appointment.',
+			);
+		}
+
+		$definitions = $this->repository->get_custom_field_definitions();
+		$details     = $this->mapper->map_detail_fields( $row, $definitions );
+
+		return array(
+			'ok'           => true,
+			'appointment'  => $mapped,
+			'detailFields' => $details,
+		);
+	}
+
+	/**
+	 * Save Reservation Manager edits via Bookly checkTime + save.
+	 *
+	 * @param int|string $appointment_id
+	 * @param array      $payload
+	 * @return array
+	 */
+	public function save_reservation( $appointment_id, array $payload ) {
+		$appointment_id = (int) $appointment_id;
+		if ( $appointment_id <= 0 ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_appointment',
+				'message' => 'Invalid appointment.',
+			);
+		}
+
+		$staff_id = (int) ( $payload['staff_id'] ?? $payload['table_id'] ?? 0 );
+		$start    = (string) ( $payload['start'] ?? '' );
+		$end      = (string) ( $payload['end'] ?? '' );
+		if ( $staff_id <= 0 || '' === $start || '' === $end ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_params',
+				'message' => 'staff_id, start, and end are required.',
+			);
+		}
+
+		$start_mysql = $this->normalize_bookly_datetime( $start );
+		$end_mysql   = $this->normalize_bookly_datetime( $end );
+		if ( ! $start_mysql || ! $end_mysql ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_time',
+				'message' => 'Invalid start or end time.',
+			);
+		}
+		if ( strtotime( $end_mysql ) <= strtotime( $start_mysql ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'invalid_interval',
+				'message' => 'End time must be after start time.',
+			);
+		}
+
+		$entity_class = '\Bookly\Lib\Entities\Appointment';
+		$utils_class  = '\Bookly\Lib\Utils\Appointment';
+		if ( ! class_exists( $entity_class ) || ! class_exists( $utils_class ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'bookly_unavailable',
+				'message' => 'Bookly appointment APIs are not available.',
+			);
+		}
+
+		$appointment = new \Bookly\Lib\Entities\Appointment();
+		if ( ! $appointment->load( $appointment_id ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'not_found',
+				'message' => 'Appointment not found.',
+			);
+		}
+
+		$customers = $this->customers_payload_for_save( $appointment );
+		if ( empty( $customers ) ) {
+			return array(
+				'ok'      => false,
+				'code'    => 'no_customers',
+				'message' => 'Appointment has no customers to save.',
+			);
+		}
+
+		$first = trim( (string) ( $payload['customer_first'] ?? $payload['first_name'] ?? '' ) );
+		$last  = trim( (string) ( $payload['customer_last'] ?? $payload['last_name'] ?? '' ) );
+		$phone = trim( (string) ( $payload['phone'] ?? '' ) );
+		$email = trim( (string) ( $payload['email'] ?? '' ) );
+		$full  = trim( $first . ' ' . $last );
+		if ( '' === $full ) {
+			$full = trim( (string) ( $payload['customer_name'] ?? '' ) );
+		}
+
+		$customer_id = (int) ( $customers[0]['id'] ?? 0 );
+		if ( $customer_id > 0 && class_exists( '\Bookly\Lib\Entities\Customer' ) ) {
+			$customer = new \Bookly\Lib\Entities\Customer();
+			if ( $customer->load( $customer_id ) ) {
+				if ( '' !== $full && method_exists( $customer, 'setFullName' ) ) {
+					$customer->setFullName( $full );
+				}
+				if ( method_exists( $customer, 'setFirstName' ) ) {
+					$customer->setFirstName( $first );
+				}
+				if ( method_exists( $customer, 'setLastName' ) ) {
+					$customer->setLastName( $last );
+				}
+				if ( method_exists( $customer, 'setPhone' ) ) {
+					$customer->setPhone( $phone );
+				}
+				if ( method_exists( $customer, 'setEmail' ) ) {
+					$customer->setEmail( $email );
+				}
+				$customer->save();
+			}
+		}
+
+		$painters = isset( $payload['painters'] ) ? max( 1, (int) $payload['painters'] ) : (int) $customers[0]['number_of_persons'];
+		$customers[0]['number_of_persons'] = $painters;
+
+		if ( array_key_exists( 'customer_notes', $payload ) ) {
+			$customers[0]['notes'] = (string) $payload['customer_notes'];
+		}
+
+		$detail_values = array();
+		if ( isset( $payload['detail_fields'] ) && is_array( $payload['detail_fields'] ) ) {
+			$detail_values = $payload['detail_fields'];
+		} elseif ( isset( $payload['detailFields'] ) && is_array( $payload['detailFields'] ) ) {
+			$detail_values = $payload['detailFields'];
+		}
+		$customers[0]['custom_fields'] = $this->merge_custom_field_values(
+			isset( $customers[0]['custom_fields'] ) && is_array( $customers[0]['custom_fields'] )
+				? $customers[0]['custom_fields']
+				: array(),
+			$detail_values
+		);
+
+		$service_id = $appointment->getServiceId();
+		$service_id = $service_id ? (int) $service_id : null;
+		if ( isset( $payload['service_id'] ) && '' !== (string) $payload['service_id'] ) {
+			$service_id = (int) $payload['service_id'];
+			$service_id = $service_id > 0 ? $service_id : null;
+		}
+		$location_id  = $appointment->getLocationId() ? (int) $appointment->getLocationId() : 0;
+		$custom_name  = $appointment->getCustomServiceName();
+		$custom_price = $appointment->getCustomServicePrice();
+		$internal     = array_key_exists( 'notes', $payload )
+			? (string) $payload['notes']
+			: (string) $appointment->getInternalNote();
+
+		$check = \Bookly\Lib\Utils\Appointment::checkTime(
+			$appointment_id,
+			$start_mysql,
+			$end_mysql,
+			$staff_id,
+			$service_id ? $service_id : 0,
+			$location_id,
+			$customers
+		);
+
+		if ( ! empty( $check['date_interval_not_available'] ) ) {
+			return array(
+				'ok'        => false,
+				'code'      => 'conflict',
+				'message'   => 'That time conflicts with another appointment on this table.',
+				'conflicts' => is_array( $check ) ? $check : array(),
+			);
+		}
+
+		$notify = (bool) apply_filters(
+			'cad_scheduler_reservation_notify',
+			true,
+			$appointment_id,
+			$payload
+		);
+
+		$bookly = \Bookly\Lib\Utils\Appointment::save(
+			$appointment_id,
+			$staff_id,
+			null === $service_id ? null : $service_id,
+			$custom_name,
+			null === $custom_price || '' === $custom_price ? '' : $custom_price,
+			$location_id,
+			0,
+			$start_mysql,
+			$end_mysql,
+			array( 'enabled' => false ),
+			array(),
+			'current',
+			$customers,
+			0,
+			$internal,
+			'backend'
+		);
+
+		if ( empty( $bookly['success'] ) ) {
+			$errors  = isset( $bookly['errors'] ) && is_array( $bookly['errors'] ) ? $bookly['errors'] : array();
+			$message = 'Could not save reservation.';
+			if ( ! empty( $errors['time_interval'] ) && is_string( $errors['time_interval'] ) ) {
+				$message = $errors['time_interval'];
+			} elseif ( ! empty( $errors['db'] ) && is_string( $errors['db'] ) ) {
+				$message = $errors['db'];
+			}
+
+			return array(
+				'ok'      => false,
+				'code'    => 'save_failed',
+				'message' => $message,
+				'errors'  => $errors,
+				'bookly'  => $bookly,
+			);
+		}
+
+		if ( $notify
+			&& class_exists( '\Bookly\Lib\Notifications\Booking\Sender', false )
+			&& method_exists( '\Bookly\Lib\Notifications\Booking\Sender', 'sendForCA' )
+		) {
+			$saved = new \Bookly\Lib\Entities\Appointment();
+			if ( $saved->load( $appointment_id ) ) {
+				foreach ( $saved->getCustomerAppointments( true ) as $ca ) {
+					\Bookly\Lib\Notifications\Booking\Sender::sendForCA( $ca, $saved, array(), true );
+				}
+			}
+		}
+
+		$loaded = $this->get_reservation( $appointment_id );
+		if ( empty( $loaded['ok'] ) ) {
+			return array(
+				'ok'          => true,
+				'appointment' => null,
+				'bookly'      => array( 'success' => true, 'notified' => $notify ),
+			);
+		}
+
+		return array(
+			'ok'           => true,
+			'appointment'  => $loaded['appointment'],
+			'detailFields' => $loaded['detailFields'],
+			'bookly'       => array(
+				'success'  => true,
+				'notified' => $notify,
+			),
+		);
+	}
+
+	/**
+	 * Merge Reservation Manager detail field values into Bookly custom_fields list.
+	 *
+	 * @param array $existing Decoded list or assoc from CA.
+	 * @param array $updates  id=>value or list of {id,value}.
+	 * @return array<int, array{id: int|string, value: string}>
+	 */
+	private function merge_custom_field_values( array $existing, array $updates ) {
+		$map = $this->mapper->decode_custom_fields( $existing );
+
+		// Normalize updates.
+		$is_list = $updates && array_keys( $updates ) === range( 0, count( $updates ) - 1 );
+		if ( $is_list ) {
+			foreach ( $updates as $item ) {
+				if ( ! is_array( $item ) ) {
+					continue;
+				}
+				$fid = isset( $item['id'] ) ? (string) $item['id'] : '';
+				if ( '' === $fid ) {
+					continue;
+				}
+				$map[ $fid ] = (string) ( $item['value'] ?? '' );
+			}
+		} else {
+			foreach ( $updates as $fid => $value ) {
+				$map[ (string) $fid ] = is_scalar( $value ) ? (string) $value : '';
+			}
+		}
+
+		$list = array();
+		foreach ( $map as $fid => $value ) {
+			$list[] = array(
+				'id'    => is_numeric( $fid ) ? (int) $fid : $fid,
+				'value' => $value,
+			);
+		}
+		return $list;
+	}
+
+	/**
 	 * Build Bookly save() customer rows from existing customer appointments.
 	 *
 	 * @param \Bookly\Lib\Entities\Appointment $appointment

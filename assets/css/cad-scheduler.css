@@ -1151,6 +1151,205 @@ body.cad-dnd-active .cad-appointment {
   filter: brightness(0.95);
 }
 
+/* Sprint 3.2 — Reservation Manager */
+.cad-rm {
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.cad-rm[hidden] {
+  display: none !important;
+}
+
+.cad-rm__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(43, 43, 43, 0.4);
+}
+
+.cad-rm__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(520px, 100%);
+  max-height: min(94vh, 52rem);
+  overflow: hidden;
+  border: 1px solid var(--cad-border);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 18px 48px rgba(43, 43, 43, 0.22);
+}
+
+.cad-rm__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  background: var(--cad-purple);
+  color: #ffffff;
+}
+
+.cad-rm__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.cad-rm__close {
+  margin: 0;
+  padding: 0.1rem 0.45rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cad-rm__close:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.cad-rm__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.cad-rm__section {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--cad-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cad-surface) 94%, var(--cad-purple) 6%);
+}
+
+.cad-rm__section-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cad-purple);
+}
+
+.cad-rm__section-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem 0.75rem;
+}
+
+.cad-rm__section--details .cad-rm__section-body,
+.cad-rm__section--notes .cad-rm__section-body,
+.cad-rm__section--status .cad-rm__section-body {
+  grid-template-columns: 1fr;
+}
+
+.cad-rm__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.cad-rm__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--cad-muted);
+}
+
+.cad-rm__hint {
+  font-size: 0.7rem;
+  color: var(--cad-muted);
+}
+
+.cad-rm__input,
+.cad-rm__textarea {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--cad-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--cad-ink);
+  font: inherit;
+}
+
+.cad-rm__input:focus,
+.cad-rm__textarea:focus {
+  outline: 2px solid var(--cad-teal);
+  outline-offset: 1px;
+}
+
+.cad-rm__input[readonly] {
+  background: #f7f7f7;
+  color: var(--cad-muted);
+}
+
+.cad-rm__empty {
+  margin: 0;
+  color: var(--cad-muted);
+  font-size: 0.875rem;
+}
+
+.cad-rm__error {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, #c0392b 12%, #ffffff);
+  color: #8e1b1b;
+  font-size: 0.875rem;
+}
+
+.cad-rm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.cad-rm__btn {
+  margin: 0;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid var(--cad-border);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cad-rm__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cad-rm__btn--ghost {
+  background: #ffffff;
+  color: var(--cad-ink);
+}
+
+.cad-rm__btn--primary {
+  border-color: var(--cad-purple);
+  background: var(--cad-purple);
+  color: #ffffff;
+}
+
+.cad-rm__btn--primary:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
 @media (max-width: 768px) {
   .cad-scheduler {
     --cad-scroll-height: min(65vh, calc(100dvh - 16rem));
@@ -1163,10 +1362,15 @@ body.cad-dnd-active .cad-appointment {
   }
 
   .cad-popover__panel,
-  .cad-quick-add__panel {
+  .cad-quick-add__panel,
+  .cad-rm__panel {
     width: 100%;
     max-width: 100%;
     max-height: 92vh;
+  }
+
+  .cad-rm__section-body {
+    grid-template-columns: 1fr;
   }
 }
 

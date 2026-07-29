@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.2.0] — 2026-07-29
+
+### Added
+
+- **Sprint 3.2 Reservation Manager** — primary view/edit UI for existing reservations (replaces opening Bookly for normal edits)
+- Dynamic **Reservation Details** from Bookly Custom Fields (service-scoped; no hard-coded birthday UI)
+- `cad_get_reservation` / `cad_save_reservation` via Bookly `checkTime` + `save`; customer updated in place
+- Duration sync (start/end ↔ duration)
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **3.2.0**; redeploy snippets **10–12** and **20**
+- Empty-slot create remains Quick Add (3.1)
+- See [sprint-3.2-reservation-manager.md](sprint-3.2-reservation-manager.md)
+
 ## [3.1.0] — 2026-07-29
 
 ### Added

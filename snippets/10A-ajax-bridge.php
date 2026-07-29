@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 // already available on jsDelivr. Do not increment before the release
 // has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '3.1.0' );
+	define( 'CAD_SCHEDULER_VERSION', '3.2.0' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -219,7 +219,8 @@ function cad_enqueue_assets() {
 	wp_enqueue_script( 'cad-notify', $src . 'cad-notify.js', array( 'cad-core' ), $ver, true );
 	wp_enqueue_script( 'cad-dnd', $src . 'cad-dnd.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-notify' ), $ver, true );
 	wp_enqueue_script( 'cad-quick-add', $src . 'components/quick-add.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-notify' ), $ver, true );
-	wp_enqueue_script( 'cad-ui', $src . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-popover', 'cad-staff-pipeline-report', 'cad-dnd', 'cad-notify', 'cad-quick-add' ), $ver, true );
+	wp_enqueue_script( 'cad-reservation-manager', $src . 'components/reservation-manager.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-notify', 'cad-status-panel' ), $ver, true );
+	wp_enqueue_script( 'cad-ui', $src . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-popover', 'cad-staff-pipeline-report', 'cad-dnd', 'cad-notify', 'cad-quick-add', 'cad-reservation-manager' ), $ver, true );
 	wp_enqueue_script( 'cad-navigation', $src . 'cad-navigation.js', array( 'cad-core', 'cad-ui' ), $ver, true );
 
 	wp_localize_script(
@@ -255,7 +256,7 @@ function cad_enqueue_assets() {
 
 	wp_add_inline_script(
 		'cad-navigation',
-		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui||!CAD.Navigation)return;CAD.init(window.cadConfig||{});var m=document.getElementById('cad-scheduler');if(!m)return;CAD.ui.mount('#cad-scheduler');if(m.querySelector('.cad-scheduler__diagnostics'))return;CAD.Navigation.init();CAD.Popover&&CAD.Popover.init();CAD.QuickAdd&&CAD.QuickAdd.init();CAD.ui.load(CAD.Config.get('today'));});})();"
+		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui||!CAD.Navigation)return;CAD.init(window.cadConfig||{});var m=document.getElementById('cad-scheduler');if(!m)return;CAD.ui.mount('#cad-scheduler');if(m.querySelector('.cad-scheduler__diagnostics'))return;CAD.Navigation.init();CAD.Popover&&CAD.Popover.init();CAD.QuickAdd&&CAD.QuickAdd.init();CAD.ReservationManager&&CAD.ReservationManager.init();CAD.ui.load(CAD.Config.get('today'));});})();"
 	);
 
 	if ( cad_scheduler_diagnostics_enabled() ) {
@@ -903,3 +904,84 @@ function cad_ajax_create_appointment() {
 	wp_send_json_success( $result );
 }
 add_action( 'wp_ajax_cad_create_appointment', 'cad_ajax_create_appointment' );
+
+function cad_ajax_get_reservation() {
+	check_ajax_referer( 'cad_scheduler', 'nonce' );
+
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'message' => 'Authentication required.', 'code' => 'auth' ), 403 );
+	}
+
+	$capability = apply_filters( 'cad_scheduler_get_reservation_capability', 'edit_posts' );
+	if ( ! current_user_can( $capability ) ) {
+		wp_send_json_error( array( 'message' => 'Insufficient permissions.', 'code' => 'capability' ), 403 );
+	}
+
+	$provider = cad_schedule_provider();
+	if ( ! $provider ) {
+		wp_send_json_error( array( 'message' => 'CAD modules not loaded.', 'code' => 'modules' ), 500 );
+	}
+
+	$appointment_id = sanitize_text_field( wp_unslash( $_POST['appointment_id'] ?? '' ) );
+	$result         = $provider->get_reservation( $appointment_id );
+	if ( empty( $result['ok'] ) ) {
+		$code = isset( $result['code'] ) ? (string) $result['code'] : 'not_found';
+		wp_send_json_error( $result, 'not_found' === $code ? 404 : 400 );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_cad_get_reservation', 'cad_ajax_get_reservation' );
+
+function cad_ajax_save_reservation() {
+	check_ajax_referer( 'cad_scheduler', 'nonce' );
+
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'message' => 'Authentication required.', 'code' => 'auth' ), 403 );
+	}
+
+	$capability = apply_filters( 'cad_scheduler_save_reservation_capability', 'edit_posts' );
+	if ( ! current_user_can( $capability ) ) {
+		wp_send_json_error( array( 'message' => 'Insufficient permissions.', 'code' => 'capability' ), 403 );
+	}
+
+	$provider = cad_schedule_provider();
+	if ( ! $provider ) {
+		wp_send_json_error( array( 'message' => 'CAD modules not loaded.', 'code' => 'modules' ), 500 );
+	}
+
+	$appointment_id = sanitize_text_field( wp_unslash( $_POST['appointment_id'] ?? '' ) );
+	$detail_raw     = wp_unslash( $_POST['detail_fields'] ?? '{}' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$detail_fields  = json_decode( is_string( $detail_raw ) ? $detail_raw : '{}', true );
+	if ( ! is_array( $detail_fields ) ) {
+		$detail_fields = array();
+	}
+
+	$payload = array(
+		'staff_id'       => sanitize_text_field( wp_unslash( $_POST['staff_id'] ?? $_POST['table_id'] ?? '' ) ),
+		'start'          => sanitize_text_field( wp_unslash( $_POST['start'] ?? '' ) ),
+		'end'            => sanitize_text_field( wp_unslash( $_POST['end'] ?? '' ) ),
+		'customer_first' => sanitize_text_field( wp_unslash( $_POST['customer_first'] ?? $_POST['first_name'] ?? '' ) ),
+		'customer_last'  => sanitize_text_field( wp_unslash( $_POST['customer_last'] ?? $_POST['last_name'] ?? '' ) ),
+		'phone'          => sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) ),
+		'email'          => sanitize_email( wp_unslash( $_POST['email'] ?? '' ) ),
+		'painters'       => absint( $_POST['painters'] ?? 1 ),
+		'notes'          => sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) ),
+		'customer_notes' => sanitize_textarea_field( wp_unslash( $_POST['customer_notes'] ?? '' ) ),
+		'service_id'     => sanitize_text_field( wp_unslash( $_POST['service_id'] ?? '' ) ),
+		'detail_fields'  => $detail_fields,
+	);
+
+	$result = $provider->save_reservation( $appointment_id, $payload );
+	if ( empty( $result['ok'] ) ) {
+		$code   = isset( $result['code'] ) ? (string) $result['code'] : 'save_failed';
+		$status = ( 'conflict' === $code ) ? 409 : 400;
+		if ( in_array( $code, array( 'bookly_unavailable', 'save_failed' ), true ) ) {
+			$status = 500;
+		}
+		wp_send_json_error( $result, $status );
+	}
+
+	wp_send_json_success( $result );
+}
+add_action( 'wp_ajax_cad_save_reservation', 'cad_ajax_save_reservation' );
