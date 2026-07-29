@@ -23,10 +23,11 @@
 - [x] Reservation Manager (edit existing) — **Sprint 3.2** (complete **3.2.0**)
 - [x] Native Bookly service compatibility — **Sprint 3.2.1** (complete **3.2.1**)
 - [x] Reservation Manager UX polish — **Sprint 3.2.2** (complete **3.2.2**)
+- [x] Reservation Manager layout polish — **Sprint 3.2.3** (complete **3.2.3**)
 
 ## Sprint 3.0 — Studio Operations
 
-Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md) · [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md) · [sprint-3.2-reservation-manager.md](sprint-3.2-reservation-manager.md) · [sprint-3.2.1-native-bookly-compatibility.md](sprint-3.2.1-native-bookly-compatibility.md) · [sprint-3.2.2-reservation-manager-ux.md](sprint-3.2.2-reservation-manager-ux.md).
+Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md) · [sprint-3.1-quick-add.md](sprint-3.1-quick-add.md) · [sprint-3.2-reservation-manager.md](sprint-3.2-reservation-manager.md) · [sprint-3.2.1-native-bookly-compatibility.md](sprint-3.2.1-native-bookly-compatibility.md) · [sprint-3.2.2-reservation-manager-ux.md](sprint-3.2.2-reservation-manager-ux.md) · [sprint-3.2.3-reservation-manager-layout.md](sprint-3.2.3-reservation-manager-layout.md).
 
 ### Phase 1 — Critical
 
@@ -37,6 +38,7 @@ Daily-ops scheduler before handoff. Docs: [sprint-3.0-studio-operations.md](spri
 | **P2b** | Reservation Manager (edit) | — | **Complete (3.2.0)** |
 | **P2c** | Native Bookly compatibility (real service id) | — | **Complete (3.2.1)** |
 | **P2d** | Reservation Manager UX polish | — | **Complete (3.2.2)** |
+| **P2e** | Reservation Manager layout polish | — | **Complete (3.2.3)** |
 
 ### Phase 2 — After Phase 1
 

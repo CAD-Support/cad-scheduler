@@ -1,5 +1,5 @@
 /**
- * Reservation Manager — Sprint 3.2 / 3.2.2 UX.
+ * Reservation Manager — Sprint 3.2 / 3.2.3 UX.
  * Primary view/edit UI for existing reservations (Bookly save path).
  * Service-specific fields come from the API detailFields list (not hard-coded).
  * @module components/reservation-manager
@@ -276,11 +276,11 @@
       reservation.body.append(
         field('Service', serviceSelect),
         field('Table', tableSelect),
-        field('Date', dateInput),
+        field('Date', dateInput, 'cad-rm__field--span'),
         field('Start Time', startSelect),
         field('End Time', endSelect),
         field('Duration', durationDisplay),
-        field('🎨 # of Painters', paintersSelect, 'cad-rm__field--span')
+        field('🎨 # of Painters', paintersSelect)
       );
 
       const firstInput = el('input', 'cad-rm__input');
@@ -305,12 +305,12 @@
 
       const customerNotesInput = el('textarea', 'cad-rm__textarea');
       customerNotesInput.name = 'customer_notes';
-      customerNotesInput.rows = 3;
+      customerNotesInput.rows = 2;
       resNotes.body.append(customerNotesInput);
 
       const notesInput = el('textarea', 'cad-rm__textarea');
       notesInput.name = 'notes';
-      notesInput.rows = 3;
+      notesInput.rows = 2;
       studioNotes.body.append(notesInput);
 
       const error = el('p', 'cad-rm__error');

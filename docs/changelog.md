@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.2.3] — 2026-07-29
+
+### Changed
+
+- **Sprint 3.2.3 Reservation Manager layout** — Start/End on one row; Duration beside Painters; tighter spacing; stronger editable fields; richer summary strip
+
+### Notes
+
+- Presentation only; save logic unchanged
+- Pin `CAD_SCHEDULER_VERSION` to **3.2.3**
+- See [sprint-3.2.3-reservation-manager-layout.md](sprint-3.2.3-reservation-manager-layout.md)
+
 ## [3.2.2] — 2026-07-29
 
 ### Changed
