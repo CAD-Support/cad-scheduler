@@ -1,8 +1,20 @@
 # Sprint 3.0 — Studio Operations (Planning)
 
-**Status:** Phase 1 **P1 Drag & Drop shipped in 2.7.0**. P2 Quick Add not started.
+**Status:** Phase 1 **P1 Drag & Drop complete** (shipped **2.7.0**–**2.7.8**). **P2 Quick Add** not started.
 
 **Goal:** Deliver a scheduler studios can use for **daily operations** before project handoff — view, create, move, edit, and update appointments **without opening the native Bookly calendar**.
+
+## P1 complete — Drag & Drop (2.7.8)
+
+Release notes:
+
+- Fixed scheduler timezone rendering.
+- Bookly wall-clock times now render correctly.
+- Drag-and-drop between tables and times is fully functional.
+- Scheduler and Bookly backend remain synchronized.
+- Removed all temporary debugging instrumentation.
+
+Pin `CAD_SCHEDULER_VERSION` to **2.7.8** and redeploy snippets **11**, **12**, and **20**.
 
 ## Reprioritization (2026-07-27)
 

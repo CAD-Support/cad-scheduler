@@ -1,5 +1,17 @@
 # Changelog
 
+## Sprint 3.0 — Drag & Drop Complete (2.7.0–2.7.8)
+
+**Status:** P1 Drag & Drop is production-ready as of **2.7.8**.
+
+### Release notes
+
+- Fixed scheduler timezone rendering.
+- Bookly wall-clock times now render correctly.
+- Drag-and-drop between tables and times is fully functional.
+- Scheduler and Bookly backend remain synchronized.
+- Removed all temporary debugging instrumentation.
+
 ## [2.7.8] — 2026-07-29
 
 ### Fixed

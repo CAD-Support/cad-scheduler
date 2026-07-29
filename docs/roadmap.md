@@ -17,11 +17,11 @@
 - [x] All visible Bookly resources as calendar columns — Sprint 2.5.1
 - [x] Scheduler UX polish (cards + popover + shared badges) — Sprint 2.6
 - [ ] Inline appointment editor (partially superseded by Sprint 3 Quick Add / popover status)
-- [ ] Drag-and-drop rescheduling — **Sprint 3.0 Phase 1 / P1**
-- [ ] Conflict detection across tables — **Sprint 3.0 Phase 1 / P1**
+- [x] Drag-and-drop rescheduling — **Sprint 3.0 Phase 1 / P1** (complete **2.7.8**)
+- [x] Conflict detection across tables — **Sprint 3.0 Phase 1 / P1** (via Bookly `checkTime`)
 - [ ] Quick Add appointment — **Sprint 3.0 Phase 1 / P2**
 
-## Sprint 3.0 — Studio Operations (planned)
+## Sprint 3.0 — Studio Operations
 
 Daily-ops scheduler before handoff: view, create, move, edit, update without the native Bookly calendar. Planning doc: [sprint-3.0-studio-operations.md](sprint-3.0-studio-operations.md).
 
@@ -31,7 +31,7 @@ P1/P2 **must** use Bookly save/create flows (notifications, validation, integrat
 
 | Priority | Item | Issue | Status |
 |----------|------|-------|--------|
-| **P1** | Drag & drop reschedule + Bookly save + conflicts | [#3](https://github.com/CAD-Support/cad-scheduler/issues/3) | **2.7.0** / init fix **2.7.1** |
+| **P1** | Drag & drop reschedule + Bookly save + conflicts | [#3](https://github.com/CAD-Support/cad-scheduler/issues/3) | **Complete (2.7.8)** |
 | **P2** | Quick Add from empty slot (Bookly create) | [#4](https://github.com/CAD-Support/cad-scheduler/issues/4) | Planned |
 
 ### Phase 2 — After Phase 1 is production-ready
@@ -43,7 +43,7 @@ P1/P2 **must** use Bookly save/create flows (notifications, validation, integrat
 | **P5** | Live refresh (preserve scroll / date / filters) | [#6](https://github.com/CAD-Support/cad-scheduler/issues/6) | Planned |
 | **P6** | Lightspeed customer lookup on create | [#5](https://github.com/CAD-Support/cad-scheduler/issues/5) | Planned |
 
-**P1 shipped in 2.7.0.** Build order: P2 → P3 → P4 → P5 → P6.
+**P1 complete in 2.7.8.** Next: **P2 Quick Add**.
 
 ## Phase 3 — Studio Features (later)
 
