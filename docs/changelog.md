@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.7.5] — 2026-07-29
+
+### Added
+
+- **Debug-only** drop logs: `[COORDS]`, `[LAST SNAP]`, `[RECTS]`, `[ROW INPUT]` (plus existing STEP / alignment / row-origin) — **no drag/drop behavior changes**
+
+### Notes
+
+- Pin `CAD_SCHEDULER_VERSION` to **2.7.5**
+- `mouseY` is `clientY - .cad-matrix__blocks.getBoundingClientRect().top` (not matrix / not scrollport)
+- `livePointerSnap` is computed on drop only for comparison; final snap selection is unchanged (`lastSnap || live`)
+
 ## [2.7.4] — 2026-07-28
 
 ### Added
