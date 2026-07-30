@@ -628,7 +628,7 @@ class CAD_Bookly_Repository {
 	/**
 	 * Active Bookly services for Quick Add / Reservation Manager.
 	 *
-	 * @return array<int, array{id: string, name: string, durationMinutes: int, color: string|null}>
+	 * @return array<int, array{id: string, name: string, durationMinutes: int, color: string|null, categoryId?: string|null, categoryName?: string|null}>
 	 */
 	public function get_services() {
 		global $wpdb;
@@ -644,28 +644,49 @@ class CAD_Bookly_Repository {
 			return array();
 		}
 
-		$sql = "SELECT id, title, duration, position
-			FROM {$table}
-			WHERE (visibility IS NULL OR visibility = '' OR visibility IN ('public','private','group','group_booking'))
-			ORDER BY position ASC, title ASC";
-
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$col_rows = $wpdb->get_results( "SHOW COLUMNS FROM {$table}", ARRAY_A );
-		$has_color = false;
+		$columns  = array();
 		if ( is_array( $col_rows ) ) {
 			foreach ( $col_rows as $col ) {
-				if ( isset( $col['Field'] ) && 'color' === $col['Field'] ) {
-					$has_color = true;
-					break;
+				if ( ! empty( $col['Field'] ) ) {
+					$columns[] = (string) $col['Field'];
 				}
 			}
 		}
+		$has_color    = in_array( 'color', $columns, true );
+		$has_category = in_array( 'category_id', $columns, true );
+
+		$cat_table = $wpdb->prefix . 'bookly_categories';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$cat_exists = $has_category
+			? (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $cat_table ) )
+			: false;
+
+		$select = array( 's.id', 's.title', 's.duration', 's.position' );
 		if ( $has_color ) {
-			$sql = "SELECT id, title, duration, position, color
-				FROM {$table}
-				WHERE (visibility IS NULL OR visibility = '' OR visibility IN ('public','private','group','group_booking'))
-				ORDER BY position ASC, title ASC";
+			$select[] = 's.color';
 		}
+		if ( $has_category ) {
+			$select[] = 's.category_id';
+		}
+		if ( $cat_exists ) {
+			$select[] = 'c.name AS category_name';
+			$select[] = 'c.position AS category_position';
+		}
+
+		$from = "FROM {$table} s";
+		if ( $cat_exists ) {
+			$from .= " LEFT JOIN {$cat_table} c ON c.id = s.category_id";
+		}
+
+		$order = $cat_exists
+			? 'ORDER BY COALESCE(c.position, 9999) ASC, s.position ASC, s.title ASC'
+			: 'ORDER BY s.position ASC, s.title ASC';
+
+		$sql = 'SELECT ' . implode( ', ', $select ) . " {$from}
+			WHERE (s.visibility IS NULL OR s.visibility = '' OR s.visibility IN ('public','private','group','group_booking'))
+			{$order}";
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$rows = $wpdb->get_results( $sql, ARRAY_A );
@@ -680,11 +701,17 @@ class CAD_Bookly_Repository {
 				continue;
 			}
 			$duration_sec = (int) ( $row['duration'] ?? 0 );
+			$cat_id       = isset( $row['category_id'] ) && '' !== (string) $row['category_id']
+				? (string) $row['category_id']
+				: null;
+			$cat_name     = isset( $row['category_name'] ) ? trim( (string) $row['category_name'] ) : '';
 			$out[]        = array(
 				'id'              => $id,
 				'name'            => (string) ( $row['title'] ?? ( 'Service ' . $id ) ),
 				'durationMinutes' => $duration_sec > 0 ? (int) max( 15, round( $duration_sec / 60 ) ) : 90,
 				'color'           => $this->normalize_hex_color( $row['color'] ?? null ),
+				'categoryId'      => $cat_id,
+				'categoryName'    => '' !== $cat_name ? $cat_name : null,
 			);
 		}
 

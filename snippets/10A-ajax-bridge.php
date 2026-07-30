@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 // already available on jsDelivr. Do not increment before the release
 // has been pushed and published.
 if ( ! defined( 'CAD_SCHEDULER_VERSION' ) ) {
-	define( 'CAD_SCHEDULER_VERSION', '3.2.5' );
+	define( 'CAD_SCHEDULER_VERSION', '3.2.6-rc1' );
 }
 
 if ( ! defined( 'CAD_SCHEDULER_GITHUB_REPO' ) ) {
@@ -220,9 +220,10 @@ function cad_enqueue_assets() {
 	wp_enqueue_script( 'cad-calendar', $src . 'cad-calendar.js', array( 'cad-core', 'cad-components', 'cad-schedule' ), $ver, true );
 	wp_enqueue_script( 'cad-notify', $src . 'cad-notify.js', array( 'cad-core' ), $ver, true );
 	wp_enqueue_script( 'cad-dnd', $src . 'cad-dnd.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-notify', 'cad-schedule', 'cad-confirm' ), $ver, true );
-	wp_enqueue_script( 'cad-quick-add', $src . 'components/quick-add.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-notify', 'cad-schedule', 'cad-confirm' ), $ver, true );
-	wp_enqueue_script( 'cad-reservation-manager', $src . 'components/reservation-manager.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-notify', 'cad-status-panel', 'cad-schedule', 'cad-confirm' ), $ver, true );
-	wp_enqueue_script( 'cad-ui', $src . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-popover', 'cad-staff-pipeline-report', 'cad-dnd', 'cad-notify', 'cad-quick-add', 'cad-reservation-manager' ), $ver, true );
+	wp_enqueue_script( 'cad-reservation-dialog', $src . 'components/reservation-dialog.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-notify', 'cad-status-panel', 'cad-schedule', 'cad-confirm' ), $ver, true );
+	wp_enqueue_script( 'cad-quick-add', $src . 'components/quick-add.js', array( 'cad-core', 'cad-reservation-dialog', 'cad-calendar' ), $ver, true );
+	wp_enqueue_script( 'cad-reservation-manager', $src . 'components/reservation-manager.js', array( 'cad-core', 'cad-reservation-dialog' ), $ver, true );
+	wp_enqueue_script( 'cad-ui', $src . 'cad-ui.js', array( 'cad-core', 'cad-api', 'cad-calendar', 'cad-popover', 'cad-staff-pipeline-report', 'cad-dnd', 'cad-notify', 'cad-reservation-dialog', 'cad-quick-add', 'cad-reservation-manager' ), $ver, true );
 	wp_enqueue_script( 'cad-navigation', $src . 'cad-navigation.js', array( 'cad-core', 'cad-ui' ), $ver, true );
 
 	wp_localize_script(
@@ -259,7 +260,7 @@ function cad_enqueue_assets() {
 
 	wp_add_inline_script(
 		'cad-navigation',
-		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui||!CAD.Navigation)return;CAD.init(window.cadConfig||{});var m=document.getElementById('cad-scheduler');if(!m)return;CAD.ui.mount('#cad-scheduler');if(m.querySelector('.cad-scheduler__diagnostics'))return;CAD.Navigation.init();CAD.Popover&&CAD.Popover.init();CAD.QuickAdd&&CAD.QuickAdd.init();CAD.ReservationManager&&CAD.ReservationManager.init();CAD.ui.load(CAD.Config.get('today'));});})();"
+		"(function(){document.addEventListener('DOMContentLoaded',function(){if(typeof CAD==='undefined'||!CAD.ui||!CAD.Navigation)return;CAD.init(window.cadConfig||{});var m=document.getElementById('cad-scheduler');if(!m)return;CAD.ui.mount('#cad-scheduler');if(m.querySelector('.cad-scheduler__diagnostics'))return;CAD.Navigation.init();CAD.Popover&&CAD.Popover.init();CAD.ReservationDialog&&CAD.ReservationDialog.init();CAD.QuickAdd&&CAD.QuickAdd.init();CAD.ReservationManager&&CAD.ReservationManager.init();CAD.ui.load(CAD.Config.get('today'));});})();"
 	);
 
 	if ( cad_scheduler_diagnostics_enabled() ) {

@@ -317,7 +317,7 @@ body.cad-dnd-active .cad-appointment {
   font-weight: 700;
   text-align: center;
   background: var(--cad-sticky-tint);
-  border-right: 2px solid rgba(43, 43, 43, 0.18);
+  border-right: 2px solid rgba(43, 43, 43, 0.34);
 }
 
 /*
@@ -378,7 +378,7 @@ body.cad-dnd-active .cad-appointment {
   position: relative;
   z-index: var(--cad-z-lane);
   isolation: isolate;
-  border-right: 2px solid rgba(43, 43, 43, 0.18);
+  border-right: 2px solid rgba(43, 43, 43, 0.34);
   min-height: var(--cad-grid-height);
   min-width: var(--cad-col-min);
 }
@@ -395,11 +395,11 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-matrix__line {
   height: var(--cad-slot-height);
-  border-bottom: 1px solid rgba(43, 43, 43, 0.06);
+  border-bottom: 1px solid rgba(43, 43, 43, 0.05);
 }
 
 .cad-matrix__line--hour {
-  border-bottom: 2px solid rgba(43, 43, 43, 0.2);
+  border-bottom: 2px solid rgba(43, 43, 43, 0.34);
 }
 
 .cad-matrix__schedule {
@@ -988,187 +988,10 @@ body.cad-dnd-active .cad-appointment {
   box-sizing: border-box;
 }
 
-/* Sprint 3.1 — Quick Add reservation modal */
-.cad-quick-add {
-  position: fixed;
-  inset: 0;
-  z-index: 10050;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.cad-quick-add[hidden] {
-  display: none !important;
-}
-
-.cad-quick-add__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(43, 43, 43, 0.35);
-}
-
-.cad-quick-add__panel {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  width: 380px;
-  max-width: 100%;
-  max-height: min(92vh, 42rem);
-  overflow: hidden;
-  border: 1px solid var(--cad-border);
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 16px 40px rgba(43, 43, 43, 0.2);
-}
-
-.cad-quick-add__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--cad-teal);
-  color: #ffffff;
-}
-
-.cad-quick-add__title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.cad-quick-add__close {
-  margin: 0;
-  padding: 0.1rem 0.45rem;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.cad-quick-add__close:hover {
-  background: rgba(255, 255, 255, 0.22);
-}
-
-.cad-quick-add__summary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid var(--cad-border);
-  background: color-mix(in srgb, var(--cad-surface) 88%, var(--cad-teal) 12%);
-}
-
-.cad-quick-add__summary-line {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--cad-ink);
-}
-
-.cad-quick-add__summary-time {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--cad-purple);
-}
-
-.cad-quick-add__form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
-  overflow: auto;
-}
-
-.cad-quick-add__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.cad-quick-add__label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--cad-muted);
-}
-
-.cad-quick-add__input,
-.cad-quick-add__textarea {
-  box-sizing: border-box;
-  width: 100%;
-  margin: 0;
-  padding: 0.55rem 0.65rem;
-  border: 1px solid var(--cad-border);
-  border-radius: 8px;
-  background: #ffffff;
-  color: var(--cad-ink);
-  font: inherit;
-}
-
-.cad-quick-add__input:focus,
-.cad-quick-add__textarea:focus {
-  outline: 2px solid var(--cad-teal);
-  outline-offset: 1px;
-}
-
-.cad-quick-add__error {
-  margin: 0;
-  padding: 0.5rem 0.65rem;
-  border-radius: 8px;
-  background: color-mix(in srgb, #c0392b 12%, #ffffff);
-  color: #8e1b1b;
-  font-size: 0.875rem;
-}
-
-.cad-quick-add__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding-top: 0.25rem;
-}
-
-.cad-quick-add__btn {
-  margin: 0;
-  padding: 0.55rem 0.95rem;
-  border: 1px solid var(--cad-border);
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.cad-quick-add__btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.cad-quick-add__btn--ghost {
-  background: #ffffff;
-  color: var(--cad-ink);
-}
-
-.cad-quick-add__btn--primary {
-  border-color: var(--cad-teal);
-  background: var(--cad-teal);
-  color: #ffffff;
-}
-
-.cad-quick-add__btn--primary:hover:not(:disabled) {
-  filter: brightness(0.95);
-}
-
-/* Sprint 3.2 / 3.2.4 — Reservation Manager (desktop app layout) */
+/* Sprint 3.2 / 3.2.6 — Shared Reservation Dialog (cad-rm*) */
 .cad-rm {
-  --cad-rm-control-h: 2.25rem;
-  --cad-rm-gap-y: 0.35rem;
+  --cad-rm-control-h: 2.35rem;
+  --cad-rm-gap-y: 0.4rem;
   --cad-rm-gap-x: 0.75rem;
   position: fixed;
   inset: 0;
@@ -1181,6 +1004,14 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-rm[hidden] {
   display: none !important;
+}
+
+.cad-rm__section[hidden] {
+  display: none !important;
+}
+
+.cad-rm__notes-row:has(.cad-rm__section--res-notes[hidden]) {
+  grid-template-columns: 1fr;
 }
 
 .cad-rm__backdrop {
@@ -1250,7 +1081,7 @@ body.cad-dnd-active .cad-appointment {
   align-items: center;
   gap: 0.3rem 0.5rem;
   margin: 0.45rem 0.85rem 0.55rem;
-  padding: 0.45rem 0.75rem;
+  padding: 0.5rem 0.8rem;
   border: 1px solid color-mix(in srgb, var(--cad-purple) 28%, var(--cad-border));
   border-radius: 9px;
   background:
@@ -1296,24 +1127,26 @@ body.cad-dnd-active .cad-appointment {
 .cad-rm__scroll {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.45rem;
   flex: 1 1 auto;
   min-height: 0;
   padding: 0.55rem 0.85rem 0.65rem;
   overflow: auto;
+  background: color-mix(in srgb, var(--cad-surface) 92%, #e4e0dc);
 }
 
 .cad-rm__section {
   margin: 0;
-  padding: 0.4rem 0.55rem 0.5rem;
-  border: 1px solid var(--cad-border);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--cad-surface) 97%, var(--cad-purple) 3%);
+  padding: 0.55rem 0.65rem 0.6rem;
+  border: 1.5px solid color-mix(in srgb, var(--cad-ink) 14%, var(--cad-border));
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(43, 43, 43, 0.04);
 }
 
 .cad-rm__section-title {
-  margin: 0 0 0.3rem;
-  font-size: 0.66rem;
+  margin: 0 0 0.4rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1340,7 +1173,7 @@ body.cad-dnd-active .cad-appointment {
 .cad-rm__notes-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.4rem var(--cad-rm-gap-x);
+  gap: 0.45rem var(--cad-rm-gap-x);
   align-items: stretch;
 }
 
@@ -1357,12 +1190,20 @@ body.cad-dnd-active .cad-appointment {
 .cad-rm__field {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.18rem;
   min-width: 0;
+}
+
+.cad-rm__section--reservation .cad-rm__section-body {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .cad-rm__field--span {
   grid-column: 1 / -1;
+}
+
+.cad-rm__section--reservation .cad-rm__field--span-2 {
+  grid-column: span 2;
 }
 
 .cad-rm__label {
@@ -1383,16 +1224,17 @@ body.cad-dnd-active .cad-appointment {
   box-sizing: border-box;
   width: 100%;
   margin: 0;
-  padding: 0.35rem 0.55rem;
-  border: 1.5px solid color-mix(in srgb, var(--cad-ink) 24%, var(--cad-border));
-  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  border: 1.5px solid color-mix(in srgb, var(--cad-ink) 28%, var(--cad-border));
+  border-radius: 7px;
   background: #ffffff;
   color: var(--cad-ink);
   font: inherit;
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.25;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 2px rgba(43, 43, 43, 0.05);
+  box-shadow: inset 0 1px 2px rgba(43, 43, 43, 0.04);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .cad-rm__input {
@@ -1401,14 +1243,14 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-rm__input:hover,
 .cad-rm__textarea:hover {
-  border-color: color-mix(in srgb, var(--cad-teal) 45%, var(--cad-border));
+  border-color: color-mix(in srgb, var(--cad-purple) 40%, var(--cad-border));
 }
 
 .cad-rm__input:focus,
 .cad-rm__textarea:focus {
-  outline: 2px solid var(--cad-teal);
-  outline-offset: 1px;
-  border-color: var(--cad-teal);
+  outline: none;
+  border-color: var(--cad-purple);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cad-purple) 22%, transparent);
 }
 
 .cad-rm__duration {
@@ -1416,10 +1258,10 @@ body.cad-dnd-active .cad-appointment {
   align-items: center;
   box-sizing: border-box;
   height: var(--cad-rm-control-h);
-  padding: 0.35rem 0.55rem;
-  border: 1px dashed color-mix(in srgb, var(--cad-muted) 40%, transparent);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--cad-surface) 78%, #e8e8e8);
+  padding: 0.4rem 0.6rem;
+  border: 1.5px dashed color-mix(in srgb, var(--cad-muted) 45%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--cad-surface) 70%, #e8e8e8);
   color: var(--cad-muted);
   font-size: 0.875rem;
   font-weight: 600;
@@ -1427,8 +1269,8 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-rm__section--res-notes .cad-rm__textarea,
 .cad-rm__section--notes .cad-rm__textarea {
-  height: 4.25rem;
-  min-height: 4.25rem;
+  height: 4.5rem;
+  min-height: 4.5rem;
   resize: vertical;
   font-weight: 500;
 }
@@ -1561,7 +1403,6 @@ body.cad-dnd-active .cad-appointment {
   }
 
   .cad-popover__panel,
-  .cad-quick-add__panel,
   .cad-rm__panel {
     width: 100%;
     max-width: 100%;
@@ -1569,9 +1410,15 @@ body.cad-dnd-active .cad-appointment {
   }
 
   .cad-rm__section-body,
+  .cad-rm__section--reservation .cad-rm__section-body,
   .cad-rm__section--details .cad-rm__section-body,
   .cad-rm__notes-row {
     grid-template-columns: 1fr;
+  }
+
+  .cad-rm__section--reservation .cad-rm__field--span-2,
+  .cad-rm__field--span {
+    grid-column: auto;
   }
 
   .cad-rm__summary {
