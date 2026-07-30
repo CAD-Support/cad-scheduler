@@ -1,19 +1,20 @@
 # Changelog
 
-## [3.2.6] — 2026-07-29 (RC2 — Bentonville UI review)
+## [3.2.6] — 2026-07-30 (RC3 — Bentonville acceptance candidate)
 
 ### Changed
 
 - **Form UX polish** — New Reservation and Edit Reservation: bordered cards, summary strip, Date beside Start/End, First/Last name, service `<optgroup>` categories, painters from table capacity, service-driven duration/end
 - **Shared Reservation Dialog** — one `CAD.ReservationDialog` for New + Edit (title / initial data / Delete footer differ); Quick Add + Reservation Manager are thin facades; `.cad-rm*` chrome only
 - **RC2 layout** — desktop two-column dialog; Booking Notes + Studio Notes both visible; Start preserves service duration and moves End; End edits do not move Start
+- **RC3 presentation** — one-line icon summary; reservation workspace hierarchy; lighter borders; ~1260px dialog; column balance; sticky Delete · Cancel · Save footer
 - Stronger hour + table grid separators (quarter-hours stay subtle)
 - Presentation only — Provider / Mapper / AJAX save flow / Bookly validation unchanged (Repository adds `categoryId`/`categoryName` on services for dropdown labels only)
 
 ### Notes
 
-- **RC2:** tag **`3.2.6-rc2`** for Bentonville UI review (not the final release). Pin `CAD_SCHEDULER_VERSION` to **3.2.6-rc2** after jsDelivr serves the tag; redeploy snippets **10** and **20**
-- Final **3.2.6** tag only after UI approval
+- **RC3:** tag **`3.2.6-rc3`** — final Bentonville acceptance candidate (not the final release). Pin `CAD_SCHEDULER_VERSION` to **3.2.6-rc3** after jsDelivr serves the tag; redeploy snippets **10** and **20**
+- After Bentonville approval: tag **3.2.6** and change the bridge pin only (no further UI/functional changes unless release-blocking)
 - Temporary CDN polyfills remain
 - See [sprint-3.2.6-form-ux-polish.md](sprint-3.2.6-form-ux-polish.md)
 

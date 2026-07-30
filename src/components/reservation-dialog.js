@@ -802,29 +802,43 @@
       const serviceName =
         this._serviceSelect?.selectedOptions?.[0]?.textContent?.trim() ||
         'Reservation';
-      const tableName =
+      const tableRaw =
         this._tableSelect?.selectedOptions?.[0]?.textContent?.trim() || 'Table';
+      const tableBase = tableRaw.replace(/\s*\([^)]*\)\s*$/, '').trim() || tableRaw;
+      const capacity = tableCapacity(this._tableSelect?.value);
+      const tableLabel = `${tableBase} (1–${capacity})`;
       const dateLabel = formatWeekday(this._dateInput?.value);
       const startLabel = formatTimeLabel(this._startSelect?.value || '');
       const endLabel = formatTimeLabel(this._endSelect?.value || '');
       const painters = Number(this._paintersSelect?.value) || 1;
       const paintersLabel =
-        painters === 1 ? '🎨 1 Painter' : `🎨 ${painters} Painters`;
+        painters === 1 ? '1 Painter' : `${painters} Painters`;
+      const timeLabel =
+        startLabel && endLabel ? `${startLabel}–${endLabel}` : '';
 
       const parts = [
-        serviceName,
-        tableName,
-        dateLabel,
-        startLabel && endLabel ? `${startLabel}–${endLabel}` : '',
-        paintersLabel,
-      ].filter(Boolean);
+        { icon: '🟣', text: serviceName, primary: true },
+        { icon: '📍', text: tableLabel },
+        { icon: '📅', text: dateLabel },
+        { icon: '🕗', text: timeLabel },
+        { icon: '🎨', text: paintersLabel },
+      ].filter((part) => part.text);
 
       this._summary.replaceChildren();
       parts.forEach((part, index) => {
         if (index > 0) {
           this._summary.appendChild(el('span', 'cad-rm__summary-sep', '•'));
         }
-        this._summary.appendChild(el('span', 'cad-rm__summary-part', part));
+        const item = el(
+          'span',
+          part.primary
+            ? 'cad-rm__summary-part cad-rm__summary-part--primary'
+            : 'cad-rm__summary-part'
+        );
+        const icon = el('span', 'cad-rm__summary-icon', part.icon);
+        icon.setAttribute('aria-hidden', 'true');
+        item.append(icon, document.createTextNode(`\u00A0${part.text}`));
+        this._summary.appendChild(item);
       });
     },
 
