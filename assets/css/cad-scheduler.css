@@ -990,7 +990,7 @@ body.cad-dnd-active .cad-appointment {
 
 /* Sprint 3.2 / 3.2.6 — Shared Reservation Dialog (cad-rm*) */
 .cad-rm {
-  --cad-rm-control-h: 2.5rem;
+  --cad-rm-control-h: 40px;
   --cad-rm-gap-y: 0.65rem;
   --cad-rm-gap-x: 1rem;
   --cad-rm-pad-x: 1.4rem;
@@ -1049,7 +1049,7 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-rm__title {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.55rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--cad-ink);
@@ -1087,7 +1087,7 @@ body.cad-dnd-active .cad-appointment {
   border-radius: 0;
   background: transparent;
   color: var(--cad-ink);
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
@@ -1096,8 +1096,8 @@ body.cad-dnd-active .cad-appointment {
 .cad-rm__summary-sep {
   flex: 0 0 auto;
   margin: 0 0.1rem;
-  color: color-mix(in srgb, var(--cad-muted) 55%, var(--cad-ink));
-  opacity: 0.55;
+  color: color-mix(in srgb, var(--cad-muted) 35%, var(--cad-ink));
+  opacity: 0.7;
   font-weight: 500;
 }
 
@@ -1112,7 +1112,7 @@ body.cad-dnd-active .cad-appointment {
   white-space: nowrap;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: color-mix(in srgb, var(--cad-ink) 92%, var(--cad-muted));
+  color: color-mix(in srgb, var(--cad-ink) 96%, var(--cad-muted));
 }
 
 .cad-rm__summary-part--primary {
@@ -1172,38 +1172,22 @@ body.cad-dnd-active .cad-appointment {
   box-shadow: none;
 }
 
-/* 2. Reservation workspace — focal scheduling block */
+/* Sections — light, no heavy cards; purple headings + hairline rules */
 .cad-rm__section--reservation {
-  padding: 0.95rem 1.05rem 1.05rem;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--cad-surface) 72%, #f6f4f1);
-}
-
-.cad-rm__section--reservation .cad-rm__section-title {
-  margin-bottom: 0.75rem;
-  color: color-mix(in srgb, var(--cad-ink) 70%, var(--cad-muted));
-  font-weight: 700;
-}
-
-.cad-rm__section--customer .cad-rm__section-title {
-  color: color-mix(in srgb, var(--cad-muted) 45%, var(--cad-ink));
-}
-
-.cad-rm__section--details .cad-rm__section-title,
-.cad-rm__section--res-notes .cad-rm__section-title,
-.cad-rm__section--notes .cad-rm__section-title,
-.cad-rm__section--status .cad-rm__section-title {
-  color: color-mix(in srgb, var(--cad-muted) 60%, var(--cad-ink));
-  font-weight: 600;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .cad-rm__section-title {
-  margin: 0 0 0.55rem;
-  font-size: 0.66rem;
-  font-weight: 600;
+  margin: 0 0 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #e8e8e8;
+  font-size: 0.8rem;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--cad-muted) 55%, var(--cad-ink));
+  color: #7d3b92;
 }
 
 .cad-rm__section-body {
@@ -1215,7 +1199,7 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-rm__section--details .cad-rm__section-body {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.55rem 0.85rem;
+  gap: 0.35rem 0.65rem;
 }
 
 .cad-rm__section--res-notes .cad-rm__section-body,
@@ -1250,76 +1234,74 @@ body.cad-dnd-active .cad-appointment {
 }
 
 .cad-rm__label {
-  font-size: 0.6rem;
+  font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.055em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--cad-muted) 78%, #ffffff);
+  color: color-mix(in srgb, var(--cad-muted) 45%, var(--cad-ink));
 }
 
 .cad-rm__section--reservation .cad-rm__label {
-  color: color-mix(in srgb, var(--cad-muted) 62%, var(--cad-ink));
+  color: color-mix(in srgb, var(--cad-muted) 35%, var(--cad-ink));
 }
 
 .cad-rm__hint {
-  font-size: 0.7rem;
-  color: var(--cad-muted);
+  font-size: 0.78rem;
+  color: color-mix(in srgb, var(--cad-muted) 70%, var(--cad-ink));
 }
 
 .cad-rm__input,
-.cad-rm__textarea {
+.cad-rm__textarea,
+.cad-rm__duration {
   box-sizing: border-box;
   width: 100%;
   margin: 0;
-  padding: 0.48rem 0.7rem;
-  border: 1px solid color-mix(in srgb, var(--cad-ink) 14%, var(--cad-border));
-  border-radius: 8px;
+  padding: 0 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
   background: #ffffff;
   color: var(--cad-ink);
   font: inherit;
-  font-size: 0.94rem;
+  font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.25;
   box-shadow: none;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
-.cad-rm__input {
-  height: var(--cad-rm-control-h);
-}
-
-.cad-rm__section--reservation .cad-rm__input,
-.cad-rm__section--reservation .cad-rm__duration {
-  border-color: color-mix(in srgb, var(--cad-ink) 12%, transparent);
-}
-
-.cad-rm__input:hover,
-.cad-rm__textarea:hover {
-  border-color: color-mix(in srgb, var(--cad-purple) 32%, var(--cad-border));
-}
-
-.cad-rm__input:focus,
-.cad-rm__textarea:focus {
-  outline: none;
-  border-color: var(--cad-purple);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cad-purple) 16%, transparent);
+.cad-rm__input,
+.cad-rm__duration {
+  height: 40px;
 }
 
 .cad-rm__duration {
   display: flex;
   align-items: center;
-  box-sizing: border-box;
-  height: var(--cad-rm-control-h);
-  padding: 0.48rem 0.7rem;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: color-mix(in srgb, #ffffff 55%, #eae7e3);
-  color: var(--cad-muted);
-  font-size: 0.94rem;
-  font-weight: 600;
+  color: color-mix(in srgb, var(--cad-muted) 55%, var(--cad-ink));
 }
 
-/* 3. Notes / details — balanced, quieter than reservation */
+.cad-rm__textarea {
+  height: auto;
+  min-height: 88px;
+  padding: 10px 12px;
+  resize: vertical;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.cad-rm__input:hover,
+.cad-rm__textarea:hover {
+  border-color: #bdbdbd;
+}
+
+.cad-rm__input:focus,
+.cad-rm__textarea:focus {
+  outline: none;
+  border-color: #7d3b92;
+  box-shadow: 0 0 0 2px rgba(125, 59, 146, 0.18);
+}
+
+/* 3. Notes — taller field containers, same language */
 .cad-rm__section--res-notes,
 .cad-rm__section--notes {
   display: flex;
@@ -1339,15 +1321,14 @@ body.cad-dnd-active .cad-appointment {
 .cad-rm__section--res-notes .cad-rm__textarea,
 .cad-rm__section--notes .cad-rm__textarea {
   flex: 1 1 auto;
-  height: auto;
-  min-height: 4.75rem;
+  min-height: 96px;
   max-height: none;
-  resize: vertical;
-  font-size: 0.86rem;
-  font-weight: 500;
-  color: color-mix(in srgb, var(--cad-ink) 82%, var(--cad-muted));
-  background: color-mix(in srgb, var(--cad-surface) 40%, #ffffff);
-  border-color: color-mix(in srgb, var(--cad-ink) 10%, var(--cad-border));
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--cad-ink) 90%, var(--cad-muted));
+  font-size: 0.96rem;
 }
 
 .cad-rm__section--details,
@@ -1356,30 +1337,39 @@ body.cad-dnd-active .cad-appointment {
   flex: 0 0 auto;
 }
 
-.cad-rm__section--details .cad-rm__textarea {
-  min-height: 2.75rem;
-  max-height: 5rem;
-  resize: vertical;
-  font-size: 0.86rem;
+.cad-rm__section--details .cad-rm__input {
+  height: 40px;
+  font-size: 0.98rem;
   font-weight: 500;
 }
 
+.cad-rm__section--details .cad-rm__textarea {
+  min-height: 72px;
+  max-height: 5rem;
+  resize: vertical;
+  font-size: 0.96rem;
+  font-weight: 500;
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+}
+
 .cad-rm__section--details .cad-rm__label {
-  font-size: 0.58rem;
+  font-size: 0.65rem;
 }
 
 .cad-rm__empty {
   margin: 0;
   grid-column: 1 / -1;
-  color: var(--cad-muted);
-  font-size: 0.76rem;
+  color: color-mix(in srgb, var(--cad-muted) 55%, var(--cad-ink));
+  font-size: 0.85rem;
 }
 
 .cad-rm__customer-missing {
   margin: 0.1rem 0 0;
   grid-column: 1 / -1;
-  color: var(--cad-muted);
-  font-size: 0.76rem;
+  color: color-mix(in srgb, var(--cad-muted) 55%, var(--cad-ink));
+  font-size: 0.85rem;
   font-style: italic;
 }
 
@@ -1416,7 +1406,7 @@ body.cad-dnd-active .cad-appointment {
   border: 1px solid color-mix(in srgb, var(--cad-ink) 12%, var(--cad-border));
   border-radius: 9px;
   font: inherit;
-  font-size: 0.92rem;
+  font-size: 1.03rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -1437,7 +1427,7 @@ body.cad-dnd-active .cad-appointment {
   color: #ffffff;
   min-width: 10.5rem;
   padding: 0.58rem 1.25rem;
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   font-weight: 700;
   box-shadow: 0 4px 12px color-mix(in srgb, var(--cad-purple) 22%, transparent);
 }
@@ -1469,9 +1459,9 @@ body.cad-dnd-active .cad-appointment {
   border: 1px solid var(--cad-border);
   border-radius: 999px;
   background: #ffffff;
-  color: var(--cad-ink);
+  color: color-mix(in srgb, var(--cad-ink) 88%, var(--cad-muted));
   font: inherit;
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   font-weight: 600;
   line-height: 1.3;
   cursor: pointer;
@@ -1480,12 +1470,18 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-status-chips__btn:hover {
   border-color: var(--cad-teal);
+  color: var(--cad-ink);
 }
 
+.cad-rm .cad-status-chips__btn--active,
 .cad-status-chips__btn--active {
-  border-color: var(--cad-teal);
-  background: #e8f6f7;
-  color: var(--cad-teal);
+  border-color: color-mix(in srgb, var(--cad-teal) 75%, var(--cad-ink));
+  background: color-mix(in srgb, var(--cad-teal) 22%, #ffffff);
+  color: color-mix(in srgb, var(--cad-teal) 55%, var(--cad-ink));
+  font-weight: 700;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cad-teal) 28%, transparent),
+    0 1px 2px color-mix(in srgb, var(--cad-teal) 18%, transparent);
 }
 
 /* Compact desktop / laptop — keep summary on one line, reduce scroll risk */
@@ -1497,7 +1493,7 @@ body.cad-dnd-active .cad-appointment {
 
   .cad-rm__summary {
     gap: 0.15rem 0.55rem;
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 
   .cad-rm__summary-icon {
@@ -1521,10 +1517,6 @@ body.cad-dnd-active .cad-appointment {
   .cad-rm__summary {
     margin-bottom: 0.65rem;
     padding-bottom: 0.5rem;
-  }
-
-  .cad-rm__section--reservation {
-    padding: 0.8rem 0.9rem 0.9rem;
   }
 
   .cad-rm__col {
@@ -1590,10 +1582,6 @@ body.cad-dnd-active .cad-appointment {
 
   .cad-rm__summary-part {
     white-space: normal;
-  }
-
-  .cad-rm__section--reservation {
-    padding: 0.85rem 0.9rem 0.95rem;
   }
 }
 

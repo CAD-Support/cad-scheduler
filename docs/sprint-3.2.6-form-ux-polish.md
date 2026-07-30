@@ -1,6 +1,6 @@
 # Sprint 3.2.6 — Form UX Polish + Shared Reservation Dialog
 
-**Status:** **RC3** tagged as **`3.2.6-rc3`** — Bentonville acceptance candidate. Final **3.2.6** only after approval (pin bump only). Feature freeze: release-blocking fixes only.
+**Status:** Shipped in **3.2.6**. Further UI work → **3.2.7**.
 
 **Goal:** Presentation-only polish and one maintainable reservation experience for New and Edit. Bookly remains source of truth. No changes to Provider, Mapper, AJAX save endpoints, or Bookly validation.
 
@@ -28,11 +28,11 @@ Everything else is shared: layout, cards, inputs, validation, summary strip, cus
 | Painters | Options 1…table `capacity`; rebuilds when table changes |
 | Service select | Sets Duration + End from Bookly `durationMinutes` |
 
-## Deploy (RC3 — Bentonville acceptance)
+## Deploy
 
-1. Wait until jsDelivr serves `…/cad-scheduler@3.2.6-rc3/…` (HTTP 200)
-2. Pin `CAD_SCHEDULER_VERSION` to **3.2.6-rc3** (already in bridge RC commit)
+1. Wait until jsDelivr serves `…/cad-scheduler@3.2.6/…` (HTTP 200)
+2. Pin `CAD_SCHEDULER_VERSION` to **3.2.6**
 3. Redeploy snippets **10** (Repository — category fields on services) and **20** (Bridge)
 4. Hard-refresh
 
-After approval: tag **3.2.6**, change bridge pin to **3.2.6**, push — no other code changes unless release-blocking. CDN polyfills remain for this release.
+CDN polyfills remain for this release.
