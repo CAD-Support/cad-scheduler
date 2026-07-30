@@ -990,9 +990,9 @@ body.cad-dnd-active .cad-appointment {
 
 /* Sprint 3.2 / 3.2.6 — Shared Reservation Dialog (cad-rm*) */
 .cad-rm {
-  --cad-rm-control-h: 2.35rem;
-  --cad-rm-gap-y: 0.4rem;
-  --cad-rm-gap-x: 0.75rem;
+  --cad-rm-control-h: 2.4rem;
+  --cad-rm-gap-y: 0.55rem;
+  --cad-rm-gap-x: 0.85rem;
   position: fixed;
   inset: 0;
   z-index: 10060;
@@ -1010,10 +1010,6 @@ body.cad-dnd-active .cad-appointment {
   display: none !important;
 }
 
-.cad-rm__notes-row:has(.cad-rm__section--res-notes[hidden]) {
-  grid-template-columns: 1fr;
-}
-
 .cad-rm__backdrop {
   position: absolute;
   inset: 0;
@@ -1025,11 +1021,11 @@ body.cad-dnd-active .cad-appointment {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  width: min(880px, 96vw);
-  max-height: min(90vh, 44rem);
+  width: min(1120px, 96vw);
+  max-height: min(92vh, 54rem);
   overflow: hidden;
   border: 1px solid var(--cad-border);
-  border-radius: 12px;
+  border-radius: 14px;
   background: #ffffff;
   box-shadow: 0 20px 56px rgba(43, 43, 43, 0.24);
 }
@@ -1038,7 +1034,7 @@ body.cad-dnd-active .cad-appointment {
   flex-shrink: 0;
   z-index: 2;
   background: #ffffff;
-  box-shadow: 0 6px 14px rgba(43, 43, 43, 0.08);
+  border-bottom: 1px solid var(--cad-border);
 }
 
 .cad-rm__header {
@@ -1046,16 +1042,17 @@ body.cad-dnd-active .cad-appointment {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.55rem 0.95rem;
-  background: var(--cad-purple);
-  color: #ffffff;
+  padding: 0.85rem 1.15rem 0.35rem;
+  background: #ffffff;
+  color: var(--cad-ink);
 }
 
 .cad-rm__title {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--cad-ink);
 }
 
 .cad-rm__close {
@@ -1064,46 +1061,37 @@ body.cad-dnd-active .cad-appointment {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: inherit;
+  color: var(--cad-muted);
   font: inherit;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
 }
 
 .cad-rm__close:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: color-mix(in srgb, var(--cad-ink) 8%, #ffffff);
+  color: var(--cad-ink);
 }
 
 .cad-rm__summary {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.3rem 0.5rem;
-  margin: 0.45rem 0.85rem 0.55rem;
-  padding: 0.5rem 0.8rem;
-  border: 1px solid color-mix(in srgb, var(--cad-purple) 28%, var(--cad-border));
-  border-radius: 9px;
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--cad-purple) 16%, #ffffff) 0%,
-      color-mix(in srgb, var(--cad-teal) 10%, #ffffff) 55%,
-      #ffffff 100%
-    );
+  gap: 0.35rem 0.65rem;
+  margin: 0.35rem 1.15rem 0.85rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--cad-purple) 22%, var(--cad-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cad-purple) 8%, #ffffff);
   color: var(--cad-ink);
-  font-size: 0.94rem;
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: 0.01em;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.75),
-    0 1px 3px rgba(43, 43, 43, 0.06);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 .cad-rm__summary-sep {
   color: var(--cad-purple);
-  opacity: 0.5;
+  opacity: 0.45;
   font-weight: 700;
 }
 
@@ -1125,30 +1113,42 @@ body.cad-dnd-active .cad-appointment {
 }
 
 .cad-rm__scroll {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  align-items: start;
+  gap: 0.75rem 1rem;
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0.55rem 0.85rem 0.65rem;
+  padding: 0.85rem 1.15rem 0.95rem;
   overflow: auto;
-  background: color-mix(in srgb, var(--cad-surface) 92%, #e4e0dc);
+  background: color-mix(in srgb, var(--cad-surface) 94%, #ebe7e3);
+}
+
+.cad-rm__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.cad-rm__scroll > .cad-rm__error {
+  grid-column: 1 / -1;
 }
 
 .cad-rm__section {
   margin: 0;
-  padding: 0.55rem 0.65rem 0.6rem;
-  border: 1.5px solid color-mix(in srgb, var(--cad-ink) 14%, var(--cad-border));
-  border-radius: 10px;
+  padding: 0.75rem 0.85rem 0.85rem;
+  border: 1.5px solid color-mix(in srgb, var(--cad-ink) 12%, var(--cad-border));
+  border-radius: 12px;
   background: #ffffff;
   box-shadow: 0 1px 2px rgba(43, 43, 43, 0.04);
 }
 
 .cad-rm__section-title {
-  margin: 0 0 0.4rem;
-  font-size: 0.68rem;
+  margin: 0 0 0.55rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--cad-purple);
 }
@@ -1170,44 +1170,31 @@ body.cad-dnd-active .cad-appointment {
   grid-template-columns: 1fr;
 }
 
-.cad-rm__notes-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.45rem var(--cad-rm-gap-x);
-  align-items: stretch;
-}
-
-.cad-rm__notes-row > .cad-rm__section {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.cad-rm__notes-row .cad-rm__section-body {
-  flex: 1 1 auto;
-}
-
 .cad-rm__field {
   display: flex;
   flex-direction: column;
-  gap: 0.18rem;
+  gap: 0.22rem;
   min-width: 0;
 }
 
 .cad-rm__section--reservation .cad-rm__section-body {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.cad-rm__section--reservation .cad-rm__field--half {
+  grid-column: span 3;
+}
+
+.cad-rm__section--reservation .cad-rm__field--third {
+  grid-column: span 2;
 }
 
 .cad-rm__field--span {
   grid-column: 1 / -1;
 }
 
-.cad-rm__section--reservation .cad-rm__field--span-2 {
-  grid-column: span 2;
-}
-
 .cad-rm__label {
-  font-size: 0.62rem;
+  font-size: 0.64rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1224,13 +1211,13 @@ body.cad-dnd-active .cad-appointment {
   box-sizing: border-box;
   width: 100%;
   margin: 0;
-  padding: 0.4rem 0.6rem;
+  padding: 0.45rem 0.65rem;
   border: 1.5px solid color-mix(in srgb, var(--cad-ink) 28%, var(--cad-border));
-  border-radius: 7px;
+  border-radius: 8px;
   background: #ffffff;
   color: var(--cad-ink);
   font: inherit;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.25;
   box-shadow: inset 0 1px 2px rgba(43, 43, 43, 0.04);
@@ -1258,19 +1245,19 @@ body.cad-dnd-active .cad-appointment {
   align-items: center;
   box-sizing: border-box;
   height: var(--cad-rm-control-h);
-  padding: 0.4rem 0.6rem;
+  padding: 0.45rem 0.65rem;
   border: 1.5px dashed color-mix(in srgb, var(--cad-muted) 45%, transparent);
-  border-radius: 7px;
+  border-radius: 8px;
   background: color-mix(in srgb, var(--cad-surface) 70%, #e8e8e8);
   color: var(--cad-muted);
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
 .cad-rm__section--res-notes .cad-rm__textarea,
 .cad-rm__section--notes .cad-rm__textarea {
-  height: 4.5rem;
-  min-height: 4.5rem;
+  height: 6.5rem;
+  min-height: 6.5rem;
   resize: vertical;
   font-weight: 500;
 }
@@ -1298,7 +1285,7 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-rm__error {
   margin: 0;
-  padding: 0.4rem 0.55rem;
+  padding: 0.45rem 0.6rem;
   border-radius: 6px;
   background: color-mix(in srgb, #c0392b 12%, #ffffff);
   color: #8e1b1b;
@@ -1309,9 +1296,9 @@ body.cad-dnd-active .cad-appointment {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   flex-shrink: 0;
-  padding: 0.5rem 0.85rem;
+  padding: 0.65rem 1.15rem;
   border-top: 1px solid var(--cad-border);
   background: #ffffff;
 }
@@ -1322,9 +1309,9 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-rm__btn {
   margin: 0;
-  padding: 0.45rem 0.9rem;
+  padding: 0.5rem 1rem;
   border: 1px solid var(--cad-border);
-  border-radius: 7px;
+  border-radius: 8px;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -1409,14 +1396,18 @@ body.cad-dnd-active .cad-appointment {
     max-height: 92vh;
   }
 
-  .cad-rm__section-body,
-  .cad-rm__section--reservation .cad-rm__section-body,
-  .cad-rm__section--details .cad-rm__section-body,
-  .cad-rm__notes-row {
+  .cad-rm__scroll {
     grid-template-columns: 1fr;
   }
 
-  .cad-rm__section--reservation .cad-rm__field--span-2,
+  .cad-rm__section-body,
+  .cad-rm__section--reservation .cad-rm__section-body,
+  .cad-rm__section--details .cad-rm__section-body {
+    grid-template-columns: 1fr;
+  }
+
+  .cad-rm__section--reservation .cad-rm__field--half,
+  .cad-rm__section--reservation .cad-rm__field--third,
   .cad-rm__field--span {
     grid-column: auto;
   }

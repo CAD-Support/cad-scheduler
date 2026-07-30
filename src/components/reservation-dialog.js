@@ -294,6 +294,7 @@
     _busy: false,
     _syncing: false,
     _bound: false,
+    _lastDurationMins: null,
 
     init() {
       if (this.root) return this;
@@ -330,15 +331,15 @@
       });
 
       const scroll = el('div', 'cad-rm__scroll');
+      const colMain = el('div', 'cad-rm__col cad-rm__col--main');
+      const colSide = el('div', 'cad-rm__col cad-rm__col--side');
 
       const reservation = section('Reservation', 'cad-rm__section--reservation');
       const customer = section('Customer', 'cad-rm__section--customer');
       const details = section('Reservation Details', 'cad-rm__section--details');
-      const resNotes = section('Reservation Notes', 'cad-rm__section--res-notes');
+      const resNotes = section('Booking Notes', 'cad-rm__section--res-notes');
       const studioNotes = section('Studio Notes', 'cad-rm__section--notes');
       const statusSec = section('Status', 'cad-rm__section--status');
-      const notesRow = el('div', 'cad-rm__notes-row');
-      notesRow.append(resNotes.sec, studioNotes.sec);
 
       this._title = title;
       this._detailsSec = details.sec;
@@ -370,16 +371,22 @@
       const paintersSelect = el('select', 'cad-rm__input');
       paintersSelect.name = 'painters';
 
-      const serviceField = field('Service', serviceSelect);
-      serviceField.classList.add('cad-rm__field--span-2');
+      const serviceField = field('Service', serviceSelect, 'cad-rm__field--half');
+      const tableField = field('Table', tableSelect, 'cad-rm__field--half');
+      const dateField = field('Date', dateInput, 'cad-rm__field--third');
+      const startField = field('Start Time', startSelect, 'cad-rm__field--third');
+      const endField = field('End Time', endSelect, 'cad-rm__field--third');
+      const durationField = field('Duration', durationDisplay, 'cad-rm__field--half');
+      const paintersField = field('🎨 # of Painters', paintersSelect, 'cad-rm__field--half');
+
       reservation.body.append(
         serviceField,
-        field('Table', tableSelect),
-        field('Date', dateInput),
-        field('Start Time', startSelect),
-        field('End Time', endSelect),
-        field('🎨 # of Painters', paintersSelect),
-        field('Duration', durationDisplay)
+        tableField,
+        dateField,
+        startField,
+        endField,
+        durationField,
+        paintersField
       );
 
       const firstInput = el('input', 'cad-rm__input');
@@ -412,25 +419,22 @@
 
       const customerNotesInput = el('textarea', 'cad-rm__textarea');
       customerNotesInput.name = 'customer_notes';
-      customerNotesInput.rows = 2;
+      customerNotesInput.rows = 3;
+      customerNotesInput.placeholder = 'Add any notes about the reservation...';
       resNotes.body.append(customerNotesInput);
 
       const notesInput = el('textarea', 'cad-rm__textarea');
       notesInput.name = 'notes';
-      notesInput.rows = 2;
+      notesInput.rows = 3;
+      notesInput.placeholder = 'Add private notes (visible to staff only)...';
       studioNotes.body.append(notesInput);
 
       const error = el('p', 'cad-rm__error');
       error.hidden = true;
 
-      scroll.append(
-        reservation.sec,
-        customer.sec,
-        details.sec,
-        notesRow,
-        statusSec.sec,
-        error
-      );
+      colMain.append(reservation.sec, customer.sec);
+      colSide.append(details.sec, resNotes.sec, studioNotes.sec, statusSec.sec);
+      scroll.append(colMain, colSide, error);
 
       const footer = el('div', 'cad-rm__footer');
       const deleteBtn = el(
@@ -468,7 +472,16 @@
       this._durationDisplay = durationDisplay;
       this._paintersSelect = paintersSelect;
 
-      const onScheduleChange = () => {
+      const onDateChange = () => {
+        this.updateSummary();
+        if (this.mode === 'new') this.refreshHighlight();
+      };
+      const onStartChange = () => {
+        this.applyEndFromStart();
+        this.updateSummary();
+        if (this.mode === 'new') this.refreshHighlight();
+      };
+      const onEndChange = () => {
         this.syncDurationFromTimes();
         this.updateSummary();
         if (this.mode === 'new') this.refreshHighlight();
@@ -484,9 +497,9 @@
         if (this.mode === 'new') this.refreshHighlight();
       };
 
-      dateInput.addEventListener('change', onScheduleChange);
-      startSelect.addEventListener('change', onScheduleChange);
-      endSelect.addEventListener('change', onScheduleChange);
+      dateInput.addEventListener('change', onDateChange);
+      startSelect.addEventListener('change', onStartChange);
+      endSelect.addEventListener('change', onEndChange);
       serviceSelect.addEventListener('change', onServiceChange);
       tableSelect.addEventListener('change', onTableChange);
       paintersSelect.addEventListener('change', () => this.updateSummary());
@@ -567,7 +580,6 @@
         );
       }
       if (this._detailsSec) this._detailsSec.hidden = !isEdit;
-      if (this._resNotesSec) this._resNotesSec.hidden = !isEdit;
       if (this._statusSec) this._statusSec.hidden = !isEdit;
       if (this._deleteBtn) this._deleteBtn.hidden = !isEdit;
       if (this._saveBtn) {
@@ -716,32 +728,60 @@
       const mins = durationMinutes(start, end);
       this._durationDisplay.textContent =
         mins > 0 ? `${mins} minute${mins === 1 ? '' : 's'}` : '—';
+      if (mins >= 15) this._lastDurationMins = mins;
       this._syncing = false;
     },
 
-    applyServiceDuration() {
+    serviceDurationMinutes() {
+      const mins = Number(serviceById(this._serviceSelect.value)?.durationMinutes);
+      return Number.isFinite(mins) && mins >= 15 ? mins : null;
+    },
+
+    /**
+     * Set End = Start + duration. Prefers Bookly service duration when present.
+     * Does not move Start when End is edited manually (see onEndChange).
+     * @param {number} [mins]
+     */
+    applyEndFromDuration(mins) {
       if (this._syncing) return;
-      const svc = serviceById(this._serviceSelect.value);
-      const mins = Number(svc?.durationMinutes);
-      if (!Number.isFinite(mins) || mins < 15) {
+      const duration = Number.isFinite(mins) && mins >= 15 ? mins : null;
+      if (duration == null) {
         this.syncDurationFromTimes();
         return;
       }
       this._syncing = true;
-      const start = combineDateTime(this._dateInput.value, this._startSelect.value);
-      if (start) {
-        const d = parseLocal(start);
-        d.setMinutes(d.getMinutes() + mins);
-        const endValue = `${String(d.getHours()).padStart(2, '0')}:${String(
-          d.getMinutes()
-        ).padStart(2, '0')}`;
+      const startMin = parseClockToMinutes(this._startSelect.value);
+      if (startMin != null) {
+        const endValue = minutesToClock(startMin + duration);
         fillTimeSelect(this._endSelect, endValue, [
           this._startSelect.value,
           endValue,
         ]);
+        this._lastDurationMins = duration;
       }
       this._syncing = false;
       this.syncDurationFromTimes();
+    },
+
+    /** Start changed: keep service duration (or last duration) and move End. */
+    applyEndFromStart() {
+      const svcMins = this.serviceDurationMinutes();
+      const mins =
+        svcMins != null
+          ? svcMins
+          : this._lastDurationMins >= 15
+            ? this._lastDurationMins
+            : null;
+      this.applyEndFromDuration(mins);
+    },
+
+    applyServiceDuration() {
+      const mins = this.serviceDurationMinutes();
+      if (mins == null) {
+        this.syncDurationFromTimes();
+        return;
+      }
+      this.applyEndFromDuration(mins);
     },
 
     populatePainters(preferred) {
