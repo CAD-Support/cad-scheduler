@@ -1,7 +1,7 @@
 /**
- * Shared Reservation Dialog — New + Edit modes (Sprint 3.2.6).
+ * Shared Reservation Dialog — New + Edit modes (Sprint 3.2.6+).
  * One layout/chrome; mode only changes title, initial data, and footer (Delete on edit).
- * Does not change Provider / Mapper / AJAX / Bookly save contracts.
+ * Presentation polish in 3.2.7; Bookly save contracts unchanged.
  * @module components/reservation-dialog
  */
 (function (global) {
@@ -27,6 +27,35 @@
     const wrap = el('label', `cad-rm__field${extraClass ? ` ${extraClass}` : ''}`);
     wrap.append(el('span', 'cad-rm__label', labelText), input);
     return wrap;
+  }
+
+  function isAccessibilityNotesField(def) {
+    const label = String(def?.label || '').toLowerCase();
+    return (
+      label.includes('accessibility') ||
+      label.includes('high chair') ||
+      label.includes('highchair')
+    );
+  }
+
+  function detailFieldItems(def) {
+    const raw = def?.items || def?.options || [];
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((item) => {
+        if (typeof item === 'string' || typeof item === 'number') {
+          const value = String(item);
+          return { value, label: value };
+        }
+        if (!item || typeof item !== 'object') return null;
+        const label = String(item.label ?? item.value ?? '').trim();
+        if (!label) return null;
+        return {
+          label,
+          value: String(item.value ?? label),
+        };
+      })
+      .filter(Boolean);
   }
 
   function section(title, className) {
@@ -320,9 +349,11 @@
       closeBtn.addEventListener('click', () => this.close());
       header.append(title, closeBtn);
 
+      const summaryWrap = el('div', 'cad-rm__summary-wrap');
       const summary = el('div', 'cad-rm__summary');
       summary.setAttribute('aria-live', 'polite');
-      chrome.append(header, summary);
+      summaryWrap.appendChild(summary);
+      chrome.append(header, summaryWrap);
 
       const form = el('form', 'cad-rm__form');
       form.addEventListener('submit', (event) => {
@@ -337,38 +368,43 @@
       const reservation = section('Reservation', 'cad-rm__section--reservation');
       const customer = section('Customer', 'cad-rm__section--customer');
       const details = section('Reservation Details', 'cad-rm__section--details');
-      const resNotes = section('Booking Notes', 'cad-rm__section--res-notes');
       const studioNotes = section('Studio Notes', 'cad-rm__section--notes');
       const statusSec = section('Status', 'cad-rm__section--status');
 
+      // Booking Notes: field label (not a major section heading).
+      const resNotesSec = el(
+        'section',
+        'cad-rm__section cad-rm__section--res-notes cad-rm__section--plain-field'
+      );
+
       this._title = title;
       this._detailsSec = details.sec;
-      this._resNotesSec = resNotes.sec;
+      this._resNotesSec = resNotesSec;
       this._statusSec = statusSec.sec;
       this._detailsBody = details.body;
       this._statusBody = statusSec.body;
 
-      const serviceSelect = el('select', 'cad-rm__input');
+      const serviceSelect = el('select', 'cad-rm__input cad-rm__select');
       serviceSelect.name = 'service_id';
       serviceSelect.required = true;
 
-      const tableSelect = el('select', 'cad-rm__input');
+      const tableSelect = el('select', 'cad-rm__input cad-rm__select');
       tableSelect.name = 'staff_id';
 
       const dateInput = el('input', 'cad-rm__input');
       dateInput.type = 'date';
       dateInput.name = 'date';
 
-      const startSelect = el('select', 'cad-rm__input');
+      const startSelect = el('select', 'cad-rm__input cad-rm__select');
       startSelect.name = 'start_time';
 
-      const endSelect = el('select', 'cad-rm__input');
+      const endSelect = el('select', 'cad-rm__input cad-rm__select');
       endSelect.name = 'end_time';
 
       const durationDisplay = el('div', 'cad-rm__duration');
       durationDisplay.setAttribute('aria-live', 'polite');
 
-      const paintersSelect = el('select', 'cad-rm__input');
+      const paintersSelect = el('select', 'cad-rm__input cad-rm__select');
       paintersSelect.name = 'painters';
 
       const serviceField = field('Service', serviceSelect, 'cad-rm__field--half');
@@ -377,7 +413,7 @@
       const startField = field('Start Time', startSelect, 'cad-rm__field--third');
       const endField = field('End Time', endSelect, 'cad-rm__field--third');
       const durationField = field('Duration', durationDisplay, 'cad-rm__field--half');
-      const paintersField = field('🎨 # of Painters', paintersSelect, 'cad-rm__field--half');
+      const paintersField = field('# of Painters', paintersSelect, 'cad-rm__field--half');
 
       reservation.body.append(
         serviceField,
@@ -421,7 +457,9 @@
       customerNotesInput.name = 'customer_notes';
       customerNotesInput.rows = 3;
       customerNotesInput.placeholder = 'Add any notes about the reservation...';
-      resNotes.body.append(customerNotesInput);
+      resNotesSec.appendChild(
+        field('Booking Notes', customerNotesInput, 'cad-rm__field--span')
+      );
 
       const notesInput = el('textarea', 'cad-rm__textarea');
       notesInput.name = 'notes';
@@ -433,7 +471,7 @@
       error.hidden = true;
 
       colMain.append(reservation.sec, customer.sec);
-      colSide.append(details.sec, resNotes.sec, studioNotes.sec, statusSec.sec);
+      colSide.append(details.sec, resNotesSec, studioNotes.sec, statusSec.sec);
       scroll.append(colMain, colSide, error);
 
       const footer = el('div', 'cad-rm__footer');
@@ -950,18 +988,21 @@
 
     /**
      * Dynamic service fields — no birthday/studio branching in the UI.
-     * @param {Array<{id:string,label:string,type:string,value:string,required?:boolean}>} fields
+     * @param {Array<{id:string,label:string,type:string,value:string,required?:boolean,items?:Array}>} fields
      */
     renderDetailFields(fields) {
       this._detailsBody.replaceChildren();
-      if (!fields.length) {
+      const visible = (Array.isArray(fields) ? fields : []).filter(
+        (def) => !isAccessibilityNotesField(def)
+      );
+      if (!visible.length) {
         this._detailsBody.append(
           el('p', 'cad-rm__empty', 'No service-specific fields for this reservation.')
         );
         return;
       }
 
-      fields.forEach((def) => {
+      visible.forEach((def) => {
         const type = String(def.type || 'text').toLowerCase();
         if (
           type === 'captcha' ||
@@ -971,26 +1012,52 @@
         ) {
           return;
         }
+
+        const items = detailFieldItems(def);
+        const label = String(def.label || def.id);
+        const wantsSelect =
+          type === 'select' ||
+          type === 'drop-down' ||
+          type === 'dropdown' ||
+          type === 'radio' ||
+          type === 'radiobuttons' ||
+          (/special\s*occasion/i.test(label) && items.length > 0);
+
         let input;
-        const isTextarea = type === 'textarea';
-        if (isTextarea) {
+        const isTextarea = type === 'textarea' && !wantsSelect;
+        if (wantsSelect && items.length) {
+          input = el('select', 'cad-rm__input cad-rm__select');
+          const blank = el('option', null, 'Select an option');
+          blank.value = '';
+          input.appendChild(blank);
+          items.forEach((item) => {
+            const opt = el('option', null, item.label);
+            opt.value = item.value;
+            input.appendChild(opt);
+          });
+          const current = def.value != null ? String(def.value) : '';
+          if (current && ![...input.options].some((o) => o.value === current)) {
+            const orphan = el('option', null, current);
+            orphan.value = current;
+            input.appendChild(orphan);
+          }
+          input.value = current;
+        } else if (isTextarea) {
           input = el('textarea', 'cad-rm__textarea');
           input.rows = 3;
+          input.value = def.value != null ? String(def.value) : '';
         } else {
           input = el('input', 'cad-rm__input');
           input.type =
             type === 'number' || type === 'email' || type === 'tel' ? type : 'text';
+          input.value = def.value != null ? String(def.value) : '';
         }
+
         input.name = `detail_${def.id}`;
         input.dataset.fieldId = String(def.id);
-        input.value = def.value != null ? String(def.value) : '';
         if (def.required) input.required = true;
         this._detailsBody.append(
-          field(
-            String(def.label || def.id),
-            input,
-            isTextarea ? 'cad-rm__field--span' : ''
-          )
+          field(label, input, isTextarea ? 'cad-rm__field--span' : '')
         );
       });
     },

@@ -1073,17 +1073,24 @@ body.cad-dnd-active .cad-appointment {
   color: var(--cad-ink);
 }
 
-/* 1. Summary — one compact scan line */
+/* 1. Summary — lightweight information banner */
+.cad-rm__summary-wrap {
+  margin: 0.45rem var(--cad-rm-pad-x) 0.9rem;
+  padding: 15px 16px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background: #f7f7f7;
+}
+
 .cad-rm__summary {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 0.2rem 0.7rem;
-  margin: 0.35rem var(--cad-rm-pad-x) 0.85rem;
-  padding: 0.45rem 0 0.7rem;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
   border: none;
-  border-bottom: 1px solid color-mix(in srgb, var(--cad-ink) 7%, transparent);
   border-radius: 0;
   background: transparent;
   color: var(--cad-ink);
@@ -1137,9 +1144,10 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-rm__scroll {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
   align-items: stretch;
-  gap: 1.15rem 1.75rem;
+  column-gap: 48px;
+  row-gap: 1.15rem;
   flex: 1 1 auto;
   min-height: 0;
   padding: 0.15rem var(--cad-rm-pad-x) 1rem;
@@ -1155,8 +1163,24 @@ body.cad-dnd-active .cad-appointment {
   min-height: 0;
 }
 
+.cad-rm__col--main {
+  position: relative;
+}
+
+/* Vertical divider: 1px #E8E8E8, 24px from each column */
+.cad-rm__col--main::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -24.5px;
+  width: 1px;
+  background: #e8e8e8;
+  pointer-events: none;
+}
+
 .cad-rm__col--side {
-  gap: 0.9rem;
+  gap: 1rem;
 }
 
 .cad-rm__scroll > .cad-rm__error {
@@ -1180,7 +1204,7 @@ body.cad-dnd-active .cad-appointment {
 }
 
 .cad-rm__section-title {
-  margin: 0 0 1rem;
+  margin: 0 0 0.85rem;
   padding-bottom: 0.4rem;
   border-bottom: 1px solid #e8e8e8;
   font-size: 0.8rem;
@@ -1199,7 +1223,7 @@ body.cad-dnd-active .cad-appointment {
 
 .cad-rm__section--details .cad-rm__section-body {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.35rem 0.65rem;
+  gap: 0.55rem 0.75rem;
 }
 
 .cad-rm__section--res-notes .cad-rm__section-body,
@@ -1208,10 +1232,21 @@ body.cad-dnd-active .cad-appointment {
   grid-template-columns: 1fr;
 }
 
+.cad-rm__section--notes .cad-rm__section-title,
+.cad-rm__section--status .cad-rm__section-title {
+  margin-bottom: 0.95rem;
+}
+
+.cad-rm__section--notes .cad-rm__section-body,
+.cad-rm__section--status .cad-rm__section-body {
+  margin-top: 0.1rem;
+  padding-top: 0.15rem;
+}
+
 .cad-rm__field {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.4rem;
   min-width: 0;
 }
 
@@ -1234,15 +1269,20 @@ body.cad-dnd-active .cad-appointment {
 }
 
 .cad-rm__label {
+  display: block;
+  margin: 0;
   font-size: 0.68rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.055em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--cad-muted) 45%, var(--cad-ink));
+  color: color-mix(in srgb, var(--cad-muted) 28%, var(--cad-ink));
+  line-height: 1.25;
 }
 
-.cad-rm__section--reservation .cad-rm__label {
-  color: color-mix(in srgb, var(--cad-muted) 35%, var(--cad-ink));
+.cad-rm__section--reservation .cad-rm__label,
+.cad-rm__section--customer .cad-rm__label,
+.cad-rm__section--details .cad-rm__label {
+  color: color-mix(in srgb, var(--cad-muted) 22%, var(--cad-ink));
 }
 
 .cad-rm__hint {
@@ -1263,7 +1303,7 @@ body.cad-dnd-active .cad-appointment {
   color: var(--cad-ink);
   font: inherit;
   font-size: 1.05rem;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.25;
   box-shadow: none;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
@@ -1278,6 +1318,27 @@ body.cad-dnd-active .cad-appointment {
   display: flex;
   align-items: center;
   color: color-mix(in srgb, var(--cad-muted) 55%, var(--cad-ink));
+  font-weight: 400;
+}
+
+/* Purple chevron on all selects; hide native arrow */
+select.cad-rm__input,
+.cad-rm__select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 2.35rem;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237D3B92' d='M1.41.59L6 5.17 10.59.59 12 2l-6 6-6-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 8px;
+  cursor: pointer;
+}
+
+select.cad-rm__input::-ms-expand,
+.cad-rm__select::-ms-expand {
+  display: none;
 }
 
 .cad-rm__textarea {
@@ -1285,7 +1346,7 @@ body.cad-dnd-active .cad-appointment {
   min-height: 88px;
   padding: 10px 12px;
   resize: vertical;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.35;
 }
 
@@ -1301,8 +1362,28 @@ body.cad-dnd-active .cad-appointment {
   box-shadow: 0 0 0 2px rgba(125, 59, 146, 0.18);
 }
 
-/* 3. Notes — taller field containers, same language */
-.cad-rm__section--res-notes,
+/* Booking Notes — field label (purple), not a major section */
+.cad-rm__section--plain-field {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  gap: 0;
+  min-height: 0;
+}
+
+.cad-rm__section--plain-field .cad-rm__label {
+  color: #7d3b92;
+  font-weight: 700;
+}
+
+.cad-rm__section--plain-field .cad-rm__textarea {
+  min-height: 88px;
+  font-weight: 400;
+  font-size: 0.96rem;
+  color: color-mix(in srgb, var(--cad-ink) 90%, var(--cad-muted));
+}
+
+/* Studio Notes — section title + spaced control */
 .cad-rm__section--notes {
   display: flex;
   flex-direction: column;
@@ -1310,15 +1391,14 @@ body.cad-dnd-active .cad-appointment {
   min-height: 0;
 }
 
-.cad-rm__section--res-notes .cad-rm__section-body,
 .cad-rm__section--notes .cad-rm__section-body {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
+  gap: 0;
 }
 
-.cad-rm__section--res-notes .cad-rm__textarea,
 .cad-rm__section--notes .cad-rm__textarea {
   flex: 1 1 auto;
   min-height: 96px;
@@ -1329,6 +1409,7 @@ body.cad-dnd-active .cad-appointment {
   box-shadow: none;
   color: color-mix(in srgb, var(--cad-ink) 90%, var(--cad-muted));
   font-size: 0.96rem;
+  font-weight: 400;
 }
 
 .cad-rm__section--details,
@@ -1340,7 +1421,7 @@ body.cad-dnd-active .cad-appointment {
 .cad-rm__section--details .cad-rm__input {
   height: 40px;
   font-size: 0.98rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .cad-rm__section--details .cad-rm__textarea {
@@ -1348,14 +1429,15 @@ body.cad-dnd-active .cad-appointment {
   max-height: 5rem;
   resize: vertical;
   font-size: 0.96rem;
-  font-weight: 500;
+  font-weight: 400;
   background: #ffffff;
   border: 1px solid #d9d9d9;
   border-radius: 6px;
 }
 
 .cad-rm__section--details .cad-rm__label {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 700;
 }
 
 .cad-rm__empty {
@@ -1382,18 +1464,18 @@ body.cad-dnd-active .cad-appointment {
   font-size: 0.78rem;
 }
 
-/* 4. Footer — sticky primary action */
+/* 4. Footer — dedicated action bar */
 .cad-rm__footer {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.65rem;
   flex-shrink: 0;
   z-index: 2;
-  min-height: 3.5rem;
-  padding: 0.8rem var(--cad-rm-pad-x) 0.95rem;
-  border-top: 1px solid color-mix(in srgb, var(--cad-ink) 7%, transparent);
-  background: #ffffff;
+  min-height: 3.75rem;
+  padding: 0.85rem var(--cad-rm-pad-x);
+  border-top: 1px solid #e5e5e5;
+  background: #f7f7f7;
 }
 
 .cad-rm__footer .cad-rm__btn--danger {
@@ -1401,13 +1483,16 @@ body.cad-dnd-active .cad-appointment {
 }
 
 .cad-rm__btn {
+  box-sizing: border-box;
   margin: 0;
-  padding: 0.52rem 1rem;
+  min-height: 42px;
+  padding: 0.5rem 1.1rem;
   border: 1px solid color-mix(in srgb, var(--cad-ink) 12%, var(--cad-border));
-  border-radius: 9px;
+  border-radius: 8px;
   font: inherit;
   font-size: 1.03rem;
   font-weight: 600;
+  line-height: 1.2;
   cursor: pointer;
 }
 
@@ -1417,71 +1502,81 @@ body.cad-dnd-active .cad-appointment {
 }
 
 .cad-rm__btn--ghost {
+  border-color: #7d3b92;
   background: #ffffff;
-  color: var(--cad-ink);
+  color: #7d3b92;
+}
+
+.cad-rm__btn--ghost:hover:not(:disabled) {
+  background: color-mix(in srgb, #7d3b92 6%, #ffffff);
 }
 
 .cad-rm__btn--primary {
-  border-color: var(--cad-purple);
-  background: var(--cad-purple);
+  border-color: #7d3b92;
+  background: #7d3b92;
   color: #ffffff;
   min-width: 10.5rem;
-  padding: 0.58rem 1.25rem;
+  padding: 0.5rem 1.25rem;
   font-size: 1.06rem;
   font-weight: 700;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--cad-purple) 22%, transparent);
+  box-shadow: none;
 }
 
 .cad-rm__btn--primary:hover:not(:disabled) {
-  filter: brightness(0.97);
+  background: #6a3180;
+  border-color: #6a3180;
 }
 
 .cad-rm__btn--danger {
-  border-color: color-mix(in srgb, #b42318 55%, var(--cad-border));
+  border-color: #c62828;
   background: #ffffff;
-  color: #b42318;
+  color: #c62828;
   font-weight: 600;
 }
 
 .cad-rm__btn--danger:hover:not(:disabled) {
-  background: #fef3f2;
+  background: #fff5f5;
 }
 
+/* Status — segmented buttons; current status in green */
+.cad-rm .cad-status-chips,
 .cad-status-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.4rem;
 }
 
+.cad-rm .cad-status-chips__btn,
 .cad-status-chips__btn {
   margin: 0;
-  padding: 0.2rem 0.55rem;
-  border: 1px solid var(--cad-border);
-  border-radius: 999px;
+  min-height: 36px;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
   background: #ffffff;
   color: color-mix(in srgb, var(--cad-ink) 88%, var(--cad-muted));
   font: inherit;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 400;
   line-height: 1.3;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: none;
 }
 
+.cad-rm .cad-status-chips__btn:hover,
 .cad-status-chips__btn:hover {
-  border-color: var(--cad-teal);
+  border-color: #bdbdbd;
   color: var(--cad-ink);
 }
 
 .cad-rm .cad-status-chips__btn--active,
 .cad-status-chips__btn--active {
-  border-color: color-mix(in srgb, var(--cad-teal) 75%, var(--cad-ink));
-  background: color-mix(in srgb, var(--cad-teal) 22%, #ffffff);
-  color: color-mix(in srgb, var(--cad-teal) 55%, var(--cad-ink));
-  font-weight: 700;
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--cad-teal) 28%, transparent),
-    0 1px 2px color-mix(in srgb, var(--cad-teal) 18%, transparent);
+  border-color: #4caf50;
+  background: #e8f5e9;
+  color: #1b5e20;
+  font-weight: 600;
+  box-shadow: none;
 }
 
 /* Compact desktop / laptop — keep summary on one line, reduce scroll risk */
@@ -1489,6 +1584,11 @@ body.cad-dnd-active .cad-appointment {
   .cad-rm {
     --cad-rm-pad-x: 1.15rem;
     --cad-rm-gap-x: 0.85rem;
+  }
+
+  .cad-rm__summary-wrap {
+    margin-bottom: 0.75rem;
+    padding: 13px 14px;
   }
 
   .cad-rm__summary {
@@ -1501,7 +1601,12 @@ body.cad-dnd-active .cad-appointment {
   }
 
   .cad-rm__scroll {
-    gap: 1rem 1.25rem;
+    column-gap: 40px;
+    row-gap: 1rem;
+  }
+
+  .cad-rm__col--main::after {
+    right: -20.5px;
   }
 }
 
@@ -1514,9 +1619,9 @@ body.cad-dnd-active .cad-appointment {
     padding-top: 0.75rem;
   }
 
-  .cad-rm__summary {
+  .cad-rm__summary-wrap {
     margin-bottom: 0.65rem;
-    padding-bottom: 0.5rem;
+    padding: 12px 14px;
   }
 
   .cad-rm__col {
@@ -1527,14 +1632,14 @@ body.cad-dnd-active .cad-appointment {
     gap: 0.75rem;
   }
 
-  .cad-rm__section--res-notes .cad-rm__textarea,
+  .cad-rm__section--plain-field .cad-rm__textarea,
   .cad-rm__section--notes .cad-rm__textarea {
     min-height: 3.75rem;
   }
 
   .cad-rm__footer {
-    min-height: 3.25rem;
-    padding-top: 0.65rem;
+    min-height: 3.4rem;
+    padding-top: 0.7rem;
     padding-bottom: 0.75rem;
   }
 }
@@ -1559,6 +1664,11 @@ body.cad-dnd-active .cad-appointment {
 
   .cad-rm__scroll {
     grid-template-columns: 1fr;
+    column-gap: 0;
+  }
+
+  .cad-rm__col--main::after {
+    display: none;
   }
 
   .cad-rm__section-body,
@@ -1573,8 +1683,11 @@ body.cad-dnd-active .cad-appointment {
     grid-column: auto;
   }
 
-  .cad-rm__summary {
+  .cad-rm__summary-wrap {
     margin: 0.4rem 0.85rem 0.65rem;
+  }
+
+  .cad-rm__summary {
     flex-wrap: wrap;
     white-space: normal;
     gap: 0.25rem 0.55rem;

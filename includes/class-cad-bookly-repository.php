@@ -607,12 +607,45 @@ class CAD_Bookly_Repository {
 					$services[] = (string) $sid;
 				}
 			}
+			$items     = array();
+			$raw_items = array();
+			if ( isset( $field['items'] ) && is_array( $field['items'] ) ) {
+				$raw_items = $field['items'];
+			} elseif ( isset( $field['values'] ) && is_array( $field['values'] ) ) {
+				$raw_items = $field['values'];
+			}
+			foreach ( $raw_items as $item ) {
+				if ( is_string( $item ) || is_numeric( $item ) ) {
+					$label = (string) $item;
+					if ( '' === $label ) {
+						continue;
+					}
+					$items[] = array(
+						'label' => $label,
+						'value' => $label,
+					);
+					continue;
+				}
+				if ( ! is_array( $item ) ) {
+					continue;
+				}
+				$label = (string) ( $item['label'] ?? $item['value'] ?? '' );
+				if ( '' === trim( $label ) ) {
+					continue;
+				}
+				$items[] = array(
+					'label' => $label,
+					'value' => (string) ( $item['value'] ?? $label ),
+				);
+			}
+
 			$out[] = array(
 				'id'       => $id,
 				'label'    => (string) ( $field['label'] ?? $field['name'] ?? ( 'Field ' . $id ) ),
 				'type'     => (string) ( $field['type'] ?? 'text' ),
 				'services' => $services,
 				'required' => ! empty( $field['required'] ),
+				'items'    => $items,
 			);
 		}
 

@@ -27,6 +27,7 @@
 - [x] Reservation Manager UI refinement — **Sprint 3.2.4** (complete **3.2.4**)
 - [x] Scheduler workflow improvements — **Sprint 3.2.5** (complete **3.2.5**; Live QA before tag)
 - [x] Form UX polish + shared Reservation Dialog (New + Edit) — **3.2.6**
+- [x] Reservation dialog UI polish — **3.2.7**
 
 ## Sprint 3.0 — Studio Operations
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.2.7] — 2026-07-30
+
+### Changed
+
+- **Reservation dialog UI polish** — bolder field labels, regular-weight values, purple select chevrons, 58%/42% columns with subtle vertical divider
+- Summary banner (`#F7F7F7`), dedicated footer bar, green current-status chips, Booking Notes as a field (not a section)
+- Accessibility notes field hidden; Special Occasion rendered as a dropdown from Bookly custom-field choices
+- Studio Notes / Status spacing so labels sit above controls
+
+### Notes
+
+- Presentation-focused; save/validation unchanged. Repository/Mapper only pass through custom-field `items` and normalize `drop-down` → `select` for the UI
+- Pin `CAD_SCHEDULER_VERSION` to **3.2.7** after jsDelivr serves the tag; redeploy snippets **10** and **20**
+- See [sprint-3.2.7-ui-polish.md](sprint-3.2.7-ui-polish.md)
+
 ## [3.2.6] — 2026-07-30
 
 ### Changed

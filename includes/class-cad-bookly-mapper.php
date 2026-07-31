@@ -231,13 +231,18 @@ class CAD_Bookly_Mapper {
 			if ( ! empty( $services ) && '' !== $service_id && ! in_array( $service_id, $services, true ) ) {
 				continue;
 			}
-			$fields[] = array(
+			$field_row = array(
 				'id'       => $fid,
 				'label'    => (string) ( $def['label'] ?? ( 'Field ' . $fid ) ),
 				'type'     => $this->normalize_field_input_type( (string) ( $def['type'] ?? 'text' ) ),
 				'value'    => isset( $values[ $fid ] ) ? (string) $values[ $fid ] : '',
 				'required' => ! empty( $def['required'] ),
 			);
+			$items = $this->normalize_field_items( isset( $def['items'] ) ? $def['items'] : array() );
+			if ( ! empty( $items ) ) {
+				$field_row['items'] = $items;
+			}
+			$fields[] = $field_row;
 		}
 
 		/**
@@ -318,12 +323,52 @@ class CAD_Bookly_Mapper {
 			'email'        => 'email',
 			'tel'          => 'tel',
 			'phone'        => 'tel',
-			'select'       => 'text',
+			'select'       => 'select',
+			'drop-down'    => 'select',
+			'dropdown'     => 'select',
 			'checkboxes'   => 'text',
-			'radio'        => 'text',
-			'radiobuttons' => 'text',
+			'radio'        => 'select',
+			'radiobuttons' => 'select',
 		);
 		return isset( $map[ $type ] ) ? $map[ $type ] : 'text';
+	}
+
+	/**
+	 * Normalize Bookly custom-field choice items for select rendering.
+	 *
+	 * @param mixed $raw Items from Bookly definitions.
+	 * @return array<int, array{label: string, value: string}>
+	 */
+	private function normalize_field_items( $raw ) {
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+		$items = array();
+		foreach ( $raw as $item ) {
+			if ( is_string( $item ) || is_numeric( $item ) ) {
+				$label = (string) $item;
+				if ( '' === trim( $label ) ) {
+					continue;
+				}
+				$items[] = array(
+					'label' => $label,
+					'value' => $label,
+				);
+				continue;
+			}
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$label = (string) ( $item['label'] ?? $item['value'] ?? '' );
+			if ( '' === trim( $label ) ) {
+				continue;
+			}
+			$items[] = array(
+				'label' => $label,
+				'value' => (string) ( $item['value'] ?? $label ),
+			);
+		}
+		return $items;
 	}
 
 	/**
